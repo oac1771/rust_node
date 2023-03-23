@@ -16,24 +16,24 @@ struct Response {
 }
 
 #[get("/forward")]
-fn forward() {
+async fn forward() {
+    // look into sending custom data received by forward
     let mut map = HashMap::new();
     map.insert("description", "foo");
     map.insert("complete", "yes");
 
     let client = reqwest::Client::new();
-    async {
-        let response = client.post("http://localhost:8001/receive").json(&map).send().await;
-        match response.unwrap().status() {
-            reqwest::StatusCode::OK => {
-                println!("OK!")
-            },
-            _ => {
-                println!("Uh oh! Something unexpected happened.");
-            },
-        }
-    };
-
+    // move this into a request client 
+    let response = client.post("http://localhost:8001/receive").json(&map).send().await;
+    // todo: match based off of Ok() on response so I can use it in match block
+    match response.unwrap().status() {
+        reqwest::StatusCode::OK => {
+            println!("OK!")
+        },
+        _ => {
+            println!("Uh oh! Something unexpected happened.");
+        },
+    }
 }
 
 #[post("/receive", data = "<task>")]
