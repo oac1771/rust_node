@@ -3,6 +3,8 @@ use rocket::serde::{Deserialize, Serialize, json::Json};
 use reqwest;
 use std::collections::HashMap;
 
+mod client;
+
 #[derive(Deserialize)]
 struct Task<'r> {
     description: &'r str,
@@ -17,7 +19,7 @@ struct Response {
 
 #[get("/forward")]
 async fn forward() {
-    // look into sending custom data received by forward
+    // look into sending custom data received by for
     let mut map = HashMap::new();
     map.insert("description", "foo");
     map.insert("complete", "yes");
@@ -25,12 +27,22 @@ async fn forward() {
     let client = reqwest::Client::new();
     // move this into a request client 
     let response = client.post("http://localhost:8001/receive").json(&map).send().await;
-    // todo: match based off of Ok() on response so I can use it in match block
-    match response.unwrap().status() {
-        reqwest::StatusCode::OK => {
-            println!("OK!")
+
+    // todo: verify that response from /receive endpoint is being matched to match thing inside this
+        // might have to return reqwest object?
+    match response {
+        Ok(response) => {
+            match response.status() {
+                reqwest::StatusCode::OK => {
+                    println!("status code: {}", response.status());
+                },
+                _ => {
+                    println!("foo")
+                }
+            }
+
         },
-        _ => {
+        Err(_error) => {
             println!("Uh oh! Something unexpected happened.");
         },
     }
