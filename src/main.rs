@@ -29,7 +29,9 @@ async fn forward() {
     let response = client.post("http://localhost:8001/receive").json(&map).send().await;
 
     // todo: verify that response from /receive endpoint is being matched to match thing inside this
-        // might have to return reqwest object?
+        // you have to wrap response from reqwest in custom struct/enum then create service to be able
+        // to process. In forward something that handles and sends reqwuest post; in receive something that handles
+        // and reqwuest and returns correct response 
     match response {
         Ok(response) => {
             match response.status() {
