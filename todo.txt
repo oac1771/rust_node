@@ -1,13 +1,23 @@
 response may not be registering correctly because it is async? so all calls will return 200 OK?
-    try just doing synchronous calls 
+    try just doing synchronous calls    
 
-understand async/await in request
-    what does .await even do 
 
 This product could be a like cluster where each pins each others data to as backups for each other
     - look into if you can leverage zksync network to manage communication between nodes
     - smart contract deployed here that is basically a smart wallet that emits events when storing ipfs
         data. It basically stores ipfs hashes
+
+
+ipfs api docs
+http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#getting-started
+http://ipfscluster.io.ipns.localhost:8080/documentation/reference/api/
+http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-ledger
+
+example: curl -X POST http://127.0.0.1:5001/api/v0/id
+
+helpful ipfs commands:
+ipfs repo gc
+    - initiate garbage collection
 
 
 Rough plan
