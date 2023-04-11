@@ -3,6 +3,7 @@ use futures::{future::BoxFuture, FutureExt};
 
 use reqwest;
 use rocket::serde::Serialize;
+use rocket::serde::json::Json;
 
 
 #[derive(Serialize)]
@@ -39,20 +40,19 @@ impl RequestClient {
         return request_client
     }
 
-    pub async fn post(&self, data: HashMap<&str, &str>, url: &str) -> Response {
+    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
         let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
         let response = self.call(request).await;
 
-        return response
+        return Json(response)
 
     }
 
-    // see if there is a way to make this impl thing more compact, maybe using where?
     async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response {
         let r = request().await.unwrap();
-        let response = Response::new(r);
+        let response = Response::new(r).await;
 
-        return response.await
+        return response
 
             // todo: verify that response from /receive endpoint is being matched to match thing inside this
         // you have to wrap response from reqwest in custom struct/enum then create service to be able

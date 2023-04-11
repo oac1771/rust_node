@@ -1,7 +1,3 @@
-response may not be registering correctly because it is async? so all calls will return 200 OK?
-    try just doing synchronous calls    
-
-
 This product could be a like cluster where each pins each others data to as backups for each other
     - look into if you can leverage zksync network to manage communication between nodes
     - smart contract deployed here that is basically a smart wallet that emits events when storing ipfs
@@ -18,62 +14,19 @@ example: curl -X POST http://127.0.0.1:5001/api/v0/id
 helpful ipfs commands:
 ipfs repo gc
     - initiate garbage collection
+ipfs pin ls 
+    - list pinned files
 
 
-Rough plan
+Rough plan:
 
 get node to talk to local ipfs cluster locally
 containerize into docker compose
+    - probably going to need to read ipfs url from env variable
 set up smart contract deployed to local instance of chain
 containerize into docker compose
 have containerized node talk to smart contract 
 
-
-
-old stuff for networking
-
-use std::collections::HashMap;
-
-use rocket::serde::{Deserialize, json::Json, Serialize};
-use reqwest;
-use serde_json;
-
-mod client;
-
-#[derive(Deserialize, Serialize)]
-struct Task<'r> {
-    description: &'r str,
-    complete: &'r str
-}
-
-#[derive(Deserialize, Serialize)]
-struct Foo<'r> {
-    description: &'r str,
-    complete: &'r str
-}
-
-
-#[post("/forward", data = "<foo>")]
-async fn forward(foo: Json<Foo<'_>>) -> Json<client::request_client::Response> {
-    let url = "http://localhost:8001/receive";
-
-    let foo = foo.into_inner();
-    let bar = serde_json::to_string(&foo).unwrap();
-    let data: HashMap<&str, &str>  = serde_json::from_str(&bar).unwrap();
-
-    let client = client::request_client::RequestClient::new();
-    let response = client.post(data, url).await;
-    println!("{}", response.status_code);
-
-    Json(response)
-
-}
-
-#[post("/receive", data = "<task>")]
-fn receive(task: Json<Task<'_>>) -> Json<client::request_client::Response> {
-    println!("Description: {}, Complete: {}", task.description, task.complete);
-    
-    Json(client::request_client::Response{
-        status_code: reqwest::StatusCode::EXPECTATION_FAILED.to_string()
-    })
-}
+Refactor Ideas:
+consider switching to blocking instead of async with reqwest
+    - if this doesnt work nicely with rocket, try using ureq crate

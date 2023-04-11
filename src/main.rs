@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 #[macro_use] extern crate rocket;
-use rocket::serde::json::Json;
 use reqwest;
+use rocket::serde::json::Json;
 
 mod client;
 
@@ -15,18 +13,21 @@ fn health() -> Json<client::request_client::Response> {
     })
 }
 
-#[get("/add")]
-fn add() {
+#[post("/add")]
+async fn add() -> Json<client::request_client::Response> {
+    let client = client::request_client::RequestClient::new();
+    let response = client.post("http://127.0.0.1:5001/api/v0/add", None).await;
 
+    return response
 }
 
 #[post("/id")]
 async fn id() -> Json<client::request_client::Response> {
-    let data: HashMap<&str, &str> = HashMap::new();
     let client = client::request_client::RequestClient::new();
-    let response = client.post(data, "http://127.0.0.1:5001/api/v0/id").await;
+    let response = client.post("http://127.0.0.1:5001/api/v0/id", None).await;
 
-    return Json(response)
+    return response
+
 }
 
 #[launch]
