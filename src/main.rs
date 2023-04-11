@@ -9,7 +9,7 @@ fn health() -> Json<client::request_client::Response> {
 
     Json(client::request_client::Response{
         status_code: reqwest::StatusCode::OK.to_string(), 
-        body: serde_json::json!("")
+        body: "".to_string()
     })
 }
 

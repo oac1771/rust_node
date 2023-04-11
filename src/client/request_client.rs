@@ -24,26 +24,18 @@ impl RequestClient {
 
     pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
         let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
-        let response = self.call(request).await.unwrap();
+        let response = self.call(request).await;
 
         return response
 
     }
 
-    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Result<Json<Response>,  ()> {
+    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Json<Response> {
 
-        let r = request().await;
+        let r = request().await.unwrap();
+        let response = Response::new(r).await;
 
-        match r {
-            Ok(r) => {
-                let response = Response::new(r).await;
-                return Ok(Json(response))
-            },
-            Err(_) => {
-                println!("Error in call method");
-                Err(())
-            }
-        }
+        return Json(response)
     }
     
 }
@@ -52,18 +44,15 @@ impl RequestClient {
 #[derive(Serialize)]
 pub struct Response {
     pub status_code: String,
-    pub body: serde_json::Value,
-    // pub content: String
+    pub body: String,
 }
 
-// might need to do unwrap or else kind of thing to get json body if successful response or return string body if underlying error
 impl Response {
-    async fn new(r: reqwest::Response) -> Response {
+    async fn new(r: reqwest::Response) -> Response{
 
         let response = Response {
             status_code: r.status().to_string(),
-            body: r.json::<serde_json::Value>().await.unwrap(),
-            // content: r.text().await.unwrap()
+            body: r.text().await.unwrap(),
         };
 
         return response
