@@ -2,9 +2,65 @@ use std::collections::HashMap;
 use futures::{future::BoxFuture, FutureExt};
 
 use reqwest;
+
 use rocket::serde::Serialize;
 use rocket::serde::json::Json;
 
+pub struct RequestClient {
+    client: reqwest::Client
+
+}
+
+impl RequestClient {
+
+    pub fn new() -> RequestClient {
+        let client = reqwest::Client::new();
+        let request_client = RequestClient {
+            client
+        };
+
+        return request_client
+    }
+
+    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<ResponseKind> {
+        let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
+        let response = self.call(request).await.unwrap();
+
+        return response
+
+    }
+
+    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Result<Json<ResponseKind>,  ()> {
+        let r = request().await;
+
+        match r {
+            Ok(r) => {
+                match r.error_for_status() {
+                    Ok(r) => {
+                        let response = ResponseKind::Response(Response::new(r).await);
+                        return Ok(Json(response))
+                    },
+                    Err(err) => {
+                        let error = ResponseKind::Error(Error::new(err));
+                        return Ok(Json(error))
+                    }
+                }
+            },
+            Err(_) => {
+                println!("Error in response");
+                Err(())
+            }
+        }
+    }
+    
+}
+
+#[derive(Serialize)]
+
+pub enum ResponseKind {
+    Response(Response),
+    Error(Error)
+}
 
 #[derive(Serialize)]
 pub struct Response {
@@ -24,57 +80,20 @@ impl Response {
     }
 }
 
-pub struct RequestClient {
-    client: reqwest::Client
-
+#[derive(Serialize)]
+pub struct Error {
+    pub status_code: String,
 }
 
-impl RequestClient {
+// figure out how to get more error info here
+impl Error {
+    fn new(e: reqwest::Error) -> Error {
 
-    pub fn new() -> RequestClient {
-        let client = reqwest::Client::new();
-        let request_client = RequestClient {
-            client
+        let error = Error {
+            status_code: e.status().unwrap().to_string()
         };
 
-        return request_client
-    }
-
-    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
-        let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
-        let response = self.call(request).await;
-
-        return Json(response)
+        return error
 
     }
-
-    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response {
-        let r = request().await.unwrap();
-        let response = Response::new(r).await;
-
-        return response
-
-            // todo: verify that response from /receive endpoint is being matched to match thing inside this
-        // you have to wrap response from reqwest in custom struct/enum then create service to be able
-        // to process. In forward something that handles and sends reqwuest post; in receive something that handles
-        // and reqwuest and returns correct response
-
-        // match response {
-        //     Ok(response) => {
-        //         match response.status() {
-        //             reqwest::StatusCode::OK => {
-        //                 println!("status code: {}", response.status());
-        //             },
-        //             _ => {
-        //                 println!("foo")
-        //             }
-        //         }
-
-        //     },
-        //     Err(_error) => {
-        //         println!("Uh oh! Something unexpected happened.");
-        //     },
-        // }
-    }
-    
 }
