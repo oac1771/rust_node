@@ -22,7 +22,7 @@ impl RequestClient {
         return request_client
     }
 
-    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<ResponseKind> {
+    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
         let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
         let response = self.call(request).await.unwrap();
 
@@ -30,24 +30,17 @@ impl RequestClient {
 
     }
 
-    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Result<Json<ResponseKind>,  ()> {
+    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Result<Json<Response>,  ()> {
+
         let r = request().await;
 
         match r {
             Ok(r) => {
-                match r.error_for_status() {
-                    Ok(r) => {
-                        let response = ResponseKind::Response(Response::new(r).await);
-                        return Ok(Json(response))
-                    },
-                    Err(err) => {
-                        let error = ResponseKind::Error(Error::new(err));
-                        return Ok(Json(error))
-                    }
-                }
+                let response = Response::new(r).await;
+                return Ok(Json(response))
             },
             Err(_) => {
-                println!("Error in response");
+                println!("Error in call method");
                 Err(())
             }
         }
@@ -55,45 +48,24 @@ impl RequestClient {
     
 }
 
-#[derive(Serialize)]
-
-pub enum ResponseKind {
-    Response(Response),
-    Error(Error)
-}
 
 #[derive(Serialize)]
 pub struct Response {
     pub status_code: String,
-    pub body: serde_json::Value
+    pub body: serde_json::Value,
+    // pub content: String
 }
 
+// might need to do unwrap or else kind of thing to get json body if successful response or return string body if underlying error
 impl Response {
     async fn new(r: reqwest::Response) -> Response {
 
         let response = Response {
             status_code: r.status().to_string(),
-            body: r.json::<serde_json::Value>().await.unwrap()
+            body: r.json::<serde_json::Value>().await.unwrap(),
+            // content: r.text().await.unwrap()
         };
 
         return response
-    }
-}
-
-#[derive(Serialize)]
-pub struct Error {
-    pub status_code: String,
-}
-
-// figure out how to get more error info here
-impl Error {
-    fn new(e: reqwest::Error) -> Error {
-
-        let error = Error {
-            status_code: e.status().unwrap().to_string()
-        };
-
-        return error
-
     }
 }

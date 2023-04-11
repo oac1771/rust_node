@@ -14,7 +14,7 @@ fn health() -> Json<client::request_client::Response> {
 }
 
 #[post("/add")]
-async fn add() -> Json<client::request_client::ResponseKind> {
+async fn add() -> Json<client::request_client::Response> {
     let client = client::request_client::RequestClient::new();
     let response = client.post("http://127.0.0.1:5001/api/v0/add", None).await;
 
@@ -22,7 +22,7 @@ async fn add() -> Json<client::request_client::ResponseKind> {
 }
 
 #[post("/id")]
-async fn id() -> Json<client::request_client::ResponseKind> {
+async fn id() -> Json<client::request_client::Response> {
     let client = client::request_client::RequestClient::new();
     let response = client.post("http://127.0.0.1:5001/api/v0/id", None).await;
 
