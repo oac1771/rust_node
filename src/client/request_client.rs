@@ -22,8 +22,8 @@ impl RequestClient {
         return request_client
     }
 
-    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
-        let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
+    pub async fn post(&self, url: &str, body: Option<reqwest::Body>) -> Json<Response> {
+        let request =  || async move {self.client.post(url).body(body.unwrap()).send().await}.boxed();
         let response = self.call(request).await;
 
         return response

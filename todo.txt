@@ -30,3 +30,4 @@ have containerized node talk to smart contract
 Refactor Ideas:
 consider switching to blocking instead of async with reqwest
     - if this doesnt work nicely with rocket, try using ureq crate
+        - doesnt work well in tokio runtime :/
