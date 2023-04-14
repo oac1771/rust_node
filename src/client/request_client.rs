@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use futures::{future::BoxFuture, FutureExt};
 
 use reqwest;

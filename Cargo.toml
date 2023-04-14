@@ -17,7 +17,7 @@ features = ["json"]
 
 [dependencies.reqwest]
 version = "0.11.16"
-features = ["blocking", "multipart"]
+features = ["multipart", "stream"]
 
 [dependencies.serde]
 version = "1.0.156"

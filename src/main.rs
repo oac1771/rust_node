@@ -4,6 +4,8 @@ use rocket::serde::json::Json;
 
 mod client;
 
+use tokio::fs::File;
+use tokio_util::codec::{BytesCodec, FramedRead};
 
 #[get("/health")]
 fn health() -> Json<client::request_client::Response> {
@@ -17,15 +19,16 @@ fn health() -> Json<client::request_client::Response> {
 #[post("/add")]
 async fn add() {
 
-    tokio::task::spawn_blocking( || {
+    let file = File::open("todo.txt").await.unwrap();
+    let stream = FramedRead::new(file, BytesCodec::new());
+    let body = reqwest::Body::wrap_stream(stream);
 
-        let form = reqwest::blocking::multipart::Form::new().file("file", "todo.txt").unwrap();
-        let client = reqwest::blocking::Client::new();
+    let part = reqwest::multipart::Part::stream(body);
+    let form = reqwest::multipart::Form::new().part("file", part);
+    let client = reqwest::Client::new();
 
-        let response = client.post("http://127.0.0.1:5001/api/v0/add").multipart(form).send().unwrap();
-        println!("{:?}", response.text())
-
-    });
+    let response = client.post("http://127.0.0.1:5001/api/v0/add").multipart(form).send().await.unwrap();
+    println!("{:?}", response.text().await.unwrap());
 
 }
 
