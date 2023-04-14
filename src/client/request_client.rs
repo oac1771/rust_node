@@ -5,6 +5,9 @@ use reqwest;
 use rocket::serde::Serialize;
 use rocket::serde::json::Json;
 
+use tokio::fs::File;
+use tokio_util::codec::{BytesCodec, FramedRead};
+
 pub struct RequestClient {
     client: reqwest::Client
 
@@ -21,8 +24,23 @@ impl RequestClient {
         return request_client
     }
 
-    pub async fn post(&self, url: &str, body: Option<reqwest::Body>) -> Json<Response> {
-        let request =  || async move {self.client.post(url).body(body.unwrap()).send().await}.boxed();
+    pub async fn post(&self, url: &str) -> Json<Response> {
+        let request =  || async move {self.client.post(url).send().await}.boxed();
+        let response = self.call(request).await;
+
+        return response
+    }
+
+    pub async fn post_multipart(&self, url: &str, file_name: &str) -> Json<Response> {
+
+        let file = File::open(file_name).await.unwrap();
+        let stream = FramedRead::new(file, BytesCodec::new());
+        let body = reqwest::Body::wrap_stream(stream);
+
+        let part = reqwest::multipart::Part::stream(body);
+        let form = reqwest::multipart::Form::new().part("file", part);
+
+        let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
         let response = self.call(request).await;
 
         return response

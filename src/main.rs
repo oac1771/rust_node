@@ -4,9 +4,6 @@ use rocket::serde::json::Json;
 
 mod client;
 
-use tokio::fs::File;
-use tokio_util::codec::{BytesCodec, FramedRead};
-
 #[get("/health")]
 fn health() -> Json<client::request_client::Response> {
 
@@ -16,26 +13,22 @@ fn health() -> Json<client::request_client::Response> {
     })
 }
 
-#[post("/add")]
-async fn add() {
+#[post("/add/<file_name>")]
+async fn add(file_name: &str) -> Json<client::request_client::Response> {
 
-    let file = File::open("todo.txt").await.unwrap();
-    let stream = FramedRead::new(file, BytesCodec::new());
-    let body = reqwest::Body::wrap_stream(stream);
+    let client = client::request_client::RequestClient::new();
+    let response = client.post_multipart("http://127.0.0.1:5001/api/v0/add", file_name).await;
 
-    let part = reqwest::multipart::Part::stream(body);
-    let form = reqwest::multipart::Form::new().part("file", part);
-    let client = reqwest::Client::new();
-
-    let response = client.post("http://127.0.0.1:5001/api/v0/add").multipart(form).send().await.unwrap();
-    println!("{:?}", response.text().await.unwrap());
-
+    return response
 }
+
+// add pin rm endpoint http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-pin-rm
+
 
 #[post("/id")]
 async fn id() -> Json<client::request_client::Response> {
     let client = client::request_client::RequestClient::new();
-    let response = client.post("http://127.0.0.1:5001/api/v0/id", None).await;
+    let response = client.post("http://127.0.0.1:5001/api/v0/id").await;
 
     return response
 
