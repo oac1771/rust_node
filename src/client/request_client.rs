@@ -35,8 +35,8 @@ impl RequestClient {
 
         let file = File::open(file_name).await.unwrap();
         let stream = FramedRead::new(file, BytesCodec::new());
+        
         let body = reqwest::Body::wrap_stream(stream);
-
         let part = reqwest::multipart::Part::stream(body);
         let form = reqwest::multipart::Form::new().part("file", part);
 
