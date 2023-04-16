@@ -22,6 +22,8 @@ ipfs pin ls
 
 Rough plan:
 
+add ipfs client
+    - add tests
 get node to talk to local ipfs cluster locally
 containerize into docker compose
     - probably going to need to read ipfs url from env variable

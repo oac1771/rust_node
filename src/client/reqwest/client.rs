@@ -8,16 +8,15 @@ use rocket::serde::json::Json;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
-pub struct RequestClient {
+pub struct ReqwestClient {
     client: reqwest::Client
-
 }
 
-impl RequestClient {
+impl ReqwestClient {
 
-    pub fn new() -> RequestClient {
+    pub fn new() -> ReqwestClient {
         let client = reqwest::Client::new();
-        let request_client = RequestClient {
+        let request_client = ReqwestClient {
             client
         };
 
@@ -47,7 +46,10 @@ impl RequestClient {
 
     }
 
-    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Json<Response> {
+    async fn call<'a, F>(&self, request: F) -> Json<Response> 
+    where
+        F: FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>
+    {
 
         let r = request().await.unwrap();
         let response = Response::new(r).await;
@@ -75,3 +77,7 @@ impl Response {
         return response
     }
 }
+
+#[cfg(test)]
+#[path = "./test_client.rs"]
+mod test_client;

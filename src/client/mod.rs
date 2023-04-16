@@ -1,2 +1,2 @@
-pub mod request_client;
+pub mod reqwest;
 pub mod ipfs;
