@@ -22,3 +22,6 @@ features = ["multipart", "stream"]
 [dependencies.serde]
 version = "1.0.156"
 features = ["derive"]
+
+[dev-dependencies]
+mockall = "0.11.4"

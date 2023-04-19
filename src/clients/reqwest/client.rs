@@ -1,7 +1,5 @@
 use futures::{future::BoxFuture, FutureExt};
 
-use reqwest;
-
 use rocket::serde::Serialize;
 use rocket::serde::json::Json;
 
@@ -46,6 +44,7 @@ impl ReqwestClient {
 
     }
 
+    // add error handling if request throws error
     async fn call<'a, F>(&self, request: F) -> Json<Response> 
     where
         F: FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>
@@ -77,7 +76,3 @@ impl Response {
         return response
     }
 }
-
-#[cfg(test)]
-#[path = "./test_client.rs"]
-mod test_client;
