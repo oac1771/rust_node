@@ -1,8 +1,7 @@
 use crate::clients::reqwest::client;
-use rocket::serde::json::Json;
-use rocket::serde::Serialize;
+use crate::clients::reqwest::client::R;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json;
 
 const IPFS_URL: &str = "http://127.0.0.1:5001";
@@ -20,12 +19,12 @@ impl IpfsClient {
         return ipfs_client
     }
 
-    pub async fn get_id(&self) -> Json<IpfsIdResponse> {
+    pub async fn get_id(&self) -> IpfsIdResponse {
         let url = format!("{}{}", IPFS_URL, "/api/v0/id");
         let response = self.reqwest_client.post(&url).await;
         let ipfs_response: IpfsIdResponse = serde_json::from_str(&response.body).unwrap();
 
-        return Json(ipfs_response)
+        return ipfs_response
     }
 
 }
