@@ -9,7 +9,6 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait R {
-    fn new() -> ReqwestClient;
     async fn post(&self, url: &str) -> Response;
     async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
     // async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response;
@@ -21,15 +20,6 @@ pub struct ReqwestClient {
 
 #[async_trait]
 impl R for ReqwestClient {
-
-    fn new() -> ReqwestClient {
-        let client = reqwest::Client::new();
-        let request_client = ReqwestClient {
-            client
-        };
-
-        return request_client
-    }
 
     async fn post(&self, url: &str) -> Response {
         let request =  || async move {self.client.post(url).send().await}.boxed();
@@ -89,4 +79,13 @@ impl Response {
 
         return response
     }
+}
+
+pub fn create() -> ReqwestClient {
+    let client = reqwest::Client::new();
+    let reqwest_client = ReqwestClient {
+        client
+    };
+
+    return reqwest_client
 }

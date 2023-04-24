@@ -17,7 +17,7 @@ fn health() -> Json<clients::reqwest::client::Response> {
 
 #[post("/add/<file_name>")]
 async fn add(file_name: &str) ->  Json<clients::reqwest::client::Response> {
-    let client = clients::reqwest::client::ReqwestClient::new();
+    let client = clients::reqwest::client::create();
     let response = client.post_multipart("http://127.0.0.1:5001/api/v0/add", file_name).await;
 
     return Json(response)
