@@ -26,16 +26,16 @@ async fn add(file_name: &str) ->  Json<clients::reqwest::client::Response> {
 // add pin rm endpoint http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-pin-rm
 
 #[post("/id")]
-async fn id() -> Json<clients::ipfs::client::IpfsIdResponse> {
+async fn id() -> Json<clients::ipfs::client::IpfsIdResponse>{
 
-    let ipfs_client = clients::ipfs::client::IpfsClient::new();
-    let response = ipfs_client.get_id().await;
+    let ipfs_client = Box::new(clients::ipfs::client::IpfsClient::new());
+    let resposne = ipfs_client.get_id().await;
 
-    return Json(response)
+    return Json(resposne)
 
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![health, add, id])
+    rocket::build().mount("/", routes![health, add])
 }

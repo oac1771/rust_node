@@ -1,4 +1,5 @@
-use crate::clients::reqwest::client::{self, R};
+use crate::clients::reqwest::client;
+use crate::clients::reqwest::client::R;
 
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -6,7 +7,7 @@ use serde_json;
 const IPFS_URL: &str = "http://127.0.0.1:5001";
 
 pub struct IpfsClient {
-    reqwest_client: client::ReqwestClient
+    reqwest_client: Box<dyn R>
 }
 
 impl IpfsClient{
@@ -14,7 +15,7 @@ impl IpfsClient{
     pub fn new() -> IpfsClient {
         let reqwest_client = client::create();
         let ipfs_client = IpfsClient {
-            reqwest_client: reqwest_client
+            reqwest_client: Box::new(reqwest_client)
         };
         return ipfs_client
     }

@@ -4,31 +4,29 @@ use crate::clients::reqwest::client::{R, Response};
 use mockall::*;
 use async_trait::async_trait;
 
-#[test]
-fn foo() {
+mock! {
+        
+    pub ReqwestClient{}
 
-    let ipfs_client = create_stubbed_client();
-    ipfs_client.reqwest_client
+    #[async_trait]
+    impl R for ReqwestClient {
+        async fn post(&self, url: &str) -> Response;
+        async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+    }
+
 }
 
 
-fn create_stubbed_client() -> IpfsClient{
-    mock! {
-        
-        pub ReqwestClient{}
-    
-        #[async_trait]
-        impl R for ReqwestClient {
-            async fn post(&self, url: &str) -> Response;
-            async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
-        }
-
-    }
+#[tokio::test]
+async fn foo() {
 
     let mut mock_reqwest_client = MockReqwestClient::new();
-    let ipfs_client = IpfsClient{
-        reqwest_client: mock_reqwest_client
+    mock_reqwest_client.expect_post().times(2);
+
+    let ipfs_client = IpfsClient {
+        reqwest_client: Box::new(mock_reqwest_client)
     };
 
-    return ipfs_client
+    ipfs_client.get_id().await;
+
 }
