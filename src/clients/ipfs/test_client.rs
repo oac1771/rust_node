@@ -1,5 +1,6 @@
 use crate::clients::ipfs::client::IpfsClient;
-use crate::clients::reqwest::client::{R, Response};
+use crate::clients::reqwest::client::R;
+use crate::clients::reqwest::models::Response;
 
 use mockall::*;
 use async_trait::async_trait;

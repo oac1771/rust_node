@@ -1,18 +1,21 @@
-use crate::clients::reqwest::client;
-use crate::clients::reqwest::client::R;
-
 use serde::{Deserialize, Serialize};
 use serde_json;
 
+use crate::clients::reqwest::client;
+use crate::clients::reqwest::client::R;
+
+use std::sync::{Arc, Mutex};
+
 const IPFS_URL: &str = "http://127.0.0.1:5001";
 
-pub struct IpfsClient {
-    reqwest_client: Box<dyn R>
+// reqwest client field should probably be wrapped around Arc(Mutex())
+pub struct IpfsClient<'r> {
+    reqwest_client: Box<dyn R + 'r>
 }
 
-impl IpfsClient{
+impl<'r> IpfsClient<'r>{
 
-    pub fn new() -> IpfsClient {
+    pub fn new() -> IpfsClient<'r> {
         let reqwest_client = client::create();
         let ipfs_client = IpfsClient {
             reqwest_client: Box::new(reqwest_client)
@@ -29,7 +32,6 @@ impl IpfsClient{
     }
 
 }
-
 
 #[derive(Deserialize, Serialize)]
 pub struct IpfsIdResponse {

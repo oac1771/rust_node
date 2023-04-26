@@ -1,41 +1,46 @@
-#[macro_use] extern crate rocket;
-use reqwest;
-use rocket::serde::json::Json;
-
 mod clients;
-use crate::clients::reqwest::client::R;
+
+use std::sync::{Arc, Mutex};
+
+#[macro_use] extern crate rocket;
+use rocket::serde::json::Json;
+use reqwest;
+
+use clients::reqwest::client::R;
+use clients::reqwest::models::Response;
+use clients::ipfs::client::IpfsIdResponse;
 
 
 #[get("/health")]
-fn health() -> Json<clients::reqwest::client::Response> {
+fn health() -> Json<Response> {
 
-    Json(clients::reqwest::client::Response{
+    Json(Response{
         status_code: reqwest::StatusCode::OK.to_string(), 
         body: "".to_string()
     })
 }
 
 #[post("/add/<file_name>")]
-async fn add(file_name: &str) ->  Json<clients::reqwest::client::Response> {
+async fn add(file_name: &str) ->  Json<Response> {
     let client = clients::reqwest::client::create();
     let response = client.post_multipart("http://127.0.0.1:5001/api/v0/add", file_name).await;
 
     return Json(response)
 }
 
+
 // add pin rm endpoint http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-pin-rm
-
 #[post("/id")]
-async fn id() -> Json<clients::ipfs::client::IpfsIdResponse>{
+async fn id() {
 
-    let ipfs_client = Box::new(clients::ipfs::client::IpfsClient::new());
-    let resposne = ipfs_client.get_id().await;
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.get_id().await;
 
-    return Json(resposne)
+    // return Json(response)
 
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![health, add])
+    rocket::build().mount("/", routes![health, id, add])
 }
