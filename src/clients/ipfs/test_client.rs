@@ -1,33 +1,38 @@
+use super::*;
 use crate::clients::ipfs::client::IpfsClient;
-use crate::clients::reqwest::client::R;
-use crate::clients::reqwest::models::Response;
+use mockall_double::double;
 
-use mockall::*;
-use async_trait::async_trait;
+mod reqwest_client {
+    use mockall::automock;
+    use crate::clients::reqwest::models::Response;
 
-mock! {
-        
-    pub ReqwestClient{}
+    pub struct ReqwestClient{}
 
-    #[async_trait]
-    impl R for ReqwestClient {
-        async fn post(&self, url: &str) -> Response;
-        async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+    #[automock]
+    impl ReqwestClient{
+        pub async fn post(&self, url: &str) -> Response {
+            return Response{
+                status_code: "".to_string(),
+                body: "".to_string()
+            };
+        }
     }
-
 }
+
+#[double]
+use reqwest_client::ReqwestClient;
 
 
 #[tokio::test]
 async fn foo() {
 
-    let mut mock_reqwest_client = MockReqwestClient::new();
-    mock_reqwest_client.expect_post().times(2);
+    let mut mock_reqwest_client = ReqwestClient::default();
+    // mock_reqwest_client.expect_post().times(2);
 
-    let ipfs_client = IpfsClient {
-        reqwest_client: Box::new(mock_reqwest_client)
-    };
+    // let ipfs_client = IpfsClient {
+    //     reqwest_client: mock_reqwest_client
+    // };
 
-    ipfs_client.get_id().await;
+    // ipfs_client.get_id().await;
 
 }

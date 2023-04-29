@@ -1,14 +1,11 @@
 mod clients;
 
-use std::sync::{Arc, Mutex};
-
 #[macro_use] extern crate rocket;
 use rocket::serde::json::Json;
 use reqwest;
 
-use clients::reqwest::client::R;
 use clients::reqwest::models::Response;
-use clients::ipfs::client::IpfsIdResponse;
+// use clients::ipfs::client::IpfsIdResponse;
 
 
 #[get("/health")]
