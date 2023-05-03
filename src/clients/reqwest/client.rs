@@ -5,10 +5,13 @@ use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::clients::reqwest::models::Response;
 
+use mockall::automock;
+
 pub struct ReqwestClient {
     client: reqwest::Client
 }
 
+#[automock]
 impl ReqwestClient {
 
     pub async fn post(&self, url: &str) -> Response {
@@ -33,6 +36,19 @@ impl ReqwestClient {
         return response
 
     }
+    
+}
+
+impl ReqwestClient {
+
+    pub fn new() -> ReqwestClient {
+        let client = reqwest::Client::new();
+        let reqwest_client = ReqwestClient {
+            client
+        };
+    
+        return reqwest_client
+    }
 
     async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response
     {
@@ -42,15 +58,4 @@ impl ReqwestClient {
 
         return response
     }
-    
-}
-
-
-pub fn create() -> ReqwestClient {
-    let client = reqwest::Client::new();
-    let reqwest_client = ReqwestClient {
-        client
-    };
-
-    return reqwest_client
 }

@@ -1,18 +1,20 @@
 use serde_json;
+use mockall_double::double;
 
-use crate::clients::reqwest::client;
+#[double]
+use crate::clients::reqwest::client::ReqwestClient;
 use crate::clients::ipfs::models;
 
 const IPFS_URL: &str = "http://127.0.0.1:5001";
 
 pub struct IpfsClient {
-    reqwest_client: client::ReqwestClient
+    pub reqwest_client: ReqwestClient
 }
 
 impl IpfsClient{
 
     pub fn new() -> IpfsClient {
-        let reqwest_client = client::create();
+        let reqwest_client = ReqwestClient::new();
         let ipfs_client = IpfsClient {
             reqwest_client: reqwest_client
         };
@@ -28,7 +30,3 @@ impl IpfsClient{
     }
 
 }
-
-#[cfg(test)]
-#[path = "./test_client.rs"]
-mod test_client;
