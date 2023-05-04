@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use serde_json;
 use mockall_double::double;
 
@@ -16,7 +18,7 @@ pub struct IpfsClient {
 impl IpfsClient{
 
     pub fn new() -> IpfsClient {
-        let reqwest_client = ReqwestClient::new();
+        let reqwest_client: ReqwestClient = ReqwestClient::new();
         let ipfs_client = IpfsClient {
             reqwest_client: reqwest_client
         };

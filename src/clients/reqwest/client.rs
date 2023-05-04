@@ -40,10 +40,6 @@ impl ReqwestClient {
         return response
 
     }
-    
-}
-
-impl ReqwestClient {
 
     pub fn new() -> ReqwestClient {
         let client = reqwest::Client::new();
@@ -62,7 +58,9 @@ impl ReqwestClient {
 
         return response
     }
+    
 }
+
 
 #[cfg(test)]
 use mockall::mock;
@@ -71,7 +69,7 @@ mock!{
     pub ReqwestClient{}
 
     #[async_trait]
-    impl R for ReqwestClient{
+    impl R for ReqwestClient {
         async fn post(&self, url: &str) -> Response;
     }
 }
