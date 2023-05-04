@@ -1,17 +1,21 @@
 use futures::{future::BoxFuture, FutureExt};
+use async_trait::async_trait;
 
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
 use crate::clients::reqwest::models::Response;
 
-use mockall::automock;
+#[async_trait]
+pub trait R {
+    async fn post(&self, url: &str) -> Response;
+    // async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+}
 
 pub struct ReqwestClient {
     client: reqwest::Client
 }
 
-#[automock]
 impl ReqwestClient {
 
     pub async fn post(&self, url: &str) -> Response {
@@ -57,5 +61,17 @@ impl ReqwestClient {
         let response = Response::new(r).await;
 
         return response
+    }
+}
+
+#[cfg(test)]
+use mockall::mock;
+#[cfg(test)]
+mock!{
+    pub ReqwestClient{}
+
+    #[async_trait]
+    impl R for ReqwestClient{
+        async fn post(&self, url: &str) -> Response;
     }
 }

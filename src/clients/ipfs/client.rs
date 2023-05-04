@@ -3,6 +3,8 @@ use mockall_double::double;
 
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
+use crate::clients::reqwest::client::R;
+
 use crate::clients::ipfs::models;
 
 const IPFS_URL: &str = "http://127.0.0.1:5001";
