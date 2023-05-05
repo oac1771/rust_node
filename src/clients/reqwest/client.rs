@@ -9,7 +9,7 @@ use crate::clients::reqwest::models::Response;
 #[async_trait]
 pub trait R {
     async fn post(&self, url: &str) -> Response;
-    // async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+    async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
 }
 
 pub struct ReqwestClient {
@@ -71,5 +71,6 @@ mock!{
     #[async_trait]
     impl R for ReqwestClient {
         async fn post(&self, url: &str) -> Response;
+        async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
     }
 }
