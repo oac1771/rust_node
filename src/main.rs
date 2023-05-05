@@ -5,7 +5,7 @@ use rocket::serde::json::Json;
 use reqwest;
 
 use clients::reqwest::models::Response;
-use clients::ipfs::models::IpfsIdResponse;
+use clients::ipfs::models::{IpfsIdResponse, IpfsAddFileResponse};
 
 
 #[get("/health")]
@@ -17,16 +17,18 @@ fn health() -> Json<Response> {
     })
 }
 
+// refactor: make this take in json object, write file on the fly, add file to ipfs, delete local file
 #[post("/add/<file_name>")]
-async fn add(file_name: &str) ->  Json<Response> {
-    let client = clients::reqwest::client::ReqwestClient::new();
-    let response = client.post_multipart("http://127.0.0.1:5001/api/v0/add", file_name).await;
+async fn add(file_name: &str) ->  Json<IpfsAddFileResponse> {
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.add_file(file_name).await;
 
     return Json(response)
 }
 
-
 // add pin rm endpoint http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-pin-rm
+
+
 #[post("/id")]
 async fn id() -> Json<IpfsIdResponse>{
 

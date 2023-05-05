@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::clients::ipfs::test_data::IPFS_ID_RESPONSE;
+    use crate::clients::ipfs::test_data::{IPFS_ID_RESPONSE, IPFS_ADD_FILE_RESPONSE};
 
     use crate::clients::ipfs::client::IpfsClient;
     use crate::clients::reqwest::client::MockReqwestClient;
@@ -33,18 +33,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_id_should_add_file_to_ipfs_and_return_hash() {
-        let body = IPFS_ID_RESPONSE.to_string();
+        let body = IPFS_ADD_FILE_RESPONSE.to_string();
         let response = create_mocked_response("".to_string(), body);
 
         let mut mock_reqwest_client = MockReqwestClient::new();
-        mock_reqwest_client.expect_post().return_once(|_| response);
+        mock_reqwest_client.expect_post_multipart().return_once(|_, _| response);
 
         let ipfs_client = IpfsClient {
             reqwest_client: mock_reqwest_client
         };
 
-        let ipfs_id_response = ipfs_client.get_id().await;
-        assert_eq!(ipfs_id_response.ID, "12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn")
+        let ipfs_add_file_response = ipfs_client.add_file("").await;
+        assert_eq!(ipfs_add_file_response.Name, "QmYNJg8vEZcToKfresVMfCQzXrDnGuYM6TR7EZ8y33bLbE");
+        assert_eq!(ipfs_add_file_response.Hash, "QmYNJg8vEZcToKfresVMfCQzXrDnGuYM6TR7EZ8y33bLbE");
 
     }
 

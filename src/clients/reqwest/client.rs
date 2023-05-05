@@ -16,6 +16,7 @@ pub struct ReqwestClient {
     client: reqwest::Client
 }
 
+#[allow(dead_code)]
 impl ReqwestClient {
 
     pub async fn post(&self, url: &str) -> Response {
@@ -36,6 +37,8 @@ impl ReqwestClient {
 
         let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
         let response = self.call(request).await;
+
+        println!("{:?}", response.body);
 
         return response
 

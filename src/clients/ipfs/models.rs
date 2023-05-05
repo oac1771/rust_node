@@ -9,5 +9,6 @@ pub struct IpfsIdResponse {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
 pub struct IpfsAddFileResponse {
-    pub ID: String,
+    pub Name: String,
+    pub Hash: String
 }

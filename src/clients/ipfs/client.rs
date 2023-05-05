@@ -3,6 +3,7 @@ use mockall_double::double;
 
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
+#[allow(unused_imports)]
 use crate::clients::reqwest::client::R;
 
 use crate::clients::ipfs::models;
