@@ -1,11 +1,12 @@
 mod clients;
 
 #[macro_use] extern crate rocket;
+use clients::reqwest::client::ReqwestClient;
 use rocket::serde::json::Json;
 use reqwest;
 
 use clients::reqwest::models::Response;
-use clients::ipfs::models::{IpfsIdResponse, IpfsAddFileResponse};
+use clients::ipfs::models::*;
 
 
 #[get("/health")]
@@ -26,7 +27,16 @@ async fn add(file_name: &str) ->  Json<IpfsAddFileResponse> {
     return Json(response)
 }
 
-// add pin rm endpoint http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-pin-rm
+#[post("/rm/<hash>")]
+async fn rm_pin(hash: &str) ->  Json<IpfsRemovePinResponse> {
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.rm_pin(hash).await;
+    // let url = format!("{}{}", "http://localhost:5001/api/v0/pin/rm?arg=", hash);
+    // let client = ReqwestClient::new();
+    // let response = client.post(&url).await;
+
+    return Json(response)
+}
 
 
 #[post("/id")]
@@ -41,5 +51,5 @@ async fn id() -> Json<IpfsIdResponse>{
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![health, id, add])
+    rocket::build().mount("/", routes![health, id, add, rm_pin])
 }

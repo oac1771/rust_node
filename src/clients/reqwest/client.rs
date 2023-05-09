@@ -40,6 +40,7 @@ impl ReqwestClient {
 
         let r = request().await.unwrap();
         let response = Response::new(r).await;
+        println!("{:?}", response.body);
 
         return response
     }
