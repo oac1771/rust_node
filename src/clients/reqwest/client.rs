@@ -1,16 +1,8 @@
 use futures::{future::BoxFuture, FutureExt};
 use async_trait::async_trait;
-
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
-
 use crate::clients::reqwest::models::Response;
-
-#[async_trait]
-pub trait R {
-    async fn post(&self, url: &str) -> Response;
-    async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
-}
 
 pub struct ReqwestClient {
     client: reqwest::Client
@@ -38,10 +30,18 @@ impl ReqwestClient {
         let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
         let response = self.call(request).await;
 
-        println!("{:?}", response.body);
 
         return response
 
+    }
+
+    pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response
+    {
+
+        let r = request().await.unwrap();
+        let response = Response::new(r).await;
+
+        return response
     }
 
     pub fn new() -> ReqwestClient {
@@ -52,18 +52,15 @@ impl ReqwestClient {
     
         return reqwest_client
     }
-
-    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response
-    {
-
-        let r = request().await.unwrap();
-        let response = Response::new(r).await;
-
-        return response
-    }
     
 }
 
+
+#[async_trait]
+pub trait R {
+    async fn post(&self, url: &str) -> Response;
+    async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+}
 
 #[cfg(test)]
 use mockall::mock;

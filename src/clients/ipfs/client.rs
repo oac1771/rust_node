@@ -33,7 +33,7 @@ impl IpfsClient{
     }
 
     pub async fn add_file(&self, file_name: &str) -> models::IpfsAddFileResponse {
-        let url = format!("{}{}", IPFS_URL, "api/v0/add");
+        let url = format!("{}{}", IPFS_URL, "/api/v0/add");
         let response = self.reqwest_client.post_multipart(&url, file_name).await;
         let ipfs_response: models::IpfsAddFileResponse = serde_json::from_str(&response.body).unwrap();
 
