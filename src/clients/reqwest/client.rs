@@ -2,7 +2,7 @@ use futures::{future::BoxFuture, FutureExt};
 use async_trait::async_trait;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use crate::clients::reqwest::models::Response;
+use crate::clients::reqwest::models::{Response, Error};
 
 pub struct ReqwestClient {
     client: reqwest::Client
@@ -11,14 +11,15 @@ pub struct ReqwestClient {
 #[allow(dead_code)]
 impl ReqwestClient {
 
-    pub async fn post(&self, url: &str) -> Response {
+    pub async fn post(&self, url: &str) ->  Result<Response, Error> {
         let request =  || async move {self.client.post(url).send().await}.boxed();
         let response = self.call(request).await;
 
         return response
     }
 
-    pub async fn post_multipart(&self, url: &str, file_name: &str) -> Response {
+    pub async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>
+    {
 
         let file = File::open(file_name).await.unwrap();
         let stream = FramedRead::new(file, BytesCodec::new());
@@ -35,14 +36,23 @@ impl ReqwestClient {
 
     }
 
-    pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Response
+    pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
+    Result<Response, Error>
     {
 
-        let r = request().await.unwrap();
-        let response = Response::new(r).await;
-        println!("{:?}", response.body);
+        let r = request().await;
 
-        return response
+        match r {
+            Ok(req) => {
+                let response = Response::new(req).await;
+                return Ok(response)
+            }
+            Err(err) => {
+                let error = Error::new(err);
+                return Err(error)
+            }
+        }
+
     }
 
     pub fn new() -> ReqwestClient {

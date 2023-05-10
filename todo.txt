@@ -1,5 +1,3 @@
-try seeing if multipart can be done with async
-
 This product could be a like cluster where each pins each others data to as backups for each other
     - look into if you can leverage zksync network to manage communication between nodes
     - smart contract deployed here that is basically a smart wallet that emits events when storing ipfs
@@ -22,9 +20,8 @@ ipfs pin ls
 
 Rough plan:
 
-add ipfs client
-    - add tests
 add error handling to reqwest client and ipfs client to avoid panics
+have /add take json as body, create file dynamically (temp file), add to ipfs, delete file
 
 get node to talk to local ipfs cluster locally
 containerize into docker compose
@@ -32,9 +29,3 @@ containerize into docker compose
 set up smart contract deployed to local instance of chain
 containerize into docker compose
 have containerized node talk to smart contract 
-
-Refactor Ideas:
-consider switching to blocking instead of async with reqwest
-    - if this doesnt work nicely with rocket, try using ureq crate
-
-add error handling for if request fails i.e. post method returns Err variant

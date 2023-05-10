@@ -14,6 +14,11 @@ pub struct IpfsClient {
     pub reqwest_client: ReqwestClient
 }
 
+
+// for error handling from reqwestclient, have a general method that returns IpfsClientError that has serder_json::Value
+// and have all of these methods return either error or successfull response
+
+// reqwest client will throw general Err type
 impl IpfsClient{
 
     pub fn new() -> IpfsClient {
