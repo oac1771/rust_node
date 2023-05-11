@@ -44,7 +44,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_return_error_struct() {
+    async fn should_return_error_struct_when_request_returns_non_200() {
+
+        let client = ReqwestClient::new();
+        let body = "404 not found";
+        let status_code = reqwest::StatusCode::NOT_FOUND;
+
+        let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
+        let error = client.call(request).await.err().unwrap();
+
+        assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
+    }
+
+    #[tokio::test]
+    async fn should_return_error_struct_when_request_cant_connect() {
 
         let client = ReqwestClient::new();
         let body = "failure :(";

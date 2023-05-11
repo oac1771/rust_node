@@ -44,8 +44,16 @@ impl ReqwestClient {
 
         match r {
             Ok(req) => {
-                let response = Response::new(req).await;
-                return Ok(response)
+                match req.error_for_status() {
+                    Ok(r) => {
+                        let response = Response::new(r).await;
+                        return Ok(response)
+                    },
+                    Err(e) => {
+                        let error = Error::new(e);
+                        return Err(error)
+                    }
+                }
             }
             Err(err) => {
                 let error = Error::new(err);

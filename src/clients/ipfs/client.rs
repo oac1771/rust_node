@@ -23,11 +23,11 @@ impl IpfsClient{
         };
         return ipfs_client
     }
-
     // move error handling stuff into general function that all methods will call
     // look into function that takes type and uses that type in serde_json::from_str and returns instance of that Type
         // might not enum in this case, would return Trait, but Json() thing in main.rs might not work on trait :( 
             // actually could have two enum variants: A successfull and error one, where successful takes Trait data (if possible)
+
     pub async fn get_id(&self) -> IpfsClientResponse {
         let url = format!("{}{}", IPFS_URL, "/api/v0/id");
         let response = self.reqwest_client.post(&url).await;
