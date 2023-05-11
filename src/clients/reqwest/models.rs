@@ -22,6 +22,7 @@ impl Response {
 #[derive(Serialize)]
 pub struct Error {
     pub body: String,
+    pub status: String
 }
 
 impl Error {
@@ -29,6 +30,7 @@ impl Error {
 
         let response = Error {
             body: err.to_string(),
+            status: err.status().unwrap().to_string()
         };
 
         return response

@@ -36,6 +36,7 @@ fn health() -> Json<Response> {
 // }
 
 
+// have this return enum that can be either of the ipfs structs or general ipfs error variant
 #[post("/id")]
 async fn id() {
 
@@ -50,6 +51,7 @@ async fn id() {
         Ok(req) => {
             println!("inside Ok block");
             println!("{:?}", req.body);
+            println!("{:?}", req.status_code);
 
         }
         Err(err) => {
