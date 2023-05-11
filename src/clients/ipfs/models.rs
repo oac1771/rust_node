@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize)]
+pub enum IpfsClientResponse {
+    IdResponse(IpfsIdResponse),
+    ErrorResponse(IpfsClientErrorResponse)
+}
+
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
 pub struct IpfsIdResponse {
@@ -17,4 +23,10 @@ pub struct IpfsAddFileResponse {
 #[derive(Deserialize, Serialize)]
 pub struct IpfsRemovePinResponse {
     pub Pins: Vec<String>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize)]
+pub struct IpfsClientErrorResponse {
+    pub Body: String,
 }

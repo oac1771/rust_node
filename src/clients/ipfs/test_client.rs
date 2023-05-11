@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
 
+    // add tests for error handling stuff
+    
     use crate::clients::ipfs::test_data::data::*;
 
     use crate::clients::ipfs::client::IpfsClient;

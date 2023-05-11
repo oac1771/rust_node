@@ -1,7 +1,6 @@
 mod clients;
 
 #[macro_use] extern crate rocket;
-use clients::reqwest::client::ReqwestClient;
 use rocket::serde::json::Json;
 use reqwest;
 
@@ -36,30 +35,13 @@ fn health() -> Json<Response> {
 // }
 
 
-// have this return enum that can be either of the ipfs structs or general ipfs error variant
 #[post("/id")]
-async fn id() {
+async fn id() -> Json<IpfsClientResponse> {
 
-    // let ipfs_client = clients::ipfs::client::IpfsClient::new();
-    // let response = ipfs_client.get_id().await;
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.get_id().await;
 
-    let url = "http://127.0.0.1:5001/apiv0/id";
-    let client = ReqwestClient::new();
-    let response = client.post(&url).await;
-
-    match response {
-        Ok(req) => {
-            println!("inside Ok block");
-            println!("{:?}", req.body);
-            println!("{:?}", req.status_code);
-
-        }
-        Err(err) => {
-            println!("inside Err block");
-            println!("{:?}", err.body);
-        }
-    }
-
+    return Json(response)
 
 }
 

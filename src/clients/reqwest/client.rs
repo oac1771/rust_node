@@ -18,23 +18,23 @@ impl ReqwestClient {
         return response
     }
 
-    pub async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>
-    {
+    // pub async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>
+    // {
 
-        let file = File::open(file_name).await.unwrap();
-        let stream = FramedRead::new(file, BytesCodec::new());
+    //     let file = File::open(file_name).await.unwrap();
+    //     let stream = FramedRead::new(file, BytesCodec::new());
         
-        let body = reqwest::Body::wrap_stream(stream);
-        let part = reqwest::multipart::Part::stream(body);
-        let form = reqwest::multipart::Form::new().part("file", part);
+    //     let body = reqwest::Body::wrap_stream(stream);
+    //     let part = reqwest::multipart::Part::stream(body);
+    //     let form = reqwest::multipart::Form::new().part("file", part);
 
-        let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
-        let response = self.call(request).await;
+    //     let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
+    //     let response = self.call(request).await;
 
 
-        return response
+    //     return response
 
-    }
+    // }
 
     pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
     Result<Response, Error>
@@ -69,8 +69,8 @@ impl ReqwestClient {
 
 #[async_trait]
 pub trait R {
-    async fn post(&self, url: &str) -> Response;
-    async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+    async fn post(&self, url: &str) -> Result<Response, Error>;
+    // async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
 }
 
 #[cfg(test)]
@@ -81,7 +81,7 @@ mock!{
 
     #[async_trait]
     impl R for ReqwestClient {
-        async fn post(&self, url: &str) -> Response;
-        async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
+        async fn post(&self, url: &str) -> Result<Response, Error>;
+        // async fn post_multipart(&self, url: &str, file_name: &str) -> Response;
     }
 }

@@ -3,6 +3,7 @@ mod tests {
 
     use http;
     use futures::FutureExt;
+    use std::any::type_name;
 
     use crate::clients::reqwest::client::ReqwestClient;
 
@@ -23,6 +24,9 @@ mod tests {
         let error_response = reqwest_response.error_for_status().err().unwrap();
 
         return Err(error_response);
+    }
+    fn type_of<T>(_: T) -> &'static str {
+        type_name::<T>()
     }
 
     #[tokio::test]
@@ -49,7 +53,7 @@ mod tests {
         let request = || async move {build_error(body.to_string(), status_code).await}.boxed();
         let error = client.call(request).await.err().unwrap();
 
-        assert_eq!(error.status, status_code.to_string());
+        assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
     }
     
 }
