@@ -5,7 +5,6 @@ use rocket::serde::json::Json;
 use reqwest;
 
 use clients::reqwest::models::Response;
-use clients::ipfs::models::*;
 
 
 #[get("/health")]
@@ -18,34 +17,34 @@ fn health() -> Json<Response> {
 }
 
 // refactor: make this take in json object, write file on the fly, add file to ipfs, delete local file
-// #[post("/add/<file_name>")]
-// async fn add(file_name: &str) ->  Json<IpfsAddFileResponse> {
-//     let ipfs_client = clients::ipfs::client::IpfsClient::new();
-//     let response = ipfs_client.add_file(file_name).await;
+#[post("/add/<file_name>")]
+async fn add(file_name: &str) -> String {
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.add_file(file_name).await;
 
-//     return Json(response)
-// }
+    return response
+}
 
-// #[post("/rm/<hash>")]
-// async fn rm_pin(hash: &str) ->  Json<IpfsRemovePinResponse> {
-//     let ipfs_client = clients::ipfs::client::IpfsClient::new();
-//     let response = ipfs_client.rm_pin(hash).await;
+#[post("/rm/<hash>")]
+async fn rm_pin(hash: &str) -> String {
+    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let response = ipfs_client.rm_pin(hash).await;
 
-//     return Json(response)
-// }
+    return response
+}
 
 
 #[post("/id")]
-async fn id() -> Json<IpfsClientResponse> {
+async fn id() -> String {
 
     let ipfs_client = clients::ipfs::client::IpfsClient::new();
     let response = ipfs_client.get_id().await;
 
-    return Json(response)
+    return response
 
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![health, id])
+    rocket::build().mount("/", routes![health, id, rm_pin, add])
 }

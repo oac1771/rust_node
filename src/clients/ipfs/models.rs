@@ -1,10 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
-pub enum IpfsClientResponse {
-    IdResponse(IpfsIdResponse),
-    ErrorResponse(IpfsClientErrorResponse)
-}
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]

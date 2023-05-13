@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use serde_json;
 use mockall_double::double;
 
@@ -23,46 +24,46 @@ impl IpfsClient{
         };
         return ipfs_client
     }
-    // move error handling stuff into general function that all methods will call
-    // look into function that takes type and uses that type in serde_json::from_str and returns instance of that Type
-        // might not enum in this case, would return Trait, but Json() thing in main.rs might not work on trait :( 
-            // actually could have two enum variants: A successfull and error one, where successful takes Trait data (if possible)
 
-    pub async fn get_id(&self) -> IpfsClientResponse {
-        let url = format!("{}{}", IPFS_URL, "/api/v0/id");
-        let response = self.reqwest_client.post(&url).await;
+    pub fn deserialize<'a, T: Deserialize<'a>>(&self, response_body: &'a str) -> T {
+        let ipfs_response: T = serde_json::from_str(response_body).unwrap();
+        return ipfs_response
+    }
 
+    fn handle<'a, T: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
         match response {
-            Ok(req) => {
-                let ipfs_response: IpfsIdResponse = serde_json::from_str(&req.body).unwrap();
-                return IpfsClientResponse::IdResponse(ipfs_response)
-
+            Ok(resp) => {
+                let ipfs_response = self.deserialize::<T>(&resp.body);
+                let string_response = serde_json::to_string(&ipfs_response).unwrap();
+                return string_response
             }
             Err(err) => {
-                let ipfs_error_response = IpfsClientErrorResponse{Body: err.body};
-                return IpfsClientResponse::ErrorResponse(ipfs_error_response)
-
+                return err.body.clone()
             }
         }
+    }
 
+    pub async fn get_id(&self) -> String {
+        let url = format!("{}{}", IPFS_URL, "/api/v0/id");
+        let response = self.reqwest_client.post(&url).await;
+         
+        return self.handle::<IpfsIdResponse>(&response)
 
     }
 
-    // pub async fn add_file(&self, file_name: &str) -> IpfsAddFileResponse {
-    //     let url = format!("{}{}", IPFS_URL, "/api/v0/add");
-    //     let response = self.reqwest_client.post_multipart(&url, file_name).await;
-    //     let ipfs_response: IpfsAddFileResponse = serde_json::from_str(&response.body).unwrap();
+    pub async fn add_file(&self, file_name: &str) -> String {
+        let url = format!("{}{}", IPFS_URL, "/api/v0/add");
+        let response = self.reqwest_client.post_multipart(&url, file_name).await;
+        
+        return self.handle::<IpfsAddFileResponse>(&response)
 
-    //     return ipfs_response
+    }
 
-    // }
+    pub async fn rm_pin(&self, hash: &str) -> String {
+        let url = format!("{}{}{}", IPFS_URL, "/api/v0/pin/rm?arg=", hash);
+        let response = self.reqwest_client.post(&url).await;
+        return self.handle::<IpfsRemovePinResponse>(&response)
 
-    // pub async fn rm_pin(&self, hash: &str) -> IpfsRemovePinResponse {
-    //     let url = format!("{}{}{}", IPFS_URL, "/api/v0/pin/rm?arg=", hash);
-    //     let response = self.reqwest_client.post(&url).await;
-    //     let ipfs_response: IpfsRemovePinResponse = serde_json::from_str(&response.body).unwrap();
-
-    //     return ipfs_response
-    // }
+    }
 
 }
