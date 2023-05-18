@@ -7,7 +7,7 @@ mod tests {
     use crate::clients::reqwest::client::MockReqwestClient;
     use crate::clients::reqwest::models::Response;
 
-    fn create_mocked_response(status_code: String, body: String) -> Response{
+    fn create_mocked_response(status_code: String, body: String) -> Response {
         return Response {
             status_code,
             body

@@ -6,7 +6,9 @@ use crate::clients::ipfs::models::*;
 use crate::clients::reqwest::models::*;
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
+
 #[allow(unused_imports)]
+#[cfg(test)]
 use crate::clients::reqwest::client::R;
 
 const IPFS_URL: &str = "http://127.0.0.1:5001";
@@ -15,7 +17,7 @@ pub struct IpfsClient {
     pub reqwest_client: ReqwestClient
 }
 
-impl IpfsClient{
+impl IpfsClient {
 
     pub fn new() -> IpfsClient {
         let reqwest_client: ReqwestClient = ReqwestClient::new();
@@ -25,15 +27,10 @@ impl IpfsClient{
         return ipfs_client
     }
 
-    pub fn deserialize<'a, T: Deserialize<'a>>(&self, response_body: &'a str) -> T {
-        let ipfs_response: T = serde_json::from_str(response_body).unwrap();
-        return ipfs_response
-    }
-
-    fn handle<'a, T: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
+    fn handle<'a, H: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
         match response {
             Ok(resp) => {
-                let ipfs_response = self.deserialize::<T>(&resp.body);
+                let ipfs_response: H = serde_json::from_str(&resp.body).unwrap();
                 let string_response = serde_json::to_string(&ipfs_response).unwrap();
                 return string_response
             }

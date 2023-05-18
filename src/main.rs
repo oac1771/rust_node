@@ -1,4 +1,6 @@
 mod clients;
+mod controllers;
+mod services;
 
 #[macro_use] extern crate rocket;
 use rocket::serde::json::Json;
@@ -16,11 +18,11 @@ fn health() -> Json<Response> {
     })
 }
 
-// refactor: make this take in json object, write file on the fly, add file to ipfs, delete local file
-#[post("/add/<file_name>")]
-async fn add(file_name: &str) -> String {
-    let ipfs_client = clients::ipfs::client::IpfsClient::new();
-    let response = ipfs_client.add_file(file_name).await;
+#[post("/add", data = "<file_contents>")]
+async fn add(file_contents: Json<controllers::models::FileContent>) -> String {
+
+    let add_controller = controllers::add::AddController::new();
+    let response = add_controller.add(file_contents.into_inner()).await;
 
     return response
 }
@@ -32,7 +34,6 @@ async fn rm_pin(hash: &str) -> String {
 
     return response
 }
-
 
 #[post("/id")]
 async fn id() -> String {

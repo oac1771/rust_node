@@ -16,16 +16,16 @@ ipfs repo gc
     - initiate garbage collection
 ipfs pin ls 
     - list pinned files
+curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:8000/add/todo.txt
 
 
 Rough plan:
 
-add error handling to reqwest client and ipfs client to avoid panics
-have /add take json as body, create file dynamically (temp file), add to ipfs, delete file
+create helm chart for deploying to k8s
+    - use alpine base image for node
+    - for ipfs: https://hub.docker.com/r/ipfs/kubo/
+    - can use k9s as a nice way to visualize stuff
 
-get node to talk to local ipfs cluster locally
-containerize into docker compose
-    - probably going to need to read ipfs url from env variable
 set up smart contract deployed to local instance of chain
 containerize into docker compose
 have containerized node talk to smart contract 
