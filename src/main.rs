@@ -8,7 +8,6 @@ use reqwest;
 
 use clients::reqwest::models::Response;
 
-
 #[get("/health")]
 fn health() -> Json<Response> {
 

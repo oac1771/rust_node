@@ -5,7 +5,7 @@ mod tests {
     use crate::clients::ipfs::client::IpfsClient;
     use crate::clients::ipfs::models::*;
     use crate::clients::reqwest::client::MockReqwestClient;
-    use crate::clients::reqwest::models::Response;
+    use crate::clients::reqwest::models::{Response, Error};
 
     fn create_mocked_response(status_code: String, body: String) -> Response {
         return Response {
@@ -67,5 +67,20 @@ mod tests {
 
     }
 
+    #[tokio::test]
+    async fn test_handle_should_return_error_body() {
+        let error_msg = "Error!";
+        let error = Error{body: error_msg.to_string()};
+
+        let mut _mock_reqwest_client = MockReqwestClient::new();
+        let ipfs_client = IpfsClient {
+            reqwest_client: _mock_reqwest_client
+        };
+
+        let handled_error = ipfs_client.handle::<IpfsIdResponse>(&Err(error));
+
+        assert_eq!(handled_error, error_msg);
+
+    }
     
 }

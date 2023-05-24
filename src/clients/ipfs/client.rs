@@ -27,7 +27,7 @@ impl IpfsClient {
         return ipfs_client
     }
 
-    fn handle<'a, H: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
+    pub fn handle<'a, H: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
         match response {
             Ok(resp) => {
                 let ipfs_response: H = serde_json::from_str(&resp.body).unwrap();
