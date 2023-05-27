@@ -21,8 +21,9 @@ impl AddController {
 
     pub async fn add(&self, file_contents: FileContent) -> String {
         let content = serde_json::to_string(&file_contents).unwrap();
-        let temp_file = self.file_service.create_tempfile(content);
-        let response = self.ipfs_client.add_file(&temp_file.path().to_str().unwrap()).await;
+        let temp_file = self.file_service.create_tempfile(content).path().to_str().unwrap().to_string();
+        println!("{:#}", temp_file);
+        let response = self.ipfs_client.add_file(&temp_file).await;
 
         return response
     }

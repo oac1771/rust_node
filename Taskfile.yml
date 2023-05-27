@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  docker-build:
+    cmds:
+      - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
+      - |
+        docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
+          /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
+      - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
