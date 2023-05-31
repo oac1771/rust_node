@@ -1,6 +1,23 @@
 version: '3'
 
 tasks:
+  start-local:
+    cmds:
+      - task: docker-build
+      - task: start-minikube
+      - task: deploy-ecosystem
+
+  deploy-ecosystem:
+    cmds:
+      - echo hi
+
+  start-minikube:
+    internal: true
+    cmds:
+      - minikube start
+    status:
+      - minikube status
+
   docker-build:
     cmds:
       - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
