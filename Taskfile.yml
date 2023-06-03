@@ -3,13 +3,17 @@ version: '3'
 tasks:
   start-local:
     cmds:
-      - task: docker-build
+      - |
+        task docker-build 
       - task: start-minikube
       - task: deploy-ecosystem
+    env:
+      BUILD: '{{ .BUILD }}'
 
   deploy-ecosystem:
+    internal: true
     cmds:
-      - echo hi
+      - helm install node-ecosystem helm_chart/
 
   start-minikube:
     internal: true
@@ -25,3 +29,8 @@ tasks:
         docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
           /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
       - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
+    env:
+      BUILD: true
+    status:
+      - |
+        if [ "$BUILD" != "true" ]; then exit 0; else exit 1; fi
