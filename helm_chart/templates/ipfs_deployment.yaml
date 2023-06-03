@@ -1,22 +1,22 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{- with .Values.ipfsContainerName }}
+  name: {{ .Values.ipfs.containerName }}
   labels:
-    app: {{- with .Values.ipfsContainerName }}
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       app: {{- with .Values.ipfsContainerName }}
-#   template:
-#     metadata:
-#       labels:
-#         app: {{- with .Values.ipfsContainerName }}
-#     spec:
-#       containers:
-#         - name: {{- with .Values.ipfs.containerName }}
-#           image: "{{ .Values.ipfs.repository }}:{{ .Values.ipfs.tag }}"
-#           imagePullPolicy: {{ .Values.ipfs.pullPolicy }}
-#           ports:
-#             - containerPort: 80
+    app: {{ .Values.ipfs.containerName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.ipfs.containerName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.ipfs.containerName }}
+    spec:
+      containers:
+        - name: {{ .Values.ipfs.containerName }}
+          image: "{{ .Values.ipfs.repository }}:{{ .Values.ipfs.tag }}"
+          imagePullPolicy: {{ .Values.ipfs.pullPolicy }}
+          ports:
+            - containerPort: 80
