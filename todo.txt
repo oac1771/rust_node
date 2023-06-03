@@ -23,37 +23,18 @@ example: curl -X POST http://127.0.0.1:5001/api/v0/id
 Rough plan:
 
 create helm chart for deploying to k8s
-    - use alpine base image for node
-    - for ipfs: https://hub.docker.com/r/ipfs/kubo/
-    - can use k9s as a nice way to visualize stuff
-
+    - deploy ipfs service
+        - figure out right ports
+    - add test to check if ipfs deployment was successful
+    - deploy rust_node
+        - deploy rust_node service
+            - figure out right ports
+        - add test to check if rust_node is up and can talk to ipfs
 set up smart contract deployed to local instance of chain
+
 have containerized node talk to smart contract 
 
 refactor ideas:
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder
 
-
-
-gcc:latest 
-
-mkdir musldist
-PREFIX=$(pwd)/musldist
-curl -O http://www.musl-libc.org/releases/musl-1.2.4.tar.gz
-tar xf musl-1.2.4.tar.gz
-cd musl-1.2.4/
-./configure --disable-shared --prefix=$PREFIX
-make
-make install
-cd ..
-du -h musldist/lib/libc.a
-
-curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/llvm-16.0.0.src.tar.xz
-tar xf llvm-16.0.0.src.tar.xz
-
-curl -OL https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/libunwind-16.0.0.src.tar.xz 
-
-curl -OL https://github.com/Kitware/CMake/releases/download/v3.26.4/cmake-3.26.4-linux-x86_64.tar.gz 
-
-alias cmake=./../../../../cmake-3.26.4-linux-x86_64/bin/cmake
