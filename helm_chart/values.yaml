@@ -4,3 +4,6 @@ ipfs:
   tag: master-2023-05-31-dfd2448
 
   containerName: ipfs
+  apiPort: 5001
+  gatewayPort: 8080
+  swarmPort: 4001

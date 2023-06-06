@@ -19,4 +19,9 @@ spec:
           image: "{{ .Values.ipfs.repository }}:{{ .Values.ipfs.tag }}"
           imagePullPolicy: {{ .Values.ipfs.pullPolicy }}
           ports:
-            - containerPort: 80
+          - containerPort: {{ .Values.ipfs.apiPort }}
+            name: api
+          - containerPort: {{ .Values.ipfs.gatewayPort }}
+            name: gateway
+          - containerPort: {{ .Values.ipfs.swarmPort }}
+            name: swarm

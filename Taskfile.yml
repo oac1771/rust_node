@@ -13,7 +13,7 @@ tasks:
   deploy-ecosystem:
     internal: true
     cmds:
-      - helm install node-ecosystem helm_chart/
+      - helm upgrade --install node-ecosystem helm_chart/
 
   start-minikube:
     internal: true
