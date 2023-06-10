@@ -7,3 +7,5 @@ ipfs:
   apiPort: 5001
   gatewayPort: 8080
   swarmPort: 4001
+
+  namespace: default

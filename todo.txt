@@ -23,13 +23,6 @@ example: curl -X POST http://127.0.0.1:5001/api/v0/id
 Rough plan:
 
 create helm chart for deploying to k8s
-    - deploy ipfs service
-        - figure out right ports
-    - add test to check if ipfs deployment was successful
-        - add namespaces to ipfs deployment and services manifest and values, reference those in dns in test
-        - look into deleting test pod after successful run
-        - add helm test after helm upgrade
-
     - deploy rust_node
         - deploy rust_node service
             - figure out right ports
