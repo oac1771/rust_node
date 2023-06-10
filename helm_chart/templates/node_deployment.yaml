@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.node.containerName }}
+  namespace: {{ .Values.node.namespace}}
+  labels:
+    app: {{ .Values.node.containerName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.node.containerName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.node.containerName }}
+    spec:
+      containers:
+        - name: {{ .Values.node.containerName }}
+          image: "{{ .Values.node.repository }}:{{ .Values.node.tag }}"
+          imagePullPolicy: {{ .Values.node.pullPolicy }}
+          command: ['sh', '-c', 'rust_node']
+          ports:
+          - containerPort: {{ .Values.node.apiPort }}
+            name: api
+

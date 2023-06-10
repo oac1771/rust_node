@@ -1,11 +1,21 @@
 ipfs:
   repository: ipfs/kubo
-  pullPolicy: IfNotPresent
   tag: master-2023-05-31-dfd2448
+  pullPolicy: IfNotPresent
 
   containerName: ipfs
   apiPort: 5001
   gatewayPort: 8080
   swarmPort: 4001
+
+  namespace: default
+
+node:
+  repository: rust_node
+  tag: latest
+  pullPolicy: Never
+
+  containerName: node
+  apiPort: 8000
 
   namespace: default

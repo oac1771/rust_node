@@ -8,9 +8,9 @@ spec:
   securityContext:
     runAsUser: 0
   containers:
-    - image: docker.io/curlimages/curl
+    - name: test-ipfs
+      image: docker.io/curlimages/curl
       imagePullPolicy: IfNotPresent
-      name: probe
       command: ['sh', '-c']
       args:
         - apk add jq;
