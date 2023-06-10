@@ -14,6 +14,7 @@ tasks:
     internal: true
     cmds:
       - helm upgrade --install node-ecosystem helm_chart/
+      - helm test node-ecosystem
 
   start-minikube:
     internal: true
