@@ -23,4 +23,6 @@ spec:
           ports:
           - containerPort: {{ .Values.node.apiPort }}
             name: api
-
+          env:
+          - name: ROCKET_ADDRESS
+            value: "0.0.0.0"

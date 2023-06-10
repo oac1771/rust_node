@@ -23,10 +23,8 @@ example: curl -X POST http://127.0.0.1:5001/api/v0/id
 Rough plan:
 
 create helm chart for deploying to k8s
-    - deploy rust_node
-        - deploy rust_node service
-            - figure out right ports
-        - add test to check if rust_node is up and can talk to ipfs
+    - add test to check if rust_node is up and can talk to ipfs
+        - make node take ipfs address as env variable to point to core dns ipfs 
 set up smart contract deployed to local instance of chain
 
 have containerized node talk to smart contract 

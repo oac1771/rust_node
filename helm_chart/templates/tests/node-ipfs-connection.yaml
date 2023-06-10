@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-node-ipfs-connection
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    runAsUser: 0
+  containers:
+    - name: test-node-ipfs
+      image: docker.io/curlimages/curl
+      imagePullPolicy: IfNotPresent
+      command: ['sh', '-c']
+      args:
+        - apk add jq && curl -X POST http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/id | jq ".ID" -e
+  restartPolicy: Never
