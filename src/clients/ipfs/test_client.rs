@@ -23,7 +23,8 @@ mod tests {
         mock_reqwest_client.expect_post().return_once(|_| Ok(response));
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client
+            reqwest_client: mock_reqwest_client,
+            ipfs_base_url: "".to_string()
         };
 
         let ipfs_id_response: IpfsIdResponse = serde_json::from_str(&ipfs_client.get_id().await).unwrap();
@@ -40,7 +41,8 @@ mod tests {
         mock_reqwest_client.expect_post_multipart().return_once(|_, _| Ok(response));
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client
+            reqwest_client: mock_reqwest_client,
+            ipfs_base_url: "".to_string()
         };
 
         let ipfs_add_file_response: IpfsAddFileResponse = serde_json::from_str(&ipfs_client.add_file("").await).unwrap();
@@ -58,7 +60,8 @@ mod tests {
         mock_reqwest_client.expect_post().return_once(|_| Ok(response));
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client
+            reqwest_client: mock_reqwest_client,
+            ipfs_base_url: "".to_string()
         };
 
         let ipfs_rm_pin_response: IpfsRemovePinResponse = serde_json::from_str(&ipfs_client.rm_pin("").await).unwrap();
@@ -74,7 +77,8 @@ mod tests {
 
         let mut _mock_reqwest_client = MockReqwestClient::new();
         let ipfs_client = IpfsClient {
-            reqwest_client: _mock_reqwest_client
+            reqwest_client: _mock_reqwest_client,
+            ipfs_base_url: "".to_string()
         };
 
         let handled_error = ipfs_client.handle::<IpfsIdResponse>(&Err(error));

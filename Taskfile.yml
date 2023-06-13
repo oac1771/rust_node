@@ -3,9 +3,9 @@ version: '3'
 tasks:
   start-local:
     cmds:
+      - task: start-minikube
       - |
         task docker-build 
-      - task: start-minikube
       - task: deploy-ecosystem
     env:
       BUILD: '{{ .BUILD }}'
@@ -14,14 +14,13 @@ tasks:
     internal: true
     cmds:
       - helm upgrade --install --atomic --timeout 45s node-ecosystem helm_chart/
-      - helm test node-ecosystem
+      - helm test node-ecosystem --logs
 
   start-minikube:
     internal: true
     cmds:
       - minikube start --driver=docker --cpus=4 --memory=4000
       - minikube addons enable metrics-server
-      - minikube image load rust_node:latest
     status:
       - minikube status
 
@@ -32,6 +31,8 @@ tasks:
         docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
           /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
       - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
+      - minikube image rm docker.io/library/rust_node:latest
+      - minikube image load rust_node:latest
     env:
       BUILD: true
     status:

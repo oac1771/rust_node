@@ -46,5 +46,6 @@ async fn id() -> String {
 
 #[launch]
 fn rocket() -> _ {
+    std::env::var("IPFS_BASE_URL").expect("IPFS_BASE_URL not set");
     rocket::build().mount("/", routes![health, id, rm_pin, add])
 }
