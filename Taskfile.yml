@@ -14,7 +14,7 @@ tasks:
     internal: true
     cmds:
       - helm upgrade --install --atomic --timeout 45s node-ecosystem helm_chart/
-      - helm test node-ecosystem --logs
+      - helm test node-ecosystem
 
   start-minikube:
     internal: true

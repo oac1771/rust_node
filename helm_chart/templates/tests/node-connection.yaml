@@ -4,6 +4,7 @@ metadata:
   name: test-node-connection
   annotations:
     "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
 spec:
   securityContext:
     runAsUser: 0
