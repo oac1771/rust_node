@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.geth.containerName }}
+  namespace: {{ .Values.geth.namespace}}
+  labels:
+    run: {{ .Values.geth.containerName }}
+spec:
+  ports:
+  - port: {{ .Values.geth.fooPort }}
+    protocol: TCP
+    name: foo
+  - port: {{ .Values.geth.barPort }}
+    protocol: TCP
+    name: bar
+
+  selector:
+    app: {{ .Values.geth.containerName }}

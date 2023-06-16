@@ -19,3 +19,16 @@ node:
   apiPort: 8000
 
   namespace: default
+
+geth:
+  repository: matterlabs/geth
+  tag: latest
+
+  # change this to ifNotPresent 
+  pullPolicy: Never
+
+  containerName: geth
+  fooPort: 8545
+  barPort: 8546
+
+  namespace: default

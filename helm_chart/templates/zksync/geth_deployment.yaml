@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.geth.containerName }}
+  namespace: {{ .Values.geth.namespace}}
+  labels:
+    app: {{ .Values.geth.containerName }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.geth.containerName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.geth.containerName }}
+    spec:
+      containers:
+        - name: {{ .Values.geth.containerName }}
+          image: "{{ .Values.geth.repository }}:{{ .Values.geth.tag }}"
+          imagePullPolicy: {{ .Values.geth.pullPolicy }}
+          ports:
+          - containerPort: {{ .Values.geth.fooPort }}
+            name: foo
+          - containerPort: {{ .Values.geth.barPort }}
+            name: bar

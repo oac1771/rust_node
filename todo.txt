@@ -1,31 +1,15 @@
-This product could be a like cluster where each pins each others data to as backups for each other
-    - look into if you can leverage zksync network to manage communication between nodes
-    - smart contract deployed here that is basically a smart wallet that emits events when storing ipfs
-        data. It basically stores ipfs hashes
-
-
-ipfs api docs
-http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#getting-started
-http://ipfscluster.io.ipns.localhost:8080/documentation/reference/api/
-http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-ledger
-
-
-helpful commands:
-ipfs repo gc
-    - initiate garbage collection
-ipfs pin ls 
-    - list pinned files
-curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:8000/add/todo.txt
-
-docker run -it rust_node:latest /bin/sh
-example: curl -X POST http://127.0.0.1:5001/api/v0/id
-
 Rough plan:
 
-create helm chart for deploying to k8s
-    - add test to check if rust_node is up and can talk to ipfs
-        - make node take ipfs address as env variable to point to core dns ipfs 
+switch to use colima
+create docker image for helm test and use that instead
+
+remember to switch imagepulPolicy of geth zksync and postress to ifNotPresent from Never
+figure out which ports mean what for geth
+
 set up smart contract deployed to local instance of chain
+    - deploy geth
+    - zksync
+    - postgress
 
 have containerized node talk to smart contract 
 
