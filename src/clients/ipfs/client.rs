@@ -21,7 +21,6 @@ impl IpfsClient {
     pub fn new() -> IpfsClient {
         let reqwest_client: ReqwestClient = ReqwestClient::new();
         let ipfs_base_url = std::env::var("IPFS_BASE_URL").unwrap();
-        println!("{:?}", ipfs_base_url);
 
         let ipfs_client = IpfsClient {
             reqwest_client: reqwest_client,

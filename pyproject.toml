@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "rust_node"
+version = "0.1.0"
+description = ""
+authors = ["Omar Carey"]
+
+
+[tool.poetry.dependencies]
+python = "3.8.10"
+eth-brownie = "^1.19.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
