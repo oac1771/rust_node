@@ -2,10 +2,12 @@ Rough plan:
 
 switch to use colima
 create docker image for helm test and use that instead
+    - install jq and other tools to test helm deployments
 
 remember to switch imagepulPolicy of geth zksync and postress to ifNotPresent from Never
 figure out which ports mean what for geth
 
+add helm tests for geth, postgress, zksync 
 set up smart contract deployed to local instance of chain
     - deploy geth
     - zksync
@@ -14,6 +16,7 @@ set up smart contract deployed to local instance of chain
 have containerized node talk to smart contract 
 
 refactor ideas:
+    - increase minikube allocation?
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder
 

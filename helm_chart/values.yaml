@@ -23,7 +23,6 @@ node:
 geth:
   repository: matterlabs/geth
   tag: latest
-
   # change this to ifNotPresent 
   pullPolicy: Never
 
@@ -32,3 +31,16 @@ geth:
   barPort: 8546
 
   namespace: default
+
+postgres:
+  repository: postgres
+  tag: 12
+  # change this to ifNotPresent 
+  pullPolicy: Never
+
+  containerName: postgres
+  containerPort: 8545
+
+  db: zksync
+  user: serviceuser
+  password: strongpasswordzk
