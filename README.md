@@ -14,3 +14,5 @@ ipfs api docs
 http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#getting-started
 http://ipfscluster.io.ipns.localhost:8080/documentation/reference/api/
 http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-ledger
+
+colima start --cpu 5 --memory 8

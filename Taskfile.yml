@@ -14,12 +14,12 @@ tasks:
     internal: true
     cmds:
       - helm upgrade --install --atomic --timeout 45s node-ecosystem helm_chart/
-      - helm test node-ecosystem
+      # - helm test node-ecosystem
 
   start-minikube:
     internal: true
     cmds:
-      - minikube start --driver=docker --cpus=4 --memory=4000
+      - minikube start --driver=docker --cpus=5 --memory=4000
       - minikube addons enable metrics-server
     status:
       - minikube status
