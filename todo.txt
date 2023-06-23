@@ -1,15 +1,24 @@
 Rough plan:
 
-make postgress statefulset
 add helm tests for geth, postgress, zksync 
+make postgress statefulset
+make geth statefulset
 set up smart contract deployed to local instance of chain
-    - deploy geth
-    - zksync
-    - postgress
 
 have containerized node talk to smart contract 
+
+encrypt ipfs address and data hash
+    - before storing ipfs file, add hash of data as field
+    - push encrypted ipfs address and data hash to smart contract
+        - form -> {ipfs_address}:{data_hash}
+    - on validation, publish event with ipfs_address and data_hash
+    - node reads that event, gets data from ipfs, validates data hash
+        and decides if request is valid or not
 
 refactor ideas:
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder
 
+Questions:
+    - how are pvc and pv linked?
+    

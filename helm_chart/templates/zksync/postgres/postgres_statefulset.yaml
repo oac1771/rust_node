@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.postgres.containerName }}
+  namespace: {{ .Values.node.namespace}}
+spec:
+  serviceName: {{ .Values.postgres.containerName }}
+  selector:
+    matchLabels:
+      app: {{ .Values.postgres.containerName }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.postgres.containerName }}
+    spec:
+      containers:
+      - name: {{ .Values.postgres.containerName }}
+        image: "{{ .Values.postgres.repository }}:{{ .Values.postgres.tag }}"
+        imagePullPolicy: {{ .Values.postgres.pullPolicy }}
+        ports:
+          - containerPort: {{ .Values.postgres.containerPort }}
+        env:
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+        envFrom:
+          - configMapRef:
+              name: {{ .Values.postgres.containerName }}-secret 
+        volumeMounts:
+          - mountPath: /var/lib/postgresql/data
+            name: {{ .Values.postgres.containerName }}-volume-claim
+  volumeClaimTemplates:
+  - metadata:
+      namespace: {{ .Values.node.namespace}}
+      name: {{ .Values.postgres.containerName }}-volume-claim
+      labels:
+        app: {{ .Values.postgres.containerName }}
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 10Gi

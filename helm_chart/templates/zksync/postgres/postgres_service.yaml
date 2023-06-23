@@ -6,7 +6,6 @@ metadata:
   labels:
     app: {{ .Values.postgres.containerName }}
 spec:
-  type: NodePort
   ports:
     - port: {{ .Values.postgres.containerPort }}
   selector:
