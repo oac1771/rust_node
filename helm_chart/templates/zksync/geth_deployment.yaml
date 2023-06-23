@@ -20,7 +20,7 @@ spec:
           image: "{{ .Values.geth.repository }}:{{ .Values.geth.tag }}"
           imagePullPolicy: {{ .Values.geth.pullPolicy }}
           ports:
-          - containerPort: {{ .Values.geth.fooPort }}
-            name: foo
-          - containerPort: {{ .Values.geth.barPort }}
-            name: bar
+          - containerPort: {{ .Values.geth.httpPort }}
+            name: http
+          - containerPort: {{ .Values.geth.websocketPort }}
+            name: websocket

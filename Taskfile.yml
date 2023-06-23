@@ -19,20 +19,25 @@ tasks:
   start-minikube:
     internal: true
     cmds:
-      - minikube start --driver=docker --cpus=5 --memory=4000
+      - minikube start --kubernetes-version=v1.23.0 --driver=docker --cpus=3 --memory=5000
       - minikube addons enable metrics-server
     status:
       - minikube status
 
   docker-build:
     cmds:
+      - docker build -f docker/toolbox.Dockerfile . -t toolbox:latest
       - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
       - |
         docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
           /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
       - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
+
       - minikube image rm docker.io/library/rust_node:latest
+      - minikube image rm docker.io/library/toolbox:latest
+
       - minikube image load rust_node:latest
+      - minikube image load toolbox:latest
     env:
       BUILD: true
     status:

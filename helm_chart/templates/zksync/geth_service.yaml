@@ -7,12 +7,12 @@ metadata:
     run: {{ .Values.geth.containerName }}
 spec:
   ports:
-  - port: {{ .Values.geth.fooPort }}
+  - port: {{ .Values.geth.httpPort }}
     protocol: TCP
-    name: foo
-  - port: {{ .Values.geth.barPort }}
+    name: http
+  - port: {{ .Values.geth.websocketPort }}
     protocol: TCP
-    name: bar
+    name: websocket
 
   selector:
     app: {{ .Values.geth.containerName }}
