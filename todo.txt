@@ -2,10 +2,6 @@ Rough plan:
 
 make postgress statefulset
 add helm tests for geth, postgress, zksync 
-
-remember to switch imagepulPolicy of geth zksync and postress to ifNotPresent from Never
-
-
 set up smart contract deployed to local instance of chain
     - deploy geth
     - zksync

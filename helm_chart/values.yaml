@@ -23,8 +23,7 @@ node:
 geth:
   repository: matterlabs/geth
   tag: latest
-  # change this to IfNotPresent 
-  pullPolicy: Never
+  pullPolicy: IfNotPresent
 
   containerName: geth
   httpPort: 8545
@@ -35,8 +34,7 @@ geth:
 postgres:
   repository: postgres
   tag: 12
-  # change this to IfNotPresent 
-  pullPolicy: Never
+  pullPolicy: IfNotPresent 
 
   containerName: postgres
   containerPort: 8545
