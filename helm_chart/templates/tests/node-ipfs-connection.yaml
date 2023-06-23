@@ -10,9 +10,9 @@ spec:
     runAsUser: 0
   containers:
     - name: test-node-ipfs
-      image: docker.io/curlimages/curl
+      image: docker.io/library/toolbox:latest
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - apk add jq && curl -X POST http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/id | jq ".ID" -e
+        - curl -X POST http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/id | jq ".ID" -e
   restartPolicy: Never

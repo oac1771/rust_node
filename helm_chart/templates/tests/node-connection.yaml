@@ -10,9 +10,9 @@ spec:
     runAsUser: 0
   containers:
     - name: test-node
-      image: docker.io/curlimages/curl
+      image: docker.io/library/toolbox:latest
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - apk add jq && curl http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/health | jq ".status_code" -e
+        - curl http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/health | jq ".status_code" -e
   restartPolicy: Never
