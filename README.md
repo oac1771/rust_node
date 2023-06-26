@@ -16,3 +16,5 @@ http://ipfscluster.io.ipns.localhost:8080/documentation/reference/api/
 http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-ledger
 
 colima start --cpu 4 --memory 6
+PGPASSWORD=strongpasswordzk psql -h postgres.default -U serviceuser -p 5432 zksync
+k delete pods -l test=true

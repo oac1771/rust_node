@@ -37,7 +37,9 @@ postgres:
   pullPolicy: IfNotPresent 
 
   containerName: postgres
-  containerPort: 8545
+  containerPort: 5432
+
+  namespace: default
 
   db: zksync
   user: serviceuser
