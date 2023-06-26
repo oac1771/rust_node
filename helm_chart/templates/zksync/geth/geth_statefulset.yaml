@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.geth.containerName }}
+  namespace: {{ .Values.geth.namespace}}
+spec:
+  serviceName: {{ .Values.geth.containerName }}
+  selector:
+    matchLabels:
+      app: {{ .Values.geth.containerName }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.geth.containerName }}
+    spec:
+      containers:
+      - name: {{ .Values.geth.containerName }}
+        image: "{{ .Values.geth.repository }}:{{ .Values.geth.tag }}"
+        imagePullPolicy: {{ .Values.geth.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.geth.httpPort }}
+          name: http
+        - containerPort: {{ .Values.geth.websocketPort }}
+          name: websocket
+        volumeMounts:
+          - mountPath: /var
+            name: {{ .Values.geth.containerName }}-volume-claim
+  volumeClaimTemplates:
+  - metadata:
+      namespace: {{ .Values.geth.namespace}}
+      name: {{ .Values.geth.containerName }}-volume-claim
+      labels:
+        app: {{ .Values.geth.containerName }}
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 10Gi

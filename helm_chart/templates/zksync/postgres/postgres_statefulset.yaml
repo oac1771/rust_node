@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.postgres.containerName }}
-  namespace: {{ .Values.node.namespace}}
+  namespace: {{ .Values.postgres.namespace}}
 spec:
   serviceName: {{ .Values.postgres.containerName }}
   selector:
@@ -27,11 +27,11 @@ spec:
           - configMapRef:
               name: {{ .Values.postgres.containerName }}-secret 
         volumeMounts:
-          - mountPath: /var/lib/postgresql/data
+          - mountPath: /var
             name: {{ .Values.postgres.containerName }}-volume-claim
   volumeClaimTemplates:
   - metadata:
-      namespace: {{ .Values.node.namespace}}
+      namespace: {{ .Values.postgres.namespace}}
       name: {{ .Values.postgres.containerName }}-volume-claim
       labels:
         app: {{ .Values.postgres.containerName }}

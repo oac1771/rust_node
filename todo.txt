@@ -1,7 +1,6 @@
 Rough plan:
 
 add helm tests for geth, postgress, zksync 
-make postgress statefulset
 make geth statefulset
 set up smart contract deployed to local instance of chain
 
@@ -21,4 +20,5 @@ refactor ideas:
 
 Questions:
     - how are pvc and pv linked?
+    - volumeMount meaning in statefulset
     
