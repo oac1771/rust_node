@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: test-ipfs-connection
+  name: test-geth-connection
   labels:
     test: "true"
   annotations:
@@ -11,11 +11,10 @@ spec:
   securityContext:
     runAsUser: 0
   containers:
-    - name: test-ipfs
+    - name: test-geth
       image: docker.io/library/toolbox:latest
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - curl -X POST http://{{ .Values.ipfs.containerName }}.{{ .Values.ipfs.namespace}}:{{ .Values.ipfs.apiPort}}/api/v0/id | jq ".ID" -e
-        # - sleep 100000000
+        - geth attach --exec eth.accounts http://{{ .Values.geth.containerName}}.{{ .Values.geth.namespace}}:{{ .Values.geth.httpPort}} | grep 0x8a91dc2d28b689474298d91899f0c1baf62cb85b
   restartPolicy: Never
