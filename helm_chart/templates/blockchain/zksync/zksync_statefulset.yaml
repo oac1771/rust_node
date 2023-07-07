@@ -3,8 +3,6 @@ kind: StatefulSet
 metadata:
   name: {{ .Values.zksync.containerName }}
   namespace: {{ .Values.zksync.namespace}}
-  annotations:
-    "helm.sh/hook-weight": "1"
 spec:
   serviceName: {{ .Values.zksync.containerName }}
   selector:

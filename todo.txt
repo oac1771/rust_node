@@ -1,7 +1,8 @@
 Rough plan:
 
-figure out why helm weights arent working
 add helm test for zksync
+add init container for node to wait for ipfs and zksync to be ready
+    - https://stackoverflow.com/questions/49368047/what-is-the-equivalent-for-depends-on-in-kubernetes
 
 set up smart contract deployed to local instance of chain
 

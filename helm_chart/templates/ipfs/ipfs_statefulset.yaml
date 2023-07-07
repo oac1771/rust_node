@@ -1,11 +1,12 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ .Values.ipfs.containerName }}
   namespace: {{ .Values.ipfs.namespace}}
   labels:
     app: {{ .Values.ipfs.containerName }}
 spec:
+  serviceName: {{ .Values.ipfs.containerName }}
   replicas: 1
   selector:
     matchLabels:
@@ -26,3 +27,14 @@ spec:
             name: gateway
           - containerPort: {{ .Values.ipfs.swarmPort }}
             name: swarm
+  volumeClaimTemplates:
+  - metadata:
+      namespace: {{ .Values.ipfs.namespace}}
+      name: {{ .Values.ipfs.containerName }}-volume-claim
+      labels:
+        app: {{ .Values.ipfs.containerName }}
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 5Gi
