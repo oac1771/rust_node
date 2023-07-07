@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zksync.containerName }}
+  namespace: {{ .Values.zksync.namespace}}
+  labels:
+    app: {{ .Values.zksync.containerName }}
+  annotations:
+    "helm.sh/hook-weight": "1"
+spec:
+  ports:
+  - port: {{ .Values.zksync.httpPort }}
+    protocol: TCP
+    name: http
+  - port: {{ .Values.zksync.websocketPort }}
+    protocol: TCP
+    name: websocket
+  selector:
+    app: {{ .Values.zksync.containerName }}

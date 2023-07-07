@@ -31,6 +31,17 @@ geth:
 
   namespace: default
 
+zksync:
+  repository: matterlabs/local-node
+  tag: latest2.0
+  pullPolicy: IfNotPresent
+
+  containerName: zksync
+  httpPort: 3050
+  websocketPort: 3051
+
+  namespace: default
+
 postgres:
   repository: postgres
   tag: 12
@@ -42,5 +53,3 @@ postgres:
   namespace: default
 
   db: zksync
-  user: serviceuser
-  password: strongpasswordzk

@@ -4,8 +4,7 @@ tasks:
   start-local:
     cmds:
       - task: start-minikube
-      - |
-        task docker-build 
+      - task docker-build 
       - task: deploy-ecosystem
     env:
       BUILD: '{{ .BUILD }}'
@@ -13,7 +12,7 @@ tasks:
   deploy-ecosystem:
     internal: true
     cmds:
-      - helm upgrade --install --atomic --timeout 45s node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 180s node-ecosystem helm_chart/
       - helm test node-ecosystem
 
   start-minikube:

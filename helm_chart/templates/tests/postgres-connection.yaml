@@ -16,5 +16,8 @@ spec:
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - PGPASSWORD={{ .Values.postgres.password }} pg_isready -h {{ .Values.postgres.containerName }}.{{ .Values.postgres.namespace}} -U {{ .Values.postgres.user }} -p {{ .Values.postgres.containerPort }}
+        - psql $DATABASE_URL -c '\q'
+      env:
+        - name: DATABASE_URL
+          value: postgres://postgres@{{ .Values.postgres.containerName }}.{{ .Values.postgres.namespace }}:{{ .Values.postgres.containerPort }}
   restartPolicy: Never

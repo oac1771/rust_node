@@ -4,7 +4,7 @@ metadata:
   name: {{ .Values.geth.containerName }}
   namespace: {{ .Values.geth.namespace}}
   labels:
-    run: {{ .Values.geth.containerName }}
+    app: {{ .Values.geth.containerName }}
 spec:
   ports:
   - port: {{ .Values.geth.httpPort }}
@@ -13,6 +13,5 @@ spec:
   - port: {{ .Values.geth.websocketPort }}
     protocol: TCP
     name: websocket
-
   selector:
     app: {{ .Values.geth.containerName }}

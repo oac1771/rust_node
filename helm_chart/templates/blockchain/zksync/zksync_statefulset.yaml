@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.zksync.containerName }}
+  namespace: {{ .Values.zksync.namespace}}
+  annotations:
+    "helm.sh/hook-weight": "1"
+spec:
+  serviceName: {{ .Values.zksync.containerName }}
+  selector:
+    matchLabels:
+      app: {{ .Values.zksync.containerName }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.zksync.containerName }}
+    spec:
+      containers:
+      - name: {{ .Values.zksync.containerName }}
+        image: "{{ .Values.zksync.repository }}:{{ .Values.zksync.tag }}"
+        imagePullPolicy: {{ .Values.zksync.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.zksync.httpPort }}
+          name: http
+        - containerPort: {{ .Values.zksync.websocketPort }}
+          name: websocket
+        env:
+        - name: DATABASE_URL
+          value: postgres://postgres@{{ .Values.postgres.containerName }}.{{ .Values.postgres.namespace }}:{{ .Values.postgres.containerPort }}/{{ .Values.postgres.db }}
+        - name: ETH_CLIENT_WEB3_URL
+          value: http://{{ .Values.geth.containerName }}.{{ .Values.geth.namespace }}:{{ .Values.geth.httpPort }}
+        volumeMounts:
+          - mountPath: /var
+            name: {{ .Values.zksync.containerName }}-volume-claim
+  volumeClaimTemplates:
+  - metadata:
+      namespace: {{ .Values.zksync.namespace}}
+      name: {{ .Values.zksync.containerName }}-volume-claim
+      labels:
+        app: {{ .Values.zksync.containerName }}
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      resources:
+        requests:
+          storage: 5Gi

@@ -1,10 +1,12 @@
 Rough plan:
 
-add helm tests for geth, postgress, zksync 
-make geth statefulset
+figure out why helm weights arent working
+add helm test for zksync
+
 set up smart contract deployed to local instance of chain
 
-have containerized node talk to smart contract 
+have containerized node talk to smart contract
+    - listen to events
 
 encrypt ipfs address and data hash
     - before storing ipfs file, add hash of data as field
