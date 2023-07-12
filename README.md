@@ -18,3 +18,5 @@ http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-led
 colima start --cpu 4 --memory 6
 
 k delete pods -l test=true
+
+https://github.com/zkSync-Community-Hub/zkync-developers/discussions/56

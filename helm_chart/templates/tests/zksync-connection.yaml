@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-zksync-connection
+  labels:
+    test: "true"
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  securityContext:
+    runAsUser: 0
+  containers:
+    - name: test-zksync
+      image: docker.io/library/toolbox:latest
+      imagePullPolicy: IfNotPresent
+      command:
+        - sh
+        - "-c"
+        - |
+          curl -X POST http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}} \
+          -H 'Content-Type: application/json' --data '{"jsonrpc": "2.0", "id": 1, "method": "zks_L1ChainId", "params": []}' \
+          | jq -e '.result'
+  restartPolicy: Never

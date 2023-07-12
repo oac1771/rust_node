@@ -13,7 +13,7 @@ tasks:
     internal: true
     cmds:
       - helm upgrade --install --wait --timeout 180s node-ecosystem helm_chart/
-      # - helm test node-ecosystem
+      - helm test node-ecosystem
 
   start-minikube:
     internal: true
