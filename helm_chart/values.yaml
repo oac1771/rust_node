@@ -15,6 +15,9 @@ node:
   tag: latest
   pullPolicy: Never
 
+  initContainerRespository: toolbox
+  initContainerTag: latest
+
   containerName: node
   apiPort: 8000
 

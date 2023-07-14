@@ -28,3 +28,17 @@ spec:
             value: "0.0.0.0"
           - name: IPFS_BASE_URL
             value: http://{{ .Values.ipfs.containerName}}.{{ .Values.ipfs.namespace}}:{{ .Values.ipfs.apiPort }}
+          - name: ZKSYNC_BASE_HTTP_URL
+            value: http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}}
+      initContainers:
+        - name: init-wait-for-dependencies
+          image: "{{ .Values.node.initContainerRespository }}:{{ .Values.node.initContainerTag }}"
+          imagePullPolicy: {{ .Values.node.pullPolicy }}
+          command:
+            - sh
+            - "-c"
+            - echo hi
+          env:
+          - name: ZKSYNC_BASE_HTTP_URL
+            value: http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}}
+          

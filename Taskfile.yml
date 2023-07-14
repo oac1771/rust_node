@@ -1,6 +1,14 @@
 version: '3'
 
 tasks:
+  destroy-local:
+    cmds:
+      - helm uninstall node-ecosystem --wait
+      - kubectl delete pvc -l app=zksync
+      - kubectl delete pvc -l app=ipfs
+      - kubectl delete pvc -l app=postgres
+      - kubectl delete pvc -l app=geth
+
   start-local:
     cmds:
       - task: start-minikube
