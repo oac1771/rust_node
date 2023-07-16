@@ -4,10 +4,8 @@ tasks:
   destroy-local:
     cmds:
       - helm uninstall node-ecosystem --wait
-      - kubectl delete pvc -l app=zksync
-      - kubectl delete pvc -l app=ipfs
-      - kubectl delete pvc -l app=postgres
-      - kubectl delete pvc -l app=geth
+      - kubectl delete pvc --all
+      - kubectl delete pv --all
 
   start-local:
     cmds:

@@ -31,14 +31,21 @@ spec:
           - name: ZKSYNC_BASE_HTTP_URL
             value: http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}}
       initContainers:
-        - name: init-wait-for-dependencies
+        - name: init
           image: "{{ .Values.node.initContainerRespository }}:{{ .Values.node.initContainerTag }}"
           imagePullPolicy: {{ .Values.node.pullPolicy }}
           command:
             - sh
             - "-c"
-            - echo hi
+            - |
+              make_request() {
+                  curl -s -X POST $ZKSYNC_BASE_HTTP_URL -H 'Content-Type: application/json' --data '{"jsonrpc": "2.0", "id": 1, "method": "zks_L1ChainId", "params": []}'
+              }
+
+              while make_request; [ $? -ne 0 ]; do
+                  printf "\nWaiting for zksync to be available...\n"
+                  sleep 5
+              done
           env:
           - name: ZKSYNC_BASE_HTTP_URL
             value: http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}}
-          
