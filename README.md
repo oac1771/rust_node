@@ -8,6 +8,8 @@ curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:
 
 pyenv shell 3.8.10
 poetry env use 3.8.10
+
+export PYENV_VERSION=3.10.8
 poetry shell
 
 ipfs api docs

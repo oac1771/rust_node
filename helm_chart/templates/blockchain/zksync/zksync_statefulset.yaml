@@ -18,13 +18,6 @@ spec:
       - name: {{ .Values.zksync.containerName }}
         image: "{{ .Values.zksync.repository }}:{{ .Values.zksync.tag }}"
         imagePullPolicy: {{ .Values.zksync.pullPolicy }}
-        command:
-          - sh
-          - "-c"
-          - |
-            touch /etc/env/dev.env
-            touch /etc/env/.init.env
-            entrypoint.sh
         ports:
         - containerPort: {{ .Values.zksync.httpPort }}
           name: http
