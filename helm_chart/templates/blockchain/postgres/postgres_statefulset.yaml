@@ -33,7 +33,7 @@ spec:
       labels:
         app: {{ .Values.postgres.containerName }}
     spec:
-      accessModes: [ "ReadWriteMany" ]
+      accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
           storage: 5Gi

@@ -1,16 +1,27 @@
 version: '3'
 
 tasks:
+
+  pause:
+    cmds:
+      - docker pause $(docker ps -q --filter "name=kind-control-plane")
+  
+  unpause:
+    cmds:
+      - docker unpause $(docker ps -q --filter "name=kind-control-plane")
+
   destroy-local:
     cmds:
-      - helm uninstall node-ecosystem --wait
+      - helm uninstall node-ecosystem --wait || true
       - kubectl delete pvc --all
       - kubectl delete pv --all
+      - kind delete cluster
 
   start-local:
     cmds:
-      - task: start-minikube
+      - task: start-kind
       - task docker-build 
+      - task load-docker-images
       - task: deploy-ecosystem
     env:
       BUILD: '{{ .BUILD }}'
@@ -21,22 +32,29 @@ tasks:
       - helm upgrade --install --wait --timeout 180s node-ecosystem helm_chart/
       - helm test node-ecosystem
 
-  start-minikube:
+  start-kind:
     internal: true
     cmds:
-      - minikube start --kubernetes-version=v1.23.0 --driver=docker --cpus=3 --memory=5000
-      - minikube addons enable metrics-server
+      - kind create cluster --wait 45s
+      - helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+      - helm repo update
+      - helm upgrade --install --set args={--kubelet-insecure-tls} metrics-server metrics-server/metrics-server --namespace kube-system
     status:
-      - minikube status
+      - kind get kubeconfig
+
+  load-docker-images:
+    cmds:
+      - kind load docker-image toolbox:latest
+      - kind load docker-image rust_node:latest
 
   docker-build:
     cmds:
-      - eval $(minikube docker-env) && docker build -f docker/toolbox.Dockerfile . -t toolbox:latest
       - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
+      - docker build -f docker/toolbox.Dockerfile . -t toolbox:latest
       - |
         docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
           /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
-      - eval $(minikube docker-env) && docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
+      - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
     env:
       BUILD: true
     status:

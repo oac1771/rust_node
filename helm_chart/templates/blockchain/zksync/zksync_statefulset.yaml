@@ -38,7 +38,7 @@ spec:
       labels:
         app: {{ .Values.zksync.containerName }}
     spec:
-      accessModes: [ "ReadWriteMany" ]
+      accessModes: [ "ReadWriteOnce" ]
       resources:
         requests:
           storage: 5Gi
