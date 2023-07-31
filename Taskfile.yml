@@ -13,12 +13,15 @@ tasks:
   destroy-local:
     cmds:
       - helm uninstall node-ecosystem --wait || true
-      - kubectl delete pvc --all
-      - kubectl delete pv --all
-      - kind delete cluster
+      - kubectl delete pvc --all || true
+      - kubectl delete pv --all || true
+      - kind delete cluster || true
+      - colima stop
+      - colima delete
 
   start-local:
     cmds:
+      - task: start-colima
       - task: start-kind
       - task docker-build 
       - task load-docker-images
@@ -31,6 +34,14 @@ tasks:
     cmds:
       - helm upgrade --install --wait --timeout 180s node-ecosystem helm_chart/
       - helm test node-ecosystem
+
+  start-colima:
+    internal: true
+    cmds:
+      - cp colima.yaml ~/.colima/_templates/colima.yaml
+      - colima start --cpu 4 --memory 8
+    status:
+      - colima status
 
   start-kind:
     internal: true
