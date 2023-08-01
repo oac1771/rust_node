@@ -16,6 +16,7 @@ tasks:
       - kubectl delete pvc --all || true
       - kubectl delete pv --all || true
       - kind delete cluster || true
+      - colima stop || true
 
   start-local:
     cmds:
