@@ -44,4 +44,29 @@ describe('Identifier', function () {
     expect(ipfsAddressFromContract).to.equal(ipfsAddress)
     expect(await identifier.getCurrentTokenID()).to.equal(1)
   });
+
+  it("Should not allow non token owner to call for authentication", async function () {
+    const provider = Provider.getDefaultProvider();
+
+    const wallet = new Wallet(DEPLOYER_CREDS["privateKey"], provider);
+    const deployer = new Deployer(hre, wallet);
+
+    const ipfsAddress = "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu"
+    const tokenId = 0;
+
+    const identifier = await deployIdentifier(deployer);
+
+    await expect(await identifier.registerIdentity(PRINCIPAL_CREDS["address"], ipfsAddress))
+      .to.emit(identifier, 'Transfer')
+      .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], tokenId);
+
+    try {
+      await identifier.authenticate(tokenId);
+    } catch (error) {
+      expect(error.message).to.have.string("execution reverted: You are not the owner of this token");
+      return; 
+    }
+    throw new Error("Transaction did not revert as expected");
+
+  });
 });
