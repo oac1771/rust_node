@@ -17,3 +17,6 @@ k delete pods -l test=true
 https://github.com/zkSync-Community-Hub/zkync-developers/discussions/56
 
 yarn hardhat compile
+
+can manage rocket Config:
+https://api.rocket.rs/v0.4/rocket/struct.State.html
