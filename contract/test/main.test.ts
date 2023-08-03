@@ -1,7 +1,11 @@
 const { expect } = require("chai");
+const { ethers } = require("ethers");
+
 import { Wallet, Provider, Contract } from 'zksync-web3';
 import * as hre from 'hardhat';
 import { Deployer } from '@matterlabs/hardhat-zksync-deploy';
+
+import * as ContractArtifact from "../artifacts-zk/contracts/Identifier.sol/Identifier.json";
 
 const DEPLOYER_CREDS = {
   "privateKey": '0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110',
@@ -14,51 +18,60 @@ const PRINCIPAL_CREDS = {
 }
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+const DATA_HASH = "aGFzaGVkX3N0cmluZw=="
+const IPFS_ADDRESS = "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu"
 
+async function getIdentifier(privateKey: string, contractAddress: string): Promise<Contract> {
+  const provider = Provider.getDefaultProvider();
+  const wallet = new Wallet(privateKey, provider);
 
-async function deployIdentifier(deployer: Deployer): Promise<Contract> {
-  const artifact = await deployer.loadArtifact('Identifier');
-  return await deployer.deploy(artifact, []);
+  const contract = new ethers.Contract(
+    contractAddress,
+    ContractArtifact.abi,
+    wallet
+  );
+
+  return contract;
 }
 
-describe('Identifier', function () {
-  it("Should emit transfer event when new identity is registered", async function () {
-    const provider = Provider.getDefaultProvider();
 
+describe('Identifier', function () {
+
+  let deployedIdentifier;
+
+  beforeEach(async () => {
+
+    const provider = Provider.getDefaultProvider();
     const wallet = new Wallet(DEPLOYER_CREDS["privateKey"], provider);
     const deployer = new Deployer(hre, wallet);
+    const artifact = await deployer.loadArtifact('Identifier');
 
-    const ipfsAddress = "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu"
+    deployedIdentifier = await deployer.deploy(artifact, []);
 
-    const identifier = await deployIdentifier(deployer);
+  })
 
-    await expect(await identifier.registerIdentity(PRINCIPAL_CREDS["address"], ipfsAddress))
-      .to.emit(identifier, 'Transfer')
+  it("Should emit transfer event when new identity is registered", async function () {
+
+    await expect(await deployedIdentifier.registerIdentity(PRINCIPAL_CREDS["address"], IPFS_ADDRESS, DATA_HASH))
+      .to.emit(deployedIdentifier, 'Transfer')
       .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], 0);
     
-    const ipfsAddressFromContract = await identifier.getIpfsAddress(0)
+    const ipfsAddressFromContract = await deployedIdentifier.getIpfsAddress(0)
     
-    expect(ipfsAddressFromContract).to.equal(ipfsAddress)
-    expect(await identifier.getCurrentTokenID()).to.equal(1)
+    expect(ipfsAddressFromContract).to.equal(IPFS_ADDRESS)
+    expect(await deployedIdentifier.getCurrentTokenID()).to.equal(1)
   });
 
   it("Should not allow non token owner to call for authentication", async function () {
-    const provider = Provider.getDefaultProvider();
 
-    const wallet = new Wallet(DEPLOYER_CREDS["privateKey"], provider);
-    const deployer = new Deployer(hre, wallet);
-
-    const ipfsAddress = "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu"
     const tokenId = 0;
 
-    const identifier = await deployIdentifier(deployer);
-
-    await expect(await identifier.registerIdentity(PRINCIPAL_CREDS["address"], ipfsAddress))
-      .to.emit(identifier, 'Transfer')
+    await expect(await deployedIdentifier.registerIdentity(PRINCIPAL_CREDS["address"], IPFS_ADDRESS, DATA_HASH))
+      .to.emit(deployedIdentifier, 'Transfer')
       .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], tokenId);
 
     try {
-      await identifier.authenticate(tokenId);
+      await deployedIdentifier.authenticate(tokenId);
     } catch (error) {
       expect(error.message).to.have.string("execution reverted: You are not the owner of this token");
       return; 
@@ -66,4 +79,21 @@ describe('Identifier', function () {
     throw new Error("Transaction did not revert as expected");
 
   });
+
+  it("Should emit Authentication request when tokenowner attempts to authenticate", async function () {
+
+    const contract = await getIdentifier(PRINCIPAL_CREDS["privateKey"], deployedIdentifier.address)
+
+    const tokenId = 0;
+
+    await expect(await deployedIdentifier.registerIdentity(PRINCIPAL_CREDS["address"], IPFS_ADDRESS, DATA_HASH))
+      .to.emit(deployedIdentifier, 'Transfer')
+      .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], tokenId);
+
+    await expect(await contract.authenticate(tokenId))
+      .to.emit(deployedIdentifier, 'AuthenticationRequest')
+      .withArgs(IPFS_ADDRESS, DATA_HASH);
+
+  });
+
 });

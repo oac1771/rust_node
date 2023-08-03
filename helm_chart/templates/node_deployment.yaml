@@ -38,7 +38,7 @@ spec:
             - sh
             - "-c"
             - |
-              make_request() {
+              function make_request() {
                   curl -s -X POST $ZKSYNC_BASE_HTTP_URL -H 'Content-Type: application/json' --data '{"jsonrpc": "2.0", "id": 1, "method": "zks_L1ChainId", "params": []}'
               }
 

@@ -31,7 +31,7 @@ tasks:
   deploy-ecosystem:
     internal: true
     cmds:
-      - helm upgrade --install --wait --timeout 5m node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 10m node-ecosystem helm_chart/
       - helm test node-ecosystem
 
   start-colima:

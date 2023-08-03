@@ -8,10 +8,10 @@ contract Identifier is ERC721 {
 
     uint256 public tokenId;
 
-    event AuthenticationRequest(string indexed ipfsAddress);
+    event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
 
     mapping(uint256 => string) public tokenIdToIpfs;
-    mapping(uint256 => string) public tokenIdToPrincipal;
+    mapping(uint256 => string) public tokenIdToDataHash;
 
     constructor() ERC721("Identity Token", "IDTKN") {
         tokenId = 0;
@@ -22,12 +22,15 @@ contract Identifier is ERC721 {
         _;
     }
 
-    function registerIdentity(address principal, string memory ipfsAddress) 
+    function registerIdentity(address principal, 
+        string memory ipfsAddress, 
+        string memory dataHash) 
     external {
         _safeMint(principal, tokenId);
         tokenIdToIpfs[tokenId] = ipfsAddress;
+        tokenIdToDataHash[tokenId] = dataHash;
 
-        tokenId++;
+        tokenId++;  
     }
 
     function getIpfsAddress(uint256 tokenId) 
@@ -40,7 +43,7 @@ contract Identifier is ERC721 {
     }
 
     function authenticate(uint256 tokenId) 
-    public onlyTokenOwner(tokenId) returns(string memory){
-        return "hi";
+    public onlyTokenOwner(tokenId) {
+        emit AuthenticationRequest(tokenIdToIpfs[tokenId], tokenIdToDataHash[tokenId]);
     }
 }
