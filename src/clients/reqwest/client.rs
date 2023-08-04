@@ -36,7 +36,6 @@ impl ReqwestClient {
 
     }
 
-    // can this be turned into a macro to be used in other methods. Benefits of macro vs function
     pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
     Result<Response, Error>
     {

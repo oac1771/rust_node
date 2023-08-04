@@ -1,9 +1,6 @@
 Rough plan:
 
-set up smart contract deployed to local instance of chain
-
-have containerized node talk to smart contract
-    - listen to events
+use config object to read ipfs url env var and smart contract address
 
 encrypt ipfs address and data hash
     - before storing ipfs file, add hash of data as field

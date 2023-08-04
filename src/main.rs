@@ -1,9 +1,11 @@
 mod clients;
 mod controllers;
 mod services;
+mod config;
 
 #[macro_use] extern crate rocket;
 use rocket::serde::json::Json;
+use rocket::State;
 use reqwest;
 
 use clients::reqwest::models::Response;
@@ -18,26 +20,26 @@ fn health() -> Json<Response> {
 }
 
 #[post("/add", data = "<file_contents>")]
-async fn add(file_contents: Json<controllers::models::FileContent>) -> String {
+async fn add(file_contents: Json<controllers::models::FileContent>, config: &State<config::Config>) -> String {
 
-    let add_controller = controllers::add::AddController::new();
+    let add_controller = controllers::add::AddController::new(&config);
     let response = add_controller.add(file_contents.into_inner()).await;
 
     return response
 }
 
 #[post("/rm/<hash>")]
-async fn rm_pin(hash: &str) -> String {
-    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+async fn rm_pin(hash: &str, config: &State<config::Config>) -> String {
+    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config);
     let response = ipfs_client.rm_pin(hash).await;
 
     return response
 }
 
 #[post("/id")]
-async fn id() -> String {
+async fn id(config: &State<config::Config>) -> String {
 
-    let ipfs_client = clients::ipfs::client::IpfsClient::new();
+    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config);
     let response = ipfs_client.get_id().await;
 
     return response
@@ -46,6 +48,6 @@ async fn id() -> String {
 
 #[launch]
 fn rocket() -> _ {
-    std::env::var("IPFS_BASE_URL").expect("IPFS_BASE_URL not set");
-    rocket::build().mount("/", routes![health, id, rm_pin, add])
+    let config = config::get_config();
+    rocket::build().mount("/", routes![health, id, rm_pin, add]).manage(config)
 }

@@ -10,6 +10,7 @@ use crate::clients::reqwest::client::ReqwestClient;
 #[allow(unused_imports)]
 #[cfg(test)]
 use crate::clients::reqwest::client::R;
+use crate::config::Config;
 
 pub struct IpfsClient {
     pub reqwest_client: ReqwestClient,
@@ -18,17 +19,17 @@ pub struct IpfsClient {
 
 impl IpfsClient {
 
-    pub fn new() -> IpfsClient {
+    pub fn new(config: &Config) -> IpfsClient {
         let reqwest_client: ReqwestClient = ReqwestClient::new();
-        let ipfs_base_url = std::env::var("IPFS_BASE_URL").unwrap();
 
         let ipfs_client = IpfsClient {
             reqwest_client: reqwest_client,
-            ipfs_base_url: ipfs_base_url
+            ipfs_base_url: config.ipfs_base_url.to_string()
         };
         return ipfs_client
     }
 
+    // might be able to move this into general trait that ipfs client and zksync can use
     pub fn handle<'a, H: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
         match response {
             Ok(resp) => {

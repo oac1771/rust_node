@@ -19,4 +19,6 @@ https://github.com/zkSync-Community-Hub/zkync-developers/discussions/56
 yarn hardhat compile
 
 can manage rocket Config:
-https://api.rocket.rs/v0.4/rocket/struct.State.html
+https://rocket.rs/v0.5-rc/guide/state/
+
+look into axum for rocket alternative
