@@ -15,6 +15,7 @@ async-trait = "0.1.68"
 mockall_double = "0.3.0"
 tempfile = "3.5.0"
 openssl = { version = "*", features = ["vendored"] } 
+rust-crypto = "0.2.36"
 
 [dependencies.rocket]
 version = "0.5.0-rc.3"

@@ -1,7 +1,5 @@
 Rough plan:
 
-use config object to read ipfs url env var and smart contract address
-
 encrypt ipfs address and data hash
     - before storing ipfs file, add hash of data as field
     - push encrypted ipfs address and data hash to smart contract

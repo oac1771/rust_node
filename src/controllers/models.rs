@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
-pub struct FileContent {
-    meta_data: String,
-    data: serde_json::Value 
+pub struct Data {
+    pub meta_data: String,
+    pub data: serde_json::Value 
 }
