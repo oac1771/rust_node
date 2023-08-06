@@ -10,7 +10,7 @@ use crate::clients::reqwest::client::ReqwestClient;
 #[allow(unused_imports)]
 #[cfg(test)]
 use crate::clients::reqwest::client::R;
-use crate::config::Config;
+use crate::config::IpfsConfig;
 
 pub struct IpfsClient {
     pub reqwest_client: ReqwestClient,
@@ -19,7 +19,7 @@ pub struct IpfsClient {
 
 impl IpfsClient {
 
-    pub fn new(config: &Config) -> IpfsClient {
+    pub fn new(config: &IpfsConfig) -> IpfsClient {
         let reqwest_client: ReqwestClient = ReqwestClient::new();
 
         let ipfs_client = IpfsClient {

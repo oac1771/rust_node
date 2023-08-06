@@ -4,3 +4,4 @@ pub mod models;
 pub mod hash;
 
 pub mod test_hash;
+pub mod test_encryption;

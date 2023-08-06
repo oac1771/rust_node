@@ -7,25 +7,25 @@ use crate::config::Config;
 use super::encryption::EncryptionService;
 use super::hash::HashService;
 
-pub struct FileService {
-    pub encryption_service: EncryptionService,
+pub struct FileService<'a> {
+    pub encryption_service: EncryptionService<'a>,
     pub hash_service: HashService
 }
 
-impl FileService {
+impl<'a> FileService<'a> {
 
     pub fn new(config: &Config) -> FileService {
 
         return FileService {
-            encryption_service: EncryptionService::new(config),
+            encryption_service: EncryptionService::new(&config.encryption_config),
             hash_service: HashService::new()
         }
     }
 
-    pub fn create_tempfile(&self, data: Data) -> NamedTempFile {
+    pub fn create_tempfile(&self, data: Data, principal_address: &str) -> NamedTempFile {
 
         let file_content = self.hash_service.hash(data);
-        let encrypted_content = self.encryption_service.encrypt(file_content);
+        let (encrypted_content, priv_key) = self.encryption_service.encrypt(&file_content, principal_address);
 
         let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(encrypted_content.as_bytes()).expect("Unable to write to tempfile");
