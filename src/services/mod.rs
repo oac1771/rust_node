@@ -1,4 +1,4 @@
-pub mod file;
+pub mod identity;
 pub mod encryption;
 pub mod models;
 pub mod hash;

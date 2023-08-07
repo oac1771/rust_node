@@ -51,9 +51,9 @@ impl IpfsClient {
 
     }
 
-    pub async fn add_file(&self, file_name: &str) -> String {
+    pub async fn add_file(&self, file_path: &str) -> String {
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/add");
-        let response = self.reqwest_client.post_multipart(&url, file_name).await;
+        let response = self.reqwest_client.post_multipart(&url, file_path).await;
         
         return self.handle::<IpfsAddFileResponse>(&response)
 

@@ -4,7 +4,7 @@ use openssl::rsa::{Rsa, Padding};
 
 use crate::config::EncryptionConfig;
 
-use super::models::FileContent;
+use super::models::Identity;
 
 pub struct EncryptionService<'a> {
     pub private_keys: &'a Mutex<HashMap<String, String>>
@@ -18,10 +18,20 @@ impl<'a> EncryptionService<'a> {
         }
     }
 
-    // use principal address as key for saving private key to config object
-    pub fn encrypt(&self, file_content: &FileContent, principal_address: &str) -> (String, String) {
+    pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) -> Option<bool>{
 
-        let content = serde_json::to_string(&file_content).unwrap();
+        if self.private_keys.lock().unwrap().contains_key(&principal_address.to_string()) != true {
+            self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
+            return Some(true)
+        } else {
+            return None
+        }
+        
+    }
+
+    pub fn encrypt(&self, identity: &Identity) -> (String, String) {
+
+        let content = serde_json::to_string(&identity).unwrap();
         let rsa = Rsa::generate(2048).unwrap();
 
         let private_key = rsa.private_key_to_pem().unwrap();
