@@ -18,15 +18,12 @@ impl<'a> EncryptionService<'a> {
         }
     }
 
-    pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) -> Option<bool>{
+    pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
+        self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
+    }
 
-        if self.private_keys.lock().unwrap().contains_key(&principal_address.to_string()) != true {
-            self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
-            return Some(true)
-        } else {
-            return None
-        }
-        
+    pub fn check_identity(&self, principal_address: &str) -> bool {
+        return self.private_keys.lock().unwrap().contains_key(&principal_address.to_string());
     }
 
     pub fn encrypt(&self, identity: &Identity) -> (String, String) {
