@@ -34,7 +34,7 @@ impl<'a> IdentityService<'a> {
     }
 
     pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
-        _ = self.encryption_service.save_encryption_key(principal_address, encryption_key)
+        self.encryption_service.save_encryption_key(principal_address, encryption_key)
     }
 
     pub fn check_identity(&self, principal_address: &str) -> bool {

@@ -2,6 +2,14 @@ version: '3'
 
 tasks:
 
+  cargo-run:
+    cmds:
+      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run
+    env:
+      IPFS_BASE_URL: http://localhost:5001
+      PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
+      ZKSYNC_URL: http://localhost:3050
+
   pause:
     cmds:
       - docker pause $(docker ps -q --filter "name=kind-control-plane")
@@ -21,8 +29,8 @@ tasks:
   start-local:
     cmds:
       - task: start-colima
-      - task: start-kind
       - task docker-build 
+      - task: start-kind
       - task load-docker-images
       - task: deploy-ecosystem
     env:
@@ -31,13 +39,13 @@ tasks:
   deploy-ecosystem:
     internal: true
     cmds:
-      - helm upgrade --install --wait --timeout 10m node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 3m node-ecosystem helm_chart/
       - helm test node-ecosystem
 
   start-colima:
     cmds:
       - cp colima.yaml ~/.colima/_templates/colima.yaml
-      - colima start --cpu 5 --memory 8
+      - colima start --cpu 4 --memory 10
     status:
       - colima status
 

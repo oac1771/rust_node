@@ -4,6 +4,7 @@ mod services;
 mod config;
 
 #[macro_use] extern crate rocket;
+use ethers_signers::Signer;
 use rocket::serde::json::Json;
 use rocket::State;
 
@@ -50,39 +51,44 @@ fn health() -> Json<Response> {
     })
 }
 
-// #[get("/get_encryption_keys")]
-// fn get_encryption_keys() {
+#[get("/contract")]
+async fn contract(config: &State<config::Config>) {
 
-//     use openssl::rsa::{Rsa, Padding};
-//     use crate::services::models::FileContent;
-
-
-//     let file_content = FileContent{
-//         content: "content".to_string(),
-//         hash: "hash".to_string()
-//     };
-
-//     let content = serde_json::to_string(&file_content).unwrap();
-    
-//     let rsa = Rsa::generate(2048).unwrap();
-
-//     let mut encrypted_content = vec![0; rsa.size() as usize];
-//     let encrypted_len = rsa.public_encrypt(content.as_bytes(), &mut encrypted_content, Padding::PKCS1).unwrap();
-//     encrypted_content.truncate(encrypted_len);
-
-//     let mut decrypted_content = vec![0; rsa.size() as usize];
-//     let decrypted_len = rsa.private_decrypt(&encrypted_content, &mut decrypted_content, Padding::PKCS1).unwrap();
-//     decrypted_content.truncate(decrypted_len);
+    use ethers::{
+        contract::Contract,
+        providers::{Provider, Http},
+        types::Address,
+        abi
+    };
+    use ethers_signers::LocalWallet;
+    use tokio::fs;
+    use rocket::serde::Deserialize;
+    use std::{convert::TryFrom, sync::Arc};
 
 
-//     println!("{:?}", String::from_utf8_lossy(&encrypted_content));
-//     println!("{:?}", String::from_utf8_lossy(&decrypted_content).to_string());
+    #[derive(Deserialize)]
+    struct AbiFilter {
+        abi: Vec<serde_json::Value>
+    }
 
-// }
+    let client = Provider::<Http>::try_from(&config.zksync_config.zksync_url).unwrap();
+    let contract_address: Address = config.zksync_config.contract_address.parse().expect("Invalid contract address");
+    let wallet: LocalWallet = config.zksync_config.private_key.parse().unwrap();
+
+    let abi_string = fs::read_to_string("contract/artifacts-zk/contracts/Identifier.sol/Identifier.json").await.unwrap();
+    let abi_filter: AbiFilter = serde_json::from_str(&abi_string).unwrap();
+    let abi: abi::Abi = serde_json::from_str(&serde_json::to_string(&abi_filter.abi).unwrap()).unwrap();
+
+    let contract = Contract::new(contract_address, abi, Arc::new(client));
+
+    let foo: abi::Uint = contract.method::<_, abi::Uint>("getCurrentTokenID", ()).unwrap().call().await.unwrap();
+    println!("{:?}", foo);
+
+}
 
 #[launch]
 fn rocket() -> _ {
     let config = config::get_config();
     rocket::build().manage(config)
-        .mount("/", routes![health, id, rm_pin, register])
+        .mount("/", routes![health, id, rm_pin, register, contract])
 }

@@ -15,12 +15,13 @@ impl<'a> RegisterController<'a> {
 
     pub fn new(config: &Config) -> RegisterController {
         
-        let ipfs_client: IpfsClient = IpfsClient::new(&config.ipfs_config);
-        let identity_service: IdentityService = IdentityService::new(config);
+        let ipfs_client = IpfsClient::new(&config.ipfs_config);
+        let identity_service = IdentityService::new(config);
+        let zksync_client = ZksyncClient::new(&config.zksync_config);
 
         let register_controller = RegisterController {
             ipfs_client,
-            zksync_client: ZksyncClient{},
+            zksync_client,
             identity_service
         };
         return register_controller
@@ -34,7 +35,6 @@ impl<'a> RegisterController<'a> {
                 let identity_file_path = identity_file.path().to_str().unwrap().to_string();
         
                 let response = self.ipfs_client.add_file(&identity_file_path).await;
-                // register to contract
         
                 self.identity_service.save_encryption_key(principal_address, &encryption_key);
         

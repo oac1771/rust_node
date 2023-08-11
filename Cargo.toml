@@ -16,6 +16,8 @@ mockall_double = "0.3.0"
 tempfile = "3.5.0"
 openssl = { version = "*", features = ["vendored"] } 
 rust-crypto = "0.2.36"
+ethers = "2.0.8"
+ethers-signers = "2.0.8"
 
 [dependencies.rocket]
 version = "0.5.0-rc.3"
