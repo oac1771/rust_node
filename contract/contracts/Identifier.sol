@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity >=0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-// import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract Identifier is ERC721 {
 
-    uint256 public tokenId;
+    uint256 public currentTokenID;
 
     event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
 
@@ -14,7 +14,7 @@ contract Identifier is ERC721 {
     mapping(uint256 => string) public tokenIdToDataHash;
 
     constructor() ERC721("Identity Token", "IDTKN") {
-        tokenId = 0;
+        currentTokenID = 0;
     }
 
     modifier onlyTokenOwner(uint256 tokenId) {
@@ -22,15 +22,16 @@ contract Identifier is ERC721 {
         _;
     }
 
+    // add check if principal has already been registered
     function registerIdentity(address principal, 
         string memory ipfsAddress, 
         string memory dataHash) 
     external {
-        _safeMint(principal, tokenId);
-        tokenIdToIpfs[tokenId] = ipfsAddress;
-        tokenIdToDataHash[tokenId] = dataHash;
+        _safeMint(principal, currentTokenID);
+        tokenIdToIpfs[currentTokenID] = ipfsAddress;
+        tokenIdToDataHash[currentTokenID] = dataHash;
 
-        tokenId++;  
+        currentTokenID++;  
     }
 
     function getIpfsAddress(uint256 tokenId) 
@@ -39,7 +40,7 @@ contract Identifier is ERC721 {
     }
 
     function getCurrentTokenID() view public returns(uint256) {
-        return tokenId;
+        return currentTokenID;
     }
 
     function authenticate(uint256 tokenId) 

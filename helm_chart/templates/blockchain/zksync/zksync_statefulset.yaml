@@ -31,6 +31,40 @@ spec:
         volumeMounts:
           - mountPath: /var
             name: {{ .Values.zksync.containerName }}-volume-claim
+      initContainers:
+        - name: init-postgres
+          image: docker.io/library/toolbox:latest
+          imagePullPolicy: {{ .Values.zksync.pullPolicy }}
+          command:
+            - sh
+            - "-c"
+            - |
+              function make_request() {
+                  psql $DATABASE_URL -c '\q'
+              }
+
+              while make_request; [ $? -ne 0 ]; do
+                  printf "\nWaiting for postgres to be available...\n"
+                  sleep 5
+              done
+          env:
+          - name: DATABASE_URL
+            value: postgres://postgres@{{ .Values.postgres.containerName }}.{{ .Values.postgres.namespace }}:{{ .Values.postgres.containerPort }}
+        - name: init-geth
+          image: docker.io/library/toolbox:latest
+          imagePullPolicy: {{ .Values.zksync.pullPolicy }}
+          command:
+            - sh
+            - "-c"
+            - |
+              function make_request() {
+                  geth attach --exec eth.accounts http://{{ .Values.geth.containerName}}.{{ .Values.geth.namespace}}:{{ .Values.geth.httpPort}} | grep 0x8a91dc2d28b689474298d91899f0c1baf62cb85b
+              }
+
+              while make_request; [ $? -ne 0 ]; do
+                  printf "\nWaiting for geth to be available...\n"
+                  sleep 5
+              done
   volumeClaimTemplates:
   - metadata:
       namespace: {{ .Values.zksync.namespace}}

@@ -11,6 +11,7 @@ spec:
     protocol: TCP
     name: http
   - port: {{ .Values.zksync.websocketPort }}
+    targetPort: {{ .Values.zksync.websocketPort }}
     protocol: TCP
     name: websocket
   selector:

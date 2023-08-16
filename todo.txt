@@ -9,6 +9,7 @@ encrypt ipfs address and data hash
         and decides if request is valid or not
 
 refactor ideas:
+    - dont use hardhat and just use rust ethers 
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder
 

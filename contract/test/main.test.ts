@@ -70,13 +70,8 @@ describe('Identifier', function () {
       .to.emit(deployedIdentifier, 'Transfer')
       .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], tokenId);
 
-    try {
-      await deployedIdentifier.authenticate(tokenId);
-    } catch (error) {
-      expect(error.message).to.have.string("execution reverted: You are not the owner of this token");
-      return; 
-    }
-    throw new Error("Transaction did not revert as expected");
+    await expect(deployedIdentifier.authenticate(tokenId))
+      .to.be.revertedWith("You are not the owner of this token");
 
   });
 

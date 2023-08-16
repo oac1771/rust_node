@@ -27,6 +27,7 @@ impl<'a> RegisterController<'a> {
         return register_controller
     }
 
+    // change check identity to look at output from smart contract (require identity not registered)
     pub async fn register(&self, data: Data, principal_address: &str) -> String {
 
         match self.identity_service.check_identity(principal_address) {

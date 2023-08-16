@@ -43,7 +43,6 @@ spec:
               }
 
               while make_request; [ $? -ne 0 ]; do
-                  echo make_request
                   printf "\nWaiting for zksync to be available...\n"
                   sleep 5
               done

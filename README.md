@@ -11,6 +11,7 @@ http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#getting-started
 http://ipfscluster.io.ipns.localhost:8080/documentation/reference/api/
 http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#api-v0-bitswap-ledger
 
+k exec -it pod/$(k get pods -l app=toolbox --no-headers -o custom-columns=":metadata.name") -- /bin/bash -c "source /root/.cargo/env && /bin/bash"
 
 k delete pods -l test=true
 

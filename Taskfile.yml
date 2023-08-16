@@ -36,6 +36,15 @@ tasks:
     env:
       BUILD: '{{ .BUILD }}'
 
+  deploy-toolbox:
+    interactive: true
+    cmds:
+      - helm upgrade --install --wait --timeout 3m toolbox local/
+      - cargo build
+      - |
+        kubectl exec -it pod/$(kubectl get pods -l app=toolbox --no-headers -o custom-columns=":metadata.name") \
+          -- /bin/bash -c "source /root/.cargo/env && /bin/bash"
+
   deploy-ecosystem:
     internal: true
     cmds:
@@ -45,7 +54,7 @@ tasks:
   start-colima:
     cmds:
       - cp colima.yaml ~/.colima/_templates/colima.yaml
-      - colima start --cpu 4 --memory 10
+      - colima start --cpu 3 --memory 5
     status:
       - colima status
 
@@ -62,16 +71,16 @@ tasks:
   load-docker-images:
     cmds:
       - kind load docker-image toolbox:latest
-      - kind load docker-image rust_node:latest
+      # - kind load docker-image rust_node:latest
 
   docker-build:
     cmds:
-      - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
+      # - docker build -f docker/rust_node_builder.Dockerfile . -t rust_node_builder:latest
       - docker build -f docker/toolbox.Dockerfile . -t toolbox:latest
-      - |
-        docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
-          /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
-      - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
+      # - |
+      #   docker run --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
+      #     /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
+      # - docker build -f docker/rust_node.Dockerfile . -t rust_node:latest
     env:
       BUILD: true
     status:

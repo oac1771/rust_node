@@ -1026,6 +1026,7 @@ dependencies = [
  "bytes",
  "enr",
  "ethers-core",
+ "futures-channel",
  "futures-core",
  "futures-timer",
  "futures-util",
@@ -2929,6 +2930,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "ethers",
+ "ethers-contract-abigen",
  "ethers-signers",
  "futures",
  "http",
