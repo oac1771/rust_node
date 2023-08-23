@@ -6,9 +6,10 @@ tasks:
     cmds:
       - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run
     env:
-      IPFS_BASE_URL: http://localhost:5001
       PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
-      ZKSYNC_URL: http://localhost:3050
+      ZKSYNC_API_URL: http://localhost:3050
+      ZKSYNC_WS_URL: ws://localhost:3051
+      IPFS_BASE_URL: http://localhost:5001
 
   pause:
     cmds:
