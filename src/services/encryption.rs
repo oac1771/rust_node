@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use openssl::rsa::{Rsa, Padding};
 
-use crate::config::EncryptionConfig;
+use crate::state::EncryptionState;
 
 use super::models::Identity;
 
@@ -12,9 +12,9 @@ pub struct EncryptionService<'a> {
 
 impl<'a> EncryptionService<'a> {
 
-    pub fn new(config: &EncryptionConfig ) -> EncryptionService {
+    pub fn new(state: &EncryptionState ) -> EncryptionService {
         return EncryptionService{
-            private_keys: &config.private_keys
+            private_keys: &state.private_keys
         }
     }
 

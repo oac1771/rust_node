@@ -4,7 +4,7 @@ tasks:
 
   cargo-run:
     cmds:
-      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run
+      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run --bin rust_node
     env:
       PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
       ZKSYNC_API_URL: http://localhost:3050

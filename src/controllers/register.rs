@@ -1,27 +1,28 @@
 use crate::clients::ipfs::client::IpfsClient;
-use crate::clients::zksync::client::ZksyncClient;
+// use crate::clients::zksync::client::ZksyncClient;
 use crate::config::Config;
+use crate::state::State;
 use crate::services::identity::IdentityService;
 
 use super::models::Data;
 
 pub struct RegisterController<'a> {
     pub ipfs_client: IpfsClient,
-    pub zksync_client: ZksyncClient,
+    // pub zksync_client: ZksyncClient<'a>,
     pub identity_service: IdentityService<'a>
 }
 
 impl<'a> RegisterController<'a> {
 
-    pub fn new(config: &Config) -> RegisterController {
+    pub async fn new(config: &'a Config, state: &'a State) -> RegisterController<'a> {
         
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
-        let identity_service = IdentityService::new(config);
-        let zksync_client = ZksyncClient::new(&config.zksync_config);
+        let identity_service = IdentityService::new(&state);
+        // let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 
         let register_controller = RegisterController {
             ipfs_client,
-            zksync_client,
+            // zksync_client,
             identity_service
         };
         return register_controller

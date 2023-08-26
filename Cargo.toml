@@ -16,9 +16,7 @@ mockall_double = "0.3.0"
 tempfile = "3.5.0"
 openssl = { version = "*", features = ["vendored"] } 
 rust-crypto = "0.2.36"
-ethers = { version = "2.0.8", features = ["ws"] }
-ethers-signers = "2.0.8"
-ethers-contract-abigen = "2.0.8"
+ethers = { version = "2.0.9", features = ["ws", "legacy"] }
 
 [dependencies.rocket]
 version = "0.5.0-rc.3"
@@ -35,3 +33,7 @@ features = ["derive"]
 [dev-dependencies]
 mockall = "0.11.4"
 http = "0.2.9"
+
+[build-dependencies]
+ethers-contract-abigen = "2.0.9"
+ethers = { version = "2.0.9", features = ["ws"] }

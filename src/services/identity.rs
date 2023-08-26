@@ -2,7 +2,7 @@ use tempfile::NamedTempFile;
 use std::io::Write;
 
 use crate::controllers::models::Data;
-use crate::config::Config;
+use crate::state::State;
 
 use super::encryption::EncryptionService;
 use super::hash::HashService;
@@ -14,10 +14,10 @@ pub struct IdentityService<'a> {
 
 impl<'a> IdentityService<'a> {
 
-    pub fn new(config: &Config) -> IdentityService {
+    pub fn new(state: &State) -> IdentityService {
 
         return IdentityService {
-            encryption_service: EncryptionService::new(&config.encryption_config),
+            encryption_service: EncryptionService::new(&state.encryption_state),
             hash_service: HashService::new()
         }
     }
