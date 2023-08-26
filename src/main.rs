@@ -3,7 +3,7 @@ mod controllers;
 mod services;
 mod config;
 mod state;
-// mod identifier;
+mod identifier;
 
 #[macro_use] extern crate rocket;
 use ethers::providers::Middleware;
@@ -61,7 +61,6 @@ async fn contract(config: &State<config::Config>) {
         providers::{Provider, Http, Ws, StreamExt},
         types::Address,
         signers::{LocalWallet, Signer},
-        contract::abigen,
         middleware::SignerMiddleware
     };
     use std::{convert::TryFrom, sync::Arc};
@@ -70,27 +69,33 @@ async fn contract(config: &State<config::Config>) {
     let ipfs_address = "ipfs://foo".to_owned();
     let data_hash = "hash".to_owned();
 
-    abigen!(
-        Identifier,
-        "contract/artifacts-zk/contracts/Identifier.sol/Identifier.json",
-    );
-
     let http_provider = Provider::<Http>::try_from(&config.zksync_config.zksync_api_url).unwrap();
     let chain_id = http_provider.get_chainid().await.unwrap().as_u64();
-
-    println!("Chain ID: {:?}", chain_id);
 
     let wallet = config.zksync_config.private_key.parse::<LocalWallet>().unwrap().with_chain_id(chain_id);
     let http_provider = Provider::<Http>::try_from(&config.zksync_config.zksync_api_url).unwrap();
     let client = SignerMiddleware::new(http_provider, wallet);
 
-    let identifier = Identifier::new(config.zksync_config.contract_address, Arc::new(&client));
+    let identifier = identifier::Identifier::new(config.zksync_config.contract_address, Arc::new(&client));
+
+    let ws_provider = Provider::<Ws>::connect(&config.zksync_config.zksync_ws_url).await.unwrap();
+    let identifier_ws = identifier::Identifier::new(config.zksync_config.contract_address, Arc::new(&ws_provider));
+    let events = identifier_ws.events();
+    let mut stream = events.subscribe().await.unwrap();
 
     let foo = identifier.register_identity(principal, ipfs_address, data_hash);
-    let tx = foo.send().await.unwrap();
+    let tx = foo.send().await.unwrap().await.unwrap();
+    println!("transaction: {:?}", tx.unwrap().transaction_hash);
 
     let token_id = identifier.get_current_token_id().call().await.unwrap();
     println!("current token id: {:?}", token_id);
+
+
+    while let Some(Ok(evt)) = stream.next().await {
+        println!("{:?}", evt);
+    }
+
+    
 
 
     // let client = clients::zksync::client::ZksyncClient::new(&config.zksync_config).await;
