@@ -91,13 +91,6 @@ async fn contract(config: &State<config::Config>) {
     println!("current token id: {:?}", token_id);
 
 
-    while let Some(Ok(evt)) = stream.next().await {
-        println!("{:?}", evt);
-    }
-
-    
-
-
     // let client = clients::zksync::client::ZksyncClient::new(&config.zksync_config).await;
 
     // let mut token_id = client.get_current_token_id().await;
@@ -146,10 +139,36 @@ async fn contract(config: &State<config::Config>) {
 }
 
 #[launch]
-fn rocket() -> _ {
+async fn rocket() -> _ {
+
+    use ethers::{
+        providers::{Provider, Http, Ws, StreamExt},
+        types::Address,
+        signers::{LocalWallet, Signer},
+        middleware::SignerMiddleware
+    };
+    use std::{convert::TryFrom, sync::Arc};
 
     let config = config::get_config();
     let state = state::set_state();
+
+    let contract_address_string = std::env::var("CONTRACT_ADDRESS").expect("CONTRACT_ADDRESS not set");
+    let contract_address: Address = contract_address_string.parse().expect("Invalid contract address");
+    let zksync_ws_url = std::env::var("ZKSYNC_WS_URL").expect("ZKSYNC_WS_URL not set");
+
+    tokio::spawn(async move {
+        println!("Starting Thread...");
+
+        let ws_provider = Provider::<Ws>::connect(zksync_ws_url.to_owned()).await.unwrap();
+        let identifier_ws = identifier::Identifier::new(contract_address.to_owned(), Arc::new(ws_provider));
+        let events = identifier_ws.events();
+        let mut stream = events.subscribe().await.unwrap();
+
+        while let Some(Ok(evt)) = stream.next().await {
+            println!("Inside thread {:?}", evt);
+        }
+    });
+
     rocket::build()
         .manage(config)
         .manage(state)
