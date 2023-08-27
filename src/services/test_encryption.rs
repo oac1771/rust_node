@@ -43,37 +43,4 @@ mod tests {
 
     }
 
-    #[test]
-    fn test_should_return_true_if_principal_address_has_been_saved() {
-
-        let private_keys = Mutex::new(HashMap::new());
-        let encryption_service = EncryptionService{
-            private_keys: &private_keys
-        };
-        let principal_address = "principal address";
-        let encryption_key = "encryption key";
-
-        private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
-
-        let status = encryption_service.check_identity(principal_address);
-
-        assert_eq!(status, true);
-
-    }
-
-    #[test]
-    fn test_should_return_false_if_principal_address_has_not_been_saved() {
-
-        let private_keys = Mutex::new(HashMap::new());
-        let encryption_service = EncryptionService{
-            private_keys: &private_keys
-        };
-        let principal_address = "principal address";
-
-        let status = encryption_service.check_identity(principal_address);
-
-        assert_eq!(status, false);
-
-    }
-
 }

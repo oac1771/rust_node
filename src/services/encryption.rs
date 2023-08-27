@@ -22,10 +22,6 @@ impl<'a> EncryptionService<'a> {
         self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
     }
 
-    pub fn check_identity(&self, principal_address: &str) -> bool {
-        return self.private_keys.lock().unwrap().contains_key(&principal_address.to_string());
-    }
-
     pub fn encrypt(&self, identity: &Identity) -> (String, String) {
 
         let content = serde_json::to_string(&identity).unwrap();

@@ -60,6 +60,7 @@ describe('Identifier', function () {
     
     expect(ipfsAddressFromContract).to.equal(IPFS_ADDRESS)
     expect(await deployedIdentifier.getCurrentTokenID()).to.equal(1)
+    expect(await deployedIdentifier.checkIdentity(PRINCIPAL_CREDS["address"])).to.equal(true)
   });
 
   it("Should not allow non token owner to call for authentication", async function () {
@@ -88,6 +89,12 @@ describe('Identifier', function () {
     await expect(await contract.authenticate(tokenId))
       .to.emit(deployedIdentifier, 'AuthenticationRequest')
       .withArgs(IPFS_ADDRESS, DATA_HASH);
+
+  });
+
+  it("Should return false if identity does not exist", async function () {
+
+    await expect(await deployedIdentifier.checkIdentity(PRINCIPAL_CREDS["address"])).to.equal(false);
 
   });
 

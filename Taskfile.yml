@@ -4,7 +4,7 @@ tasks:
 
   cargo-run:
     cmds:
-      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run --bin rust_node
+      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run
     env:
       PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
       ZKSYNC_API_URL: http://localhost:3050
@@ -36,15 +36,6 @@ tasks:
       - task: deploy-ecosystem
     env:
       BUILD: '{{ .BUILD }}'
-
-  deploy-toolbox:
-    interactive: true
-    cmds:
-      - helm upgrade --install --wait --timeout 3m toolbox local/
-      - cargo build
-      - |
-        kubectl exec -it pod/$(kubectl get pods -l app=toolbox --no-headers -o custom-columns=":metadata.name") \
-          -- /bin/bash -c "source /root/.cargo/env && /bin/bash"
 
   deploy-ecosystem:
     internal: true

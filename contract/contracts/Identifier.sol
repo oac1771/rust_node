@@ -7,11 +7,16 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract Identifier is ERC721 {
 
     uint256 public currentTokenID;
+    
+    struct Data {
+        string ipfs_addr;
+        string data_hash;
+    }
+
+    mapping (uint256 => Data) public tokenIdToData;
+    address[] identities;
 
     event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
-
-    mapping(uint256 => string) public tokenIdToIpfs;
-    mapping(uint256 => string) public tokenIdToDataHash;
 
     constructor() ERC721("Identity Token", "IDTKN") {
         currentTokenID = 0;
@@ -22,21 +27,29 @@ contract Identifier is ERC721 {
         _;
     }
 
-    // add check if principal has already been registered
     function registerIdentity(address principal, 
         string memory ipfsAddress, 
         string memory dataHash) 
     external {
         _safeMint(principal, currentTokenID);
-        tokenIdToIpfs[currentTokenID] = ipfsAddress;
-        tokenIdToDataHash[currentTokenID] = dataHash;
+        tokenIdToData[currentTokenID] = Data(ipfsAddress, dataHash);
+        identities.push(principal);
 
         currentTokenID++;  
     }
 
+    function checkIdentity(address principal) view public returns(bool) {
+        for (uint i = 0; i < identities.length; i++) {
+            if (identities[i] == principal) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function getIpfsAddress(uint256 tokenId) 
     view public returns(string memory) {
-        return tokenIdToIpfs[tokenId];
+        return tokenIdToData[tokenId].ipfs_addr;
     }
 
     function getCurrentTokenID() view public returns(uint256) {
@@ -45,6 +58,6 @@ contract Identifier is ERC721 {
 
     function authenticate(uint256 tokenId) 
     public onlyTokenOwner(tokenId) {
-        emit AuthenticationRequest(tokenIdToIpfs[tokenId], tokenIdToDataHash[tokenId]);
+        emit AuthenticationRequest(tokenIdToData[tokenId].ipfs_addr, tokenIdToData[tokenId].data_hash);
     }
 }
