@@ -173,4 +173,5 @@ async fn rocket() -> _ {
         .manage(config)
         .manage(state)
         .mount("/", routes![health, id, rm_pin, register, contract])
+        
 }
