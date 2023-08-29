@@ -27,13 +27,16 @@ async fn register(data: Json<controllers::models::Data>,
 }
 
 
-// #[post("/rm/<hash>")]
-// async fn rm_pin(hash: &str, config: &State<config::Config>) -> String {
-//     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-//     let response = ipfs_client.rm_pin(hash).await;
+#[delete("/remove/<principal_address>")]
+async fn remove(config: &State<config::Config>,
+    state: &State<state::State>,
+    principal_address: &str) -> Json<RegisterResponse> {
 
-//     return response
-// }
+    let register_controller = controllers::register::RegisterController::new(config, state).await;
+    let response = register_controller.remove(principal_address).await;
+
+    return Json(response)
+}
 
 // #[post("/id")]
 // async fn id(config: &State<config::Config>) -> String {
@@ -93,13 +96,13 @@ async fn rocket() -> _ {
         let mut stream = events.subscribe().await.unwrap();
 
         while let Some(Ok(evt)) = stream.next().await {
-            println!("Inside thread {:?}", evt);
+            println!("PubSub Thread: {:?}", evt);
         }
     });
 
     rocket::build()
         .manage(config)
         .manage(state)
-        .mount("/", routes![health, register, contract])
+        .mount("/", routes![health, register, contract, remove])
 
 }

@@ -32,39 +32,53 @@ impl<'a> RegisterController<'a> {
 
     pub async fn register(&self, data: Data, principal_address: &str) -> RegisterResponse {
 
-        let check_identity = self.zksync_client.check_identity(principal_address.to_string()).await;
+        let check_identity = self.zksync_client.check_identity(principal_address).await;
         let mut register_response = RegisterResponse::new();
 
-        match check_identity {
-            true => {
-                register_response.set_error("Identity already exists".to_string());
+        // if check_identity {
+        //     register_response.set_error("Identity already exists".to_string());
+        //     return register_response
+        // } 
+
+        let mut identity_file = self.identity_service.generate_identity_file();
+        let (hash, encryption_key) = self.identity_service.encrypt_file_contents(data, &mut identity_file);
+        let identity_file_path = identity_file.path().to_str().unwrap().to_string();
+
+        let response = self.ipfs_client.add_file(&identity_file_path).await;
+
+        match response {
+            Ok(ipfs_response) => {
+
+                let (tx_hash, token_id) = self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
+                self.identity_service.save_encryption_key(principal_address, &encryption_key);
+
+                register_response.set_body(json!({
+                    "tx_hash": tx_hash,
+                    "token_id": token_id.unwrap().to_string(),
+                    "ipfs_address": ipfs_response.Hash,
+                    "encryption_key": &encryption_key
+                }))
             },
-            false => {
-                let mut identity_file = self.identity_service.generate_identity_file();
-                let (hash, encryption_key) = self.identity_service.encrypt_file_contents(data, &mut identity_file);
-                let identity_file_path = identity_file.path().to_str().unwrap().to_string();
-        
-                let response = self.ipfs_client.add_file(&identity_file_path).await;
-
-                match response {
-                    Ok(ipfs_response) => {
-                        
-                        let tx_hash = self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
-                        self.identity_service.save_encryption_key(principal_address, &encryption_key);
-
-                        register_response.set_body(json!({
-                            "tx_hash": tx_hash,
-                            "ipfs_address": ipfs_response.Hash
-                        }))
-                    },
-                    Err(err) => {
-                        register_response.set_error(err.body.to_string());
-                    }
-                }
+            Err(err) => {
+                register_response.set_error(err.body.to_string());
             }
         }
 
+
         return register_response
 
+    }
+
+    pub async fn remove(&self, principal_address: &str) -> RegisterResponse {
+
+        let mut register_response = RegisterResponse::new();
+        let check_identity = self.zksync_client.check_identity(principal_address).await;
+
+        if !check_identity {
+            register_response.set_error("Identity does not exist".to_string());
+            return register_response
+        } 
+
+        return register_response
     }
 }

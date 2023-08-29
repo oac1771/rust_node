@@ -1,14 +1,14 @@
 use ethers::{
     providers::{Provider, Http, Middleware},
     middleware::SignerMiddleware,
-    types::{U256, Address},
+    types::{U256, Address, H256},
     signers::{LocalWallet, Signer},
 };
 
 use std::{convert::TryFrom, sync::Arc};
 
 use crate::config::ZksyncConfig;
-use crate::identifier::Identifier;
+use crate::identifier::{Identifier, IdentifierEvents};
 
 pub struct ZksyncClient {
     pub contract: Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
@@ -31,27 +31,46 @@ impl ZksyncClient {
         }
     }
 
+    pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> (H256, Option<U256>) {
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
+
+        let call = self.contract.register_identity(principal, ipfs_address.to_string(), data_hash.to_string());
+        let tx = call.send().await.unwrap().await.unwrap();
+        let tx_hash = tx.unwrap().transaction_hash;
+        let token_id = self.check_events(principal_address).await;
+
+        return (tx_hash, token_id)
+
+    }
+
+    pub async fn check_identity(&self, principal_address: &str) -> bool {
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
+
+        let call = self.contract.check_identity(principal).call().await.unwrap();
+        return call
+    }
+
     pub async fn get_current_token_id(&self) -> U256 {
         let token_id = self.contract.get_current_token_id().call().await.unwrap();
         return token_id
     }
 
-    pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> String{
+    // eventually make this take in a closure that will run on the list of events obtained from query and return what you want
+    pub async fn check_events(&self, principal_address: &str) -> Option<U256> {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
+        let events = self.contract.events().from_block(0).query().await.unwrap();
 
-        let call = self.contract.register_identity(principal, ipfs_address.to_string(), data_hash.to_string());
-        let tx = call.send().await.unwrap().await.unwrap();
-        // println!("transaction: {:?}", &tx.unwrap().transaction_hash);
-
-        return tx.unwrap().transaction_hash.to_string()
-
-    }
-
-    pub async fn check_identity(&self, principal_address: String) -> bool {
-        let principal: Address = principal_address.parse().expect("Invalid principal address");
-
-        let call = self.contract.check_identity(principal).call().await.unwrap();
-        return call
+        for event in events {
+            match event {
+                IdentifierEvents::TransferFilter(transfer) => {
+                    if transfer.to == principal {
+                        return Some(transfer.token_id)
+                    }
+                },
+                _ => {}
+            }
+        }
+        return None
     }
 
 }

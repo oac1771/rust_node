@@ -98,4 +98,18 @@ describe('Identifier', function () {
 
   });
 
+  it("Should remove identity", async function () {
+
+    await expect(await deployedIdentifier.registerIdentity(PRINCIPAL_CREDS["address"], IPFS_ADDRESS, DATA_HASH))
+    .to.emit(deployedIdentifier, 'Transfer')
+    .withArgs(ZERO_ADDRESS, PRINCIPAL_CREDS["address"], 0);
+
+    await expect(await deployedIdentifier.removeIdentity(0, PRINCIPAL_CREDS["address"]))
+    .to.emit(deployedIdentifier, 'Transfer')
+    .withArgs(PRINCIPAL_CREDS["address"], ZERO_ADDRESS, 0);
+
+    await expect(await deployedIdentifier.checkIdentity(PRINCIPAL_CREDS["address"])).to.equal(false);
+
+  });
+
 });

@@ -38,6 +38,19 @@ contract Identifier is ERC721 {
         currentTokenID++;  
     }
 
+    function removeIdentity(uint256 tokenId, address principal) external {
+        require(principal == ERC721.ownerOf(tokenId));
+        _burn(tokenId);
+        delete tokenIdToData[tokenId];
+
+        for (uint i = 0; i < identities.length; i++) {
+            if (identities[i] == principal) {
+                delete identities[i];
+            }
+        }
+
+    }
+
     function checkIdentity(address principal) view public returns(bool) {
         for (uint i = 0; i < identities.length; i++) {
             if (identities[i] == principal) {
