@@ -1,5 +1,5 @@
 use ethers::{
-    providers::{Provider, Http, Ws, Middleware},
+    providers::{Provider, Http, Middleware},
     middleware::SignerMiddleware,
     types::{U256, Address},
     signers::{LocalWallet, Signer},
@@ -36,12 +36,22 @@ impl ZksyncClient {
         return token_id
     }
 
-    pub async fn register_identity(&self, principal: Address, ipfs_address: String, data_hash: String) {
+    pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> String{
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
 
-        let call = self.contract.register_identity(principal, ipfs_address, data_hash);
+        let call = self.contract.register_identity(principal, ipfs_address.to_string(), data_hash.to_string());
         let tx = call.send().await.unwrap().await.unwrap();
-        println!("transaction: {:?}", tx.unwrap().transaction_hash);
+        // println!("transaction: {:?}", &tx.unwrap().transaction_hash);
 
+        return tx.unwrap().transaction_hash.to_string()
+
+    }
+
+    pub async fn check_identity(&self, principal_address: String) -> bool {
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
+
+        let call = self.contract.check_identity(principal).call().await.unwrap();
+        return call
     }
 
 }

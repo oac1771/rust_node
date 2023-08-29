@@ -20,9 +20,10 @@ mod tests {
             content: "file content".to_string()
         };
 
-        let (enc_content, _) = encryption_service.encrypt(&file_content);
+        let (enc_content, _) = encryption_service.encrypt(file_content.to_string());
 
         assert_ne!(serde_json::to_string(&file_content).unwrap(), enc_content);
+        assert_ne!("".to_string(), enc_content);
 
     }
     

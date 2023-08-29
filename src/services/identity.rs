@@ -6,6 +6,7 @@ use crate::state::State;
 
 use super::encryption::EncryptionService;
 use super::hash::HashService;
+use super::models::Identity;
 
 pub struct IdentityService<'a> {
     pub encryption_service: EncryptionService<'a>,
@@ -21,16 +22,22 @@ impl<'a> IdentityService<'a> {
             hash_service: HashService::new()
         }
     }
+ 
+    pub fn encrypt_file_contents(&self, data: Data, temp_file: &mut NamedTempFile) -> (String, String) {
 
-    pub fn generate_identity_file(&self, data: Data) -> (NamedTempFile, String) {
+        let (content, hash) = self.hash_service.hash(data);
+        let identity = Identity::new(content, hash);
 
-        let identity = self.hash_service.hash(data);
-        let (encrypted_content, priv_key) = self.encryption_service.encrypt(&identity);
+        let (encrypted_content, priv_key) = self.encryption_service.encrypt(identity.to_string());
 
-        let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(encrypted_content.as_bytes()).expect("Unable to write to tempfile");
 
-        return (temp_file, priv_key);
+        return (identity.hash.to_string(), priv_key);
+    }
+
+    pub fn generate_identity_file(&self) -> NamedTempFile {
+        let temp_file = NamedTempFile::new().unwrap();
+        return temp_file
     }
 
     pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {

@@ -4,7 +4,7 @@ ipfs repo gc
     - initiate garbage collection
 ipfs pin ls 
     - list pinned files
-curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:8000/register/principal_address
+curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:8000/register/0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92
 
 ipfs api docs
 http://docs.ipfs.tech.ipns.localhost:8080/reference/kubo/rpc/#getting-started

@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-use serde_json;
 use mockall_double::double;
 
 use crate::clients::ipfs::models::*;
@@ -29,41 +27,27 @@ impl IpfsClient {
         return ipfs_client
     }
 
-    // might be able to move this into general trait that ipfs client and zksync can use
-    pub fn handle<'a, H: Deserialize<'a> + Serialize>(&self, response: &'a Result<Response, Error>) -> String {
-        match response {
-            Ok(resp) => {
-                let ipfs_response: H = serde_json::from_str(&resp.body).unwrap();
-                let string_response = serde_json::to_string(&ipfs_response).unwrap();
-                return string_response
-            }
-            Err(err) => {
-                return err.body.clone()
-            }
-        }
-    }
-
-    pub async fn get_id(&self) -> String {
-        let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
-        let response = self.reqwest_client.post(&url).await;
+    // pub async fn get_id(&self) -> String {
+    //     let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
+    //     let response = self.reqwest_client.post(&url).await;
          
-        return self.handle::<IpfsIdResponse>(&response)
+    //     return self.handle::<IpfsIdResponse>(&response)
 
-    }
+    // }
 
-    pub async fn add_file(&self, file_path: &str) -> String {
+    pub async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, Error>{
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/add");
-        let response = self.reqwest_client.post_multipart(&url, file_path).await;
-        
-        return self.handle::<IpfsAddFileResponse>(&response)
+        let response = self.reqwest_client.post_multipart::<IpfsAddFileResponse>(&url, file_path).await;
+
+        return response
 
     }
 
-    pub async fn rm_pin(&self, hash: &str) -> String {
-        let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/pin/rm?arg=", hash);
-        let response = self.reqwest_client.post(&url).await;
-        return self.handle::<IpfsRemovePinResponse>(&response)
+    // pub async fn rm_pin(&self, hash: &str) -> String {
+    //     let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/pin/rm?arg=", hash);
+    //     let response = self.reqwest_client.post(&url).await;
+    //     return self.handle::<IpfsRemovePinResponse>(&response)
 
-    }
+    // }
 
 }

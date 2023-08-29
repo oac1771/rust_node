@@ -4,8 +4,6 @@ use openssl::rsa::{Rsa, Padding};
 
 use crate::state::EncryptionState;
 
-use super::models::Identity;
-
 pub struct EncryptionService<'a> {
     pub private_keys: &'a Mutex<HashMap<String, String>>
 }
@@ -22,9 +20,8 @@ impl<'a> EncryptionService<'a> {
         self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
     }
 
-    pub fn encrypt(&self, identity: &Identity) -> (String, String) {
+    pub fn encrypt(&self, content: String) -> (String, String) {
 
-        let content = serde_json::to_string(&identity).unwrap();
         let rsa = Rsa::generate(2048).unwrap();
 
         let private_key = rsa.private_key_to_pem().unwrap();

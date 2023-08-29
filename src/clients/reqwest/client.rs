@@ -2,6 +2,7 @@ use futures::{future::BoxFuture, FutureExt};
 use async_trait::async_trait;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
+use serde::{de::DeserializeOwned, Serialize};
 use crate::clients::reqwest::models::{Response, Error};
 
 pub struct ReqwestClient {
@@ -11,14 +12,14 @@ pub struct ReqwestClient {
 #[allow(dead_code)]
 impl ReqwestClient {
 
-    pub async fn post(&self, url: &str) ->  Result<Response, Error> {
-        let request =  || async move {self.client.post(url).send().await}.boxed();
-        let response = self.call(request).await;
+    // pub async fn post(&self, url: &str) ->  Result<Response, Error> {
+    //     let request =  || async move {self.client.post(url).send().await}.boxed();
+    //     let response = self.call(request).await;
 
-        return response
-    }
+    //     return response
+    // }
 
-    pub async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>
+    pub async fn post_multipart<H: DeserializeOwned + Serialize>(&self, url: &str, file_name: &str) -> Result<H, Error>
     {
 
         let file = File::open(file_name).await.unwrap();
@@ -29,15 +30,16 @@ impl ReqwestClient {
         let form = reqwest::multipart::Form::new().part("file", part);
 
         let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
-        let response = self.call(request).await;
+        let response = self.call::<H>(request).await;
 
 
         return response
 
     }
 
-    pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
-    Result<Response, Error>
+    // this fn could also take type to handle deserializing into a specific Error type E and return that instead clients::reqwest::models::Error
+    pub async fn call<'a, H: DeserializeOwned + Serialize>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
+    Result<H, Error>
     {
 
         let r = request().await;
@@ -47,7 +49,9 @@ impl ReqwestClient {
                 match req.error_for_status() {
                     Ok(r) => {
                         let response = Response::new(r).await;
-                        return Ok(response)
+                        let deserialized_response: H = serde_json::from_str(&response.body).unwrap();
+
+                        return Ok(deserialized_response)
                     },
                     Err(e) => {
                         let error = Error::new(e);
@@ -78,7 +82,7 @@ impl ReqwestClient {
 #[async_trait]
 pub trait R {
     async fn post(&self, url: &str) -> Result<Response, Error>;
-    async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>;
+    async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
 }
 
 #[cfg(test)]
@@ -91,6 +95,6 @@ mock!{
     #[async_trait]
     impl R for ReqwestClient {
         async fn post(&self, url: &str) -> Result<Response, Error>;
-        async fn post_multipart(&self, url: &str, file_name: &str) -> Result<Response, Error>;
+        async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
     }
 }

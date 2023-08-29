@@ -1,10 +1,12 @@
+use serde_json::json;
+
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
 use crate::config::Config;
 use crate::state::State;
 use crate::services::identity::IdentityService;
 
-use super::models::Data;
+use super::models::{Data, RegisterResponse};
 
 pub struct RegisterController<'a> {
     pub ipfs_client: IpfsClient,
@@ -28,17 +30,41 @@ impl<'a> RegisterController<'a> {
         return register_controller
     }
 
-    // call contract check_identity to see if exists before doing all of this
-    pub async fn register(&self, data: Data, principal_address: &str) -> String {
+    pub async fn register(&self, data: Data, principal_address: &str) -> RegisterResponse {
 
-        let (identity_file, encryption_key) = self.identity_service.generate_identity_file(data);
-        let identity_file_path = identity_file.path().to_str().unwrap().to_string();
+        let check_identity = self.zksync_client.check_identity(principal_address.to_string()).await;
+        let mut register_response = RegisterResponse::new();
 
-        let response = self.ipfs_client.add_file(&identity_file_path).await;
+        match check_identity {
+            true => {
+                register_response.set_error("Identity already exists".to_string());
+            },
+            false => {
+                let mut identity_file = self.identity_service.generate_identity_file();
+                let (hash, encryption_key) = self.identity_service.encrypt_file_contents(data, &mut identity_file);
+                let identity_file_path = identity_file.path().to_str().unwrap().to_string();
+        
+                let response = self.ipfs_client.add_file(&identity_file_path).await;
 
-        self.identity_service.save_encryption_key(principal_address, &encryption_key);
+                match response {
+                    Ok(ipfs_response) => {
+                        
+                        let tx_hash = self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
+                        self.identity_service.save_encryption_key(principal_address, &encryption_key);
 
-        return response
+                        register_response.set_body(json!({
+                            "tx_hash": tx_hash,
+                            "ipfs_address": ipfs_response.Hash
+                        }))
+                    },
+                    Err(err) => {
+                        register_response.set_error(err.body.to_string());
+                    }
+                }
+            }
+        }
+
+        return register_response
 
     }
 }
