@@ -14,6 +14,12 @@ pub struct ZksyncClient {
     pub contract: Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
 }
 
+// make register_identity and remove_identity use same base send() method that does error handling
+    // just pass in self.contract.<method>
+
+// make check_identity, get_current_token use same base call() method that does error handling
+// make get_token_id use same base query() method that does error handling
+
 impl ZksyncClient {
 
     pub async fn new(config: &ZksyncConfig) -> ZksyncClient {
@@ -31,15 +37,27 @@ impl ZksyncClient {
         }
     }
 
-    pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> (H256, Option<U256>) {
+    pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> H256 {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
         let call = self.contract.register_identity(principal, ipfs_address.to_string(), data_hash.to_string());
         let tx = call.send().await.unwrap().await.unwrap();
         let tx_hash = tx.unwrap().transaction_hash;
-        let token_id = self.check_events(principal_address).await;
 
-        return (tx_hash, token_id)
+        return tx_hash
+
+    }
+
+    pub async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256 {
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
+        let token: U256 = U256::from(token_id);
+
+        let call = self.contract.remove_identity(token, principal);
+        let tx = call.send().await.unwrap().await.unwrap();
+
+        let tx_hash = tx.unwrap().transaction_hash;
+
+        return tx_hash
 
     }
 
@@ -55,8 +73,7 @@ impl ZksyncClient {
         return token_id
     }
 
-    // eventually make this take in a closure that will run on the list of events obtained from query and return what you want
-    pub async fn check_events(&self, principal_address: &str) -> Option<U256> {
+    pub async fn get_token_id(&self, principal_address: &str) -> Option<U256> {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
         let events = self.contract.events().from_block(0).query().await.unwrap();
 
@@ -65,6 +82,23 @@ impl ZksyncClient {
                 IdentifierEvents::TransferFilter(transfer) => {
                     if transfer.to == principal {
                         return Some(transfer.token_id)
+                    }
+                },
+                _ => {}
+            }
+        }
+        return None
+    }
+
+    pub async fn get_ipfs_addr(&self, principal_address: &str) -> Option<H256>{
+        let principal: Address = principal_address.parse().expect("Invalid principal address");
+        let events = self.contract.events().from_block(0).query().await.unwrap();
+
+        for event in events {
+            match event {
+                IdentifierEvents::IpfsDeletionRequestFilter(request) => {
+                    if request.principal == principal {
+                        return Some(request.ipfs_address)
                     }
                 },
                 _ => {}

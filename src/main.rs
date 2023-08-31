@@ -27,26 +27,26 @@ async fn register(data: Json<controllers::models::Data>,
 }
 
 
-#[delete("/remove/<principal_address>")]
+#[delete("/remove/<principal_address>/<token_id>")]
 async fn remove(config: &State<config::Config>,
     state: &State<state::State>,
-    principal_address: &str) -> Json<RegisterResponse> {
+    principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
 
     let register_controller = controllers::register::RegisterController::new(config, state).await;
-    let response = register_controller.remove(principal_address).await;
+    let response = register_controller.remove(principal_address, token_id).await;
 
     return Json(response)
 }
 
-// #[post("/id")]
-// async fn id(config: &State<config::Config>) -> String {
+#[post("/ipfs_id")]
+async fn ipfs_id(config: &State<config::Config>) -> String {
 
-//     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-//     let response = ipfs_client.get_id().await;
+    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
+    let response = ipfs_client.get_id().await.unwrap();
 
-//     return response
+    return response.ID
 
-// }
+}
 
 #[get("/health")]
 fn health() -> Json<Response> {
@@ -60,6 +60,9 @@ fn health() -> Json<Response> {
 #[get("/contract")]
 async fn contract(config: &State<config::Config>) {
 
+    use ethers::types::Bytes;
+    use std::str;
+
     let principal_address =  "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92";
     let ipfs_address = "ipfs://foo".to_owned();
     let data_hash = "hash".to_owned();
@@ -67,7 +70,33 @@ async fn contract(config: &State<config::Config>) {
     let zksync_client = clients::zksync::client::ZksyncClient::new(&config.zksync_config).await;
     zksync_client.register_identity(principal_address, &ipfs_address, &data_hash).await;
     let token_id = zksync_client.get_current_token_id().await;
+
+    let _foo = zksync_client.contract.get_ipfs_address(token_id).call().await;
+
+    let test = Bytes::from_static("Hi".as_bytes());
+
+    let _bar = zksync_client.contract.test(test).send().await.unwrap().await.unwrap();
     println!("current token id after registration: {:?}", token_id);
+
+    let events = zksync_client.contract.events().from_block(0).query().await.unwrap();
+
+    println!("number of events {}", events.len());
+    for event in events {
+        match event {
+            identifier::IdentifierEvents::TestFilter(request) => {
+                let foo = request.foo;
+                let hi = foo.to_vec();
+                let foo_str = str::from_utf8(&foo).unwrap();
+
+                println!("bytes: {:?}", foo.0);
+                println!("vec of u8: {:?}", hi);
+                println!("string: {:?}", foo_str);
+
+            },
+            _ => {}
+        }
+    }
+
 
 }
 
@@ -103,6 +132,6 @@ async fn rocket() -> _ {
     rocket::build()
         .manage(config)
         .manage(state)
-        .mount("/", routes![health, register, contract, remove])
+        .mount("/", routes![health, register, contract, remove, ipfs_id])
 
 }

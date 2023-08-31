@@ -27,15 +27,15 @@ impl IpfsClient {
         return ipfs_client
     }
 
-    // pub async fn get_id(&self) -> String {
-    //     let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
-    //     let response = self.reqwest_client.post(&url).await;
+    pub async fn get_id(&self) -> Result<IpfsIdResponse, Error> {
+        let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
+        let response = self.reqwest_client.post::<IpfsIdResponse>(&url).await;
          
-    //     return self.handle::<IpfsIdResponse>(&response)
+        return response
 
-    // }
+    }
 
-    pub async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, Error>{
+    pub async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, Error> {
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/add");
         let response = self.reqwest_client.post_multipart::<IpfsAddFileResponse>(&url, file_path).await;
 
@@ -43,11 +43,12 @@ impl IpfsClient {
 
     }
 
-    // pub async fn rm_pin(&self, hash: &str) -> String {
-    //     let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/pin/rm?arg=", hash);
-    //     let response = self.reqwest_client.post(&url).await;
-    //     return self.handle::<IpfsRemovePinResponse>(&response)
+    pub async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, Error> {
+        let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/pin/rm?arg=", hash);
+        let response = self.reqwest_client.post::<IpfsRemovePinResponse>(&url).await;
 
-    // }
+        return response
+        
+    }
 
 }

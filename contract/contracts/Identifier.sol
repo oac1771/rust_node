@@ -17,6 +17,8 @@ contract Identifier is ERC721 {
     address[] identities;
 
     event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
+    event IpfsDeletionRequest(string indexed ipfsAddress, address indexed principal);
+    event Test(bytes foo);
 
     constructor() ERC721("Identity Token", "IDTKN") {
         currentTokenID = 0;
@@ -25,6 +27,11 @@ contract Identifier is ERC721 {
     modifier onlyTokenOwner(uint256 tokenId) {
         require(ownerOf(tokenId) == msg.sender, "You are not the owner of this token");
         _;
+    }
+
+
+    function test(bytes memory foo) external {
+        emit Test(foo);
     }
 
     function registerIdentity(address principal, 
@@ -41,13 +48,15 @@ contract Identifier is ERC721 {
     function removeIdentity(uint256 tokenId, address principal) external {
         require(principal == ERC721.ownerOf(tokenId));
         _burn(tokenId);
-        delete tokenIdToData[tokenId];
 
         for (uint i = 0; i < identities.length; i++) {
             if (identities[i] == principal) {
                 delete identities[i];
             }
         }
+
+        emit IpfsDeletionRequest(tokenIdToData[tokenId].ipfs_addr, principal);
+        delete tokenIdToData[tokenId];
 
     }
 

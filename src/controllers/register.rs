@@ -1,4 +1,5 @@
 use serde_json::json;
+use std::str;
 
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
@@ -49,7 +50,8 @@ impl<'a> RegisterController<'a> {
         match response {
             Ok(ipfs_response) => {
 
-                let (tx_hash, token_id) = self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
+                let tx_hash= self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
+                let token_id = self.zksync_client.get_token_id(principal_address).await;
                 self.identity_service.save_encryption_key(principal_address, &encryption_key);
 
                 register_response.set_body(json!({
@@ -69,15 +71,24 @@ impl<'a> RegisterController<'a> {
 
     }
 
-    pub async fn remove(&self, principal_address: &str) -> RegisterResponse {
+    pub async fn remove(&self, principal_address: &str, token_id: u128) -> RegisterResponse {
 
         let mut register_response = RegisterResponse::new();
         let check_identity = self.zksync_client.check_identity(principal_address).await;
 
-        if !check_identity {
-            register_response.set_error("Identity does not exist".to_string());
-            return register_response
-        } 
+        // if !check_identity {
+        //     register_response.set_error("Identity does not exist".to_string());
+        //     return register_response
+        // }
+
+        let tx_hash = self.zksync_client.remove_identity(principal_address, token_id).await;
+        let ipfs_addr = self.zksync_client.get_ipfs_addr(principal_address).await.unwrap();
+        let foo = ipfs_addr.as_bytes();
+
+        println!("as_bytes: {:?}", ipfs_addr.as_bytes());
+        println!("to_string: {}", ipfs_addr);
+
+        // let response = self.ipfs_client.rm_pin(hash).await.unwrap();
 
         return register_response
     }

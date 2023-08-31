@@ -21,7 +21,7 @@ if (!PRIVATE_KEY)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 
 // Address of the contract on zksync testnet
-const CONTRACT_ADDRESS = "0xe306542F9982bcEB6Eb18Ac71D6D11c2BA7864E9";
+const CONTRACT_ADDRESS = "0x4da8b63F2Ce2331065E9EE1ED79Fe157B2Bd3286";
 
 if (!CONTRACT_ADDRESS) throw "⛔️ Contract address not provided";
 
@@ -33,19 +33,19 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   // @ts-ignore
 
   const provider = new Provider(hre.userConfig.networks?.zkSyncTestnet?.url);
-  // const websocket_provider = new ethers.providers.WebSocketProvider('ws://localhost:3051')
   const signer = new ethers.Wallet(PRIVATE_KEY, provider);
 
-  // const event_contract = new ethers.Contract(CONTRACT_ADDRESS, ContractArtifact.abi, websocket_provider);
+  const websocket_provider = new ethers.providers.WebSocketProvider('ws://localhost:3051')
+  const event_contract = new ethers.Contract(CONTRACT_ADDRESS, ContractArtifact.abi, websocket_provider);
 
-  // event_contract.on("Transfer", (event) => {
-  //   let options = {
-  //     filter: { }, // e.g { from: '0x48c6c0923b514db081782271355e5745c49wd60' }
-  //     data: event,
-  //   };
+  event_contract.on("IpfsDeletionRequest", (event) => {
+    let options = {
+      filter: { }, // e.g { from: '0x48c6c0923b514db081782271355e5745c49wd60' }
+      data: event,
+    };
 
-  //   console.log(JSON.stringify(options, null, 4));
-  // });
+    console.log(JSON.stringify(event, null, 4));
+  });
   // Initialize contract instance
   const contract = new ethers.Contract(
     CONTRACT_ADDRESS,
@@ -60,7 +60,13 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   // send transaction to update the message
   const tx = await contract.registerIdentity(PRINCIPAL_CREDS["address"], IPFS_ADDRESS, DATA_HASH);
   await tx.wait()
-  console.log(`The current tokenID is ${await contract.getCurrentTokenID()}`);
+
+  const token_id = await contract.getCurrentTokenID();
+  console.log(`The current tokenID is ${token_id}`);
+
+
+  const tx_remove = await contract.removeIdentity(token_id-1, PRINCIPAL_CREDS["address"]);
+  await tx_remove.wait()
 
 
   // console.log(`Transaction to change the message is ${tx.hash}`);

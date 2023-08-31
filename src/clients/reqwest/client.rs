@@ -12,12 +12,12 @@ pub struct ReqwestClient {
 #[allow(dead_code)]
 impl ReqwestClient {
 
-    // pub async fn post(&self, url: &str) ->  Result<Response, Error> {
-    //     let request =  || async move {self.client.post(url).send().await}.boxed();
-    //     let response = self.call(request).await;
+    pub async fn post<H: DeserializeOwned + Serialize>(&self, url: &str) ->  Result<H, Error> {
+        let request =  || async move {self.client.post(url).send().await}.boxed();
+        let response = self.call::<H>(request).await;
 
-    //     return response
-    // }
+        return response
+    }
 
     pub async fn post_multipart<H: DeserializeOwned + Serialize>(&self, url: &str, file_name: &str) -> Result<H, Error>
     {
@@ -81,7 +81,7 @@ impl ReqwestClient {
 
 #[async_trait]
 pub trait R {
-    async fn post(&self, url: &str) -> Result<Response, Error>;
+    async fn post<H: DeserializeOwned + Serialize + 'static>(&self, url: &str) -> Result<H, Error>;
     async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
 }
 
@@ -94,7 +94,7 @@ mock!{
 
     #[async_trait]
     impl R for ReqwestClient {
-        async fn post(&self, url: &str) -> Result<Response, Error>;
+        async fn post<H: DeserializeOwned + Serialize + 'static>(&self, url: &str) -> Result<H, Error>;
         async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
     }
 }
