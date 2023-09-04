@@ -43,8 +43,8 @@ impl ZksyncClient {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
         let call = self.contract.register_identity(principal, 
-            self.to_bytes(ipfs_address), 
-            self.to_bytes(data_hash));
+            ipfs_address.to_string(), 
+            data_hash.to_string());
         let tx = call.send().await.unwrap().await.unwrap();
         let tx_hash = tx.unwrap().transaction_hash;
 
@@ -102,8 +102,7 @@ impl ZksyncClient {
             match event {
                 IdentifierEvents::IpfsDeletionRequestFilter(request) => {
                     if request.principal == principal {
-                        let ipfs_address = self.from_bytes(request.ipfs_address);
-                        return Some(ipfs_address)
+                        return Some(request.ipfs_address)
                     }
                 },
                 _ => {}

@@ -60,14 +60,10 @@ fn health() -> Json<Response> {
 #[get("/contract")]
 async fn contract(config: &State<config::Config>) {
 
-    use ethers::types::{Address, Filter, Bytes};
+    use ethers::types::{Address, Filter};
     use ethers::providers::{Provider, Http};
-    use ethers::contract::EthEvent;
     use ethers::abi::{Detokenize, Token, InvalidOutputType};
     use ethers::providers::Middleware;
-    use ethers::utils::hex;
-
-    use std::str;
 
     let principal_address =  "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92";
     let ipfs_address = "ipfs://foo".to_owned();
@@ -79,7 +75,7 @@ async fn contract(config: &State<config::Config>) {
     println!("current token id after registration: {:?}", token_id);
 
     let ipfs_addr = zksync_client.contract.get_ipfs_address(token_id-1).call().await.unwrap();
-    println!("ipfs_addr: {}", zksync_client.from_bytes(ipfs_addr));
+    println!("ipfs_addr: {}", ipfs_addr);
 
     let principal: Address = principal_address.parse().expect("Invalid principal address");
     let identity_removal_tx = zksync_client.contract.remove_identity(token_id-1, principal).send().await.unwrap().await.unwrap().unwrap().transaction_hash;
@@ -113,7 +109,7 @@ async fn contract(config: &State<config::Config>) {
     }
 
 
-    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event("IpfsDeletionRequest(bytes,address)");
+    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event("IpfsDeletionRequest(string,address)");
     let logs = http_provider.get_logs(&filter).await.unwrap();
 
     println!("number of logs {}", logs.len());
@@ -126,8 +122,8 @@ async fn contract(config: &State<config::Config>) {
             Ok(vec) => {
                 for v in vec {
                     match v {
-                        Token::Bytes(bytes) => {
-                            println!("bytes to string: {:?}", str::from_utf8(&bytes).unwrap().to_string());
+                        Token::String(string) => {
+                            println!("ipfs_addr: {:?}", string);
                         },
                         Token::Address(address) => {
                             println!("address: {:?}", address)
