@@ -60,7 +60,7 @@ fn health() -> Json<Response> {
 #[get("/contract")]
 async fn contract(config: &State<config::Config>) {
 
-    use ethers::types::{Address, Filter};
+    use ethers::types::{Address, Filter, H160};
     use ethers::providers::{Provider, Http};
     use ethers::abi::{Detokenize, Token, InvalidOutputType};
     use ethers::providers::Middleware;
@@ -87,54 +87,57 @@ async fn contract(config: &State<config::Config>) {
     #[derive(Clone, Debug)]
     struct IpfsDeletionRequest {
         principal: Address,
+        ipfs_addr: String
+    }
+
+    impl IpfsDeletionRequest {
+        const NAME_WITH_SIGNATURES: &'static str = "IpfsDeletionRequest(string,address)";
+        const NAME: &'static str = "IpfsDeletionRequest";
+
+        pub fn new() -> IpfsDeletionRequest {
+            return IpfsDeletionRequest { principal: H160::zero(), ipfs_addr: "".to_string() }
+        }
+
+        pub fn set_principal(&mut self, principal: Address) {
+            self.principal = principal;
+        }
+
+        pub fn set_ipfs_addr(&mut self, ipfs_addr: String) {
+            self.ipfs_addr = ipfs_addr;
+        }
     }
 
     impl Detokenize for IpfsDeletionRequest {
 
         fn from_tokens(tokens: Vec<Token>) -> Result<Self, InvalidOutputType> 
         {
+            let mut ipfs_deletion_request = IpfsDeletionRequest::new();
+
             for token in tokens {
                 match token {
                     Token::Address(address) => {
-                        let principal: Address = address.clone();
-                        let event = IpfsDeletionRequest {principal};
-                        return Ok(event)
+                        let principal = address.clone();
+                        ipfs_deletion_request.set_principal(principal);
                     },
-                    _ => {return Err(InvalidOutputType("Invalid Principal token".to_string()))}
+                    Token::String(ipfs_addr) => {
+                        ipfs_deletion_request.set_ipfs_addr(ipfs_addr);
+                    }
+                    _ => {return Err(InvalidOutputType("No matching Tokens found".to_string()))}
                 }
             }
 
-            return Err(InvalidOutputType("Invalid Principal token".to_string()))
+            return Ok(ipfs_deletion_request);
         }
     }
 
-
-    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event("IpfsDeletionRequest(string,address)");
+    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event(IpfsDeletionRequest::NAME_WITH_SIGNATURES);
     let logs = http_provider.get_logs(&filter).await.unwrap();
 
     println!("number of logs {}", logs.len());
     for log in logs {
         println!("log: {:?}", log);
-        let event = contract.decode_event_raw("IpfsDeletionRequest", log.topics, log.data);
+        let event = contract.decode_event::<IpfsDeletionRequest>(IpfsDeletionRequest::NAME, log.topics, log.data);
         println!("event: {:?}", event);
-
-        match event {
-            Ok(vec) => {
-                for v in vec {
-                    match v {
-                        Token::String(string) => {
-                            println!("ipfs_addr: {:?}", string);
-                        },
-                        Token::Address(address) => {
-                            println!("address: {:?}", address)
-                        }
-                        _ => {}
-                    }
-                }
-            },
-            Err(_) => {}
-        }
-        println!("------------------------------------");
 
     }
 
