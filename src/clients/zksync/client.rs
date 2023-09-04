@@ -1,7 +1,9 @@
+use std::str;
+
 use ethers::{
     providers::{Provider, Http, Middleware},
     middleware::SignerMiddleware,
-    types::{U256, Address, H256},
+    types::{U256, Address, H256, Bytes},
     signers::{LocalWallet, Signer},
 };
 
@@ -40,7 +42,9 @@ impl ZksyncClient {
     pub async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> H256 {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
-        let call = self.contract.register_identity(principal, ipfs_address.to_string(), data_hash.to_string());
+        let call = self.contract.register_identity(principal, 
+            self.to_bytes(ipfs_address), 
+            self.to_bytes(data_hash));
         let tx = call.send().await.unwrap().await.unwrap();
         let tx_hash = tx.unwrap().transaction_hash;
 
@@ -90,7 +94,7 @@ impl ZksyncClient {
         return None
     }
 
-    pub async fn get_ipfs_addr(&self, principal_address: &str) -> Option<H256>{
+    pub async fn get_ipfs_addr(&self, principal_address: &str) -> Option<String>{
         let principal: Address = principal_address.parse().expect("Invalid principal address");
         let events = self.contract.events().from_block(0).query().await.unwrap();
 
@@ -98,13 +102,23 @@ impl ZksyncClient {
             match event {
                 IdentifierEvents::IpfsDeletionRequestFilter(request) => {
                     if request.principal == principal {
-                        return Some(request.ipfs_address)
+                        let ipfs_address = self.from_bytes(request.ipfs_address);
+                        return Some(ipfs_address)
                     }
                 },
                 _ => {}
             }
         }
         return None
+    }
+
+    pub fn to_bytes(&self, str: &str) -> Bytes {
+        let bytes = Bytes(str.as_bytes().to_vec().into());
+        return bytes
+    }
+
+    pub fn from_bytes(&self, bytes: Bytes) -> String {
+        return str::from_utf8(&bytes).unwrap().to_string()
     }
 
 }
