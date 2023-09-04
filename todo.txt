@@ -11,6 +11,7 @@ make contract emit specific registration event to get token id instead of lookin
 track gascost in zksync client
 
 refactor ideas:
+    - make remove identity publish empty data to ipfs network at same content identifier so its efectivel deleted
     - dont use hardhat and just use rust ethers 
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder

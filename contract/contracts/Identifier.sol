@@ -17,7 +17,7 @@ contract Identifier is ERC721 {
     address[] identities;
 
     event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
-    event IpfsDeletionRequest(string ipfsAddress, address indexed principal);
+    event IpfsDeletionRequest(address indexed principal, uint256 indexed token_id, string ipfsAddress);
 
     constructor() ERC721("Identity Token", "IDTKN") {
         currentTokenID = 0;
@@ -49,7 +49,7 @@ contract Identifier is ERC721 {
             }
         }
 
-        emit IpfsDeletionRequest(tokenIdToData[tokenId].ipfs_addr, principal);
+        emit IpfsDeletionRequest(principal, tokenId, tokenIdToData[tokenId].ipfs_addr);
         delete tokenIdToData[tokenId];
 
     }

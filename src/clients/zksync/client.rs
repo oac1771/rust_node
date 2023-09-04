@@ -3,7 +3,7 @@ use std::str;
 use ethers::{
     providers::{Provider, Http, Middleware},
     middleware::SignerMiddleware,
-    types::{U256, Address, H256, Bytes},
+    types::{U256, Address, H256},
     signers::{LocalWallet, Signer},
 };
 
@@ -94,14 +94,16 @@ impl ZksyncClient {
         return None
     }
 
-    pub async fn get_ipfs_addr(&self, principal_address: &str) -> Option<String>{
+    pub async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<String>{
         let principal: Address = principal_address.parse().expect("Invalid principal address");
+        let token: U256 = U256::from(token_id);
+
         let events = self.contract.events().from_block(0).query().await.unwrap();
 
         for event in events {
             match event {
                 IdentifierEvents::IpfsDeletionRequestFilter(request) => {
-                    if request.principal == principal {
+                    if request.principal == principal && request.token_id == token {
                         return Some(request.ipfs_address)
                     }
                 },
@@ -109,15 +111,6 @@ impl ZksyncClient {
             }
         }
         return None
-    }
-
-    pub fn to_bytes(&self, str: &str) -> Bytes {
-        let bytes = Bytes(str.as_bytes().to_vec().into());
-        return bytes
-    }
-
-    pub fn from_bytes(&self, bytes: Bytes) -> String {
-        return str::from_utf8(&bytes).unwrap().to_string()
     }
 
 }

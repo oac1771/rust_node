@@ -82,14 +82,24 @@ impl<'a> RegisterController<'a> {
         // }
 
         let tx_hash = self.zksync_client.remove_identity(principal_address, token_id).await;
-        let ipfs_addr = self.zksync_client.get_ipfs_addr(principal_address).await.unwrap();
-        let foo = ipfs_addr.as_bytes();
+        let ipfs_addr = self.zksync_client.get_ipfs_addr(principal_address, token_id).await.unwrap();
 
-        println!("as_bytes: {:?}", ipfs_addr.as_bytes());
-        println!("to_string: {}", ipfs_addr);
+        let response = self.ipfs_client.rm_pin(&ipfs_addr).await;
 
-        // let response = self.ipfs_client.rm_pin(hash).await.unwrap();
+        match response {
+            Ok(ipfs_response) => {
+
+                register_response.set_body(json!({
+                    "tx_hash": tx_hash,
+                    "removed_pins": ipfs_response.Pins,
+                }))
+            },
+            Err(err) => {
+                register_response.set_error(err.body.to_string());
+            }
+        }
 
         return register_response
+
     }
 }

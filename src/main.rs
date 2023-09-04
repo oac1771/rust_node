@@ -60,10 +60,7 @@ fn health() -> Json<Response> {
 #[get("/contract")]
 async fn contract(config: &State<config::Config>) {
 
-    use ethers::types::{Address, Filter, H160};
-    use ethers::providers::{Provider, Http};
-    use ethers::abi::{Detokenize, Token, InvalidOutputType};
-    use ethers::providers::Middleware;
+    use ethers::types::Address;
 
     let principal_address =  "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92";
     let ipfs_address = "ipfs://foo".to_owned();
@@ -81,65 +78,9 @@ async fn contract(config: &State<config::Config>) {
     let identity_removal_tx = zksync_client.contract.remove_identity(token_id-1, principal).send().await.unwrap().await.unwrap().unwrap().transaction_hash;
     println!("tx hash of identity removal: {:?}", identity_removal_tx);
 
-    let http_provider = Provider::<Http>::try_from(&config.zksync_config.zksync_api_url).unwrap();
-    let contract = zksync_client.contract;
-
-    #[derive(Clone, Debug)]
-    struct IpfsDeletionRequest {
-        principal: Address,
-        ipfs_addr: String
-    }
-
-    impl IpfsDeletionRequest {
-        const NAME_WITH_SIGNATURES: &'static str = "IpfsDeletionRequest(string,address)";
-        const NAME: &'static str = "IpfsDeletionRequest";
-
-        pub fn new() -> IpfsDeletionRequest {
-            return IpfsDeletionRequest { principal: H160::zero(), ipfs_addr: "".to_string() }
-        }
-
-        pub fn set_principal(&mut self, principal: Address) {
-            self.principal = principal;
-        }
-
-        pub fn set_ipfs_addr(&mut self, ipfs_addr: String) {
-            self.ipfs_addr = ipfs_addr;
-        }
-    }
-
-    impl Detokenize for IpfsDeletionRequest {
-
-        fn from_tokens(tokens: Vec<Token>) -> Result<Self, InvalidOutputType> 
-        {
-            let mut ipfs_deletion_request = IpfsDeletionRequest::new();
-
-            for token in tokens {
-                match token {
-                    Token::Address(address) => {
-                        let principal = address.clone();
-                        ipfs_deletion_request.set_principal(principal);
-                    },
-                    Token::String(ipfs_addr) => {
-                        ipfs_deletion_request.set_ipfs_addr(ipfs_addr);
-                    }
-                    _ => {return Err(InvalidOutputType("No matching Tokens found".to_string()))}
-                }
-            }
-
-            return Ok(ipfs_deletion_request);
-        }
-    }
-
-    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event(IpfsDeletionRequest::NAME_WITH_SIGNATURES);
-    let logs = http_provider.get_logs(&filter).await.unwrap();
-
-    println!("number of logs {}", logs.len());
-    for log in logs {
-        println!("log: {:?}", log);
-        let event = contract.decode_event::<IpfsDeletionRequest>(IpfsDeletionRequest::NAME, log.topics, log.data);
-        println!("event: {:?}", event);
-
-    }
+    let token: u128 = token_id.as_u128() - 1;
+    let foo = zksync_client.get_ipfs_addr(principal_address, token).await;
+    println!("ipfs_addr from reading chain {:?}", foo);
 
 
 }
@@ -156,22 +97,22 @@ async fn rocket() -> _ {
     let config = config::get_config();
     let state = state::set_state();
 
-    // let contract_address_string = std::env::var("CONTRACT_ADDRESS").expect("CONTRACT_ADDRESS not set");
-    // let contract_address: Address = contract_address_string.parse().expect("Invalid contract address");
-    // let zksync_ws_url = std::env::var("ZKSYNC_WS_URL").expect("ZKSYNC_WS_URL not set");
+    let contract_address_string = std::env::var("CONTRACT_ADDRESS").expect("CONTRACT_ADDRESS not set");
+    let contract_address: Address = contract_address_string.parse().expect("Invalid contract address");
+    let zksync_ws_url = std::env::var("ZKSYNC_WS_URL").expect("ZKSYNC_WS_URL not set");
 
-    // tokio::spawn(async move {
-    //     println!("Starting PubSub Thread...");
+    tokio::spawn(async move {
+        println!("Starting PubSub Thread...");
 
-    //     let ws_provider = Provider::<Ws>::connect(zksync_ws_url.to_owned()).await.unwrap();
-    //     let identifier_ws = identifier::Identifier::new(contract_address.to_owned(), Arc::new(ws_provider));
-    //     let events = identifier_ws.events();
-    //     let mut stream = events.subscribe().await.unwrap();
+        let ws_provider = Provider::<Ws>::connect(zksync_ws_url.to_owned()).await.unwrap();
+        let identifier_ws = identifier::Identifier::new(contract_address.to_owned(), Arc::new(ws_provider));
+        let events = identifier_ws.events();
+        let mut stream = events.subscribe().await.unwrap();
 
-    //     while let Some(Ok(evt)) = stream.next().await {
-    //         println!("PubSub Thread: {:?}", evt);
-    //     }
-    // });
+        while let Some(Ok(evt)) = stream.next().await {
+            println!("PubSub Thread: {:?}", evt);
+        }
+    });
 
     rocket::build()
         .manage(config)
