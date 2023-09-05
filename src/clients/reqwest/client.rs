@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 use serde::{de::DeserializeOwned, Serialize};
-use crate::clients::reqwest::models::{Response, Error};
+use crate::clients::reqwest::models::Error;
 
 pub struct ReqwestClient {
     client: reqwest::Client
@@ -49,8 +49,8 @@ impl ReqwestClient {
             Ok(req) => {
                 match req.error_for_status() {
                     Ok(r) => {
-                        let response = Response::new(r).await;
-                        let deserialized_response: H = serde_json::from_str(&response.body).unwrap();
+                        let body = r.text().await.unwrap();
+                        let deserialized_response: H = serde_json::from_str(&body).unwrap();
 
                         return Ok(deserialized_response)
                     },

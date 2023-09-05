@@ -9,10 +9,8 @@ mod identifier;
 use rocket::serde::json::Json;
 use rocket::State;
 
-use reqwest;
-
-use clients::reqwest::models::Response;
 use controllers::models::RegisterResponse;
+use state::Health;
 
 #[post("/register/<principal_address>", data = "<data>")]
 async fn register(data: Json<controllers::models::Data>,
@@ -49,11 +47,10 @@ async fn ipfs_id(config: &State<config::Config>) -> String {
 }
 
 #[get("/health")]
-fn health() -> Json<Response> {
+fn health() -> Json<Health> {
 
-    Json(Response{
-        status_code: reqwest::StatusCode::OK.to_string(), 
-        body: "".to_string()
+    Json(Health{
+        status: "up".to_string() 
     })
 }
 
