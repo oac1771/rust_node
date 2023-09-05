@@ -1,3 +1,4 @@
+// dont need these anymore. Will need error until call() method takes custom Err type
 use rocket::serde::Serialize;
 
 #[derive(Serialize)]

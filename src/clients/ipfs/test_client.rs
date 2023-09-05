@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    
     use crate::clients::ipfs::test_data::data::*;
     use crate::clients::ipfs::client::IpfsClient;
     use crate::clients::ipfs::models::*;

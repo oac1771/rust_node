@@ -4,8 +4,15 @@ mod tests {
     use http;
     use futures::FutureExt;
     use std::any::type_name;
+    use serde::{Deserialize, Serialize};
 
     use crate::clients::reqwest::client::ReqwestClient;
+
+    #[allow(non_snake_case)]
+    #[derive(Deserialize, Serialize)]
+    pub struct TestResponse {
+        pub body: String,
+    }
 
     async fn build_response(body: String, status_code: reqwest::StatusCode) -> Result<reqwest::Response, reqwest::Error> {
         let http_response = http::response::Response::builder()
@@ -30,17 +37,16 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn should_return_body_and_200_status_code() {
+    async fn should_return_body_status_code() {
 
         let client = ReqwestClient::new();
-        let body = "success!";
+        let body = "{\"body\": \"success!\"}";
         let status_code = reqwest::StatusCode::OK;
 
         let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
-        let response = client.call(request).await.unwrap();
+        let response = client.call::<TestResponse>(request).await.unwrap();
 
-        assert_eq!(response.body, body);
-        assert_eq!(response.status_code, status_code.to_string());
+        assert_eq!(response.body, "success!");
     }
 
     #[tokio::test]
@@ -51,7 +57,7 @@ mod tests {
         let status_code = reqwest::StatusCode::NOT_FOUND;
 
         let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
-        let error = client.call(request).await.err().unwrap();
+        let error = client.call::<TestResponse>(request).await.err().unwrap();
 
         assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
     }
@@ -64,7 +70,7 @@ mod tests {
         let status_code = reqwest::StatusCode::NETWORK_AUTHENTICATION_REQUIRED;
 
         let request = || async move {build_error(body.to_string(), status_code).await}.boxed();
-        let error = client.call(request).await.err().unwrap();
+        let error = client.call::<TestResponse>(request).await.err().unwrap();
 
         assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
     }
