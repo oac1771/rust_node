@@ -38,6 +38,7 @@ impl ReqwestClient {
     }
 
     // this fn could also take type to handle deserializing into a specific Error type E and return that instead clients::reqwest::models::Error
+    // check if from_str().unwrap fails (add match case) and add test to check for this
     pub async fn call<'a, H: DeserializeOwned + Serialize>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
     Result<H, Error>
     {

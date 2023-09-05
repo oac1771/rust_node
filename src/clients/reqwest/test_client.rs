@@ -8,7 +8,6 @@ mod tests {
 
     use crate::clients::reqwest::client::ReqwestClient;
 
-    #[allow(non_snake_case)]
     #[derive(Deserialize, Serialize)]
     pub struct TestResponse {
         pub body: String,
