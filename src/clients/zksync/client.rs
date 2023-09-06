@@ -16,11 +16,13 @@ pub struct ZksyncClient {
     pub contract: Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
 }
 
+// change queries to use manual log filtering ones so you dont have to check all events, only specific ones you care about
+
 // make register_identity and remove_identity use same base send() method that does error handling
     // just pass in self.contract.<method>
-
 // make check_identity, get_current_token use same base call() method that does error handling
 // make get_token_id use same base query() method that does error handling
+// this wont really matter until error handling on awaiting transactions are done
 
 impl ZksyncClient {
 
@@ -112,5 +114,6 @@ impl ZksyncClient {
         }
         return None
     }
+
 
 }
