@@ -5,24 +5,23 @@ use std::sync::Arc;
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
 use crate::config::Config;
-use crate::state::State;
 use crate::services::identity::IdentityService;
 
 use crate::identifier::{Identifier, IdentifierEvents};
 
 
-pub struct AuthenticationController<'a> {
+pub struct AuthenticationController {
     pub ipfs_client: IpfsClient,
     pub zksync_client: ZksyncClient,
-    pub identity_service: IdentityService<'a>,
+    pub identity_service: IdentityService,
     pub contract: Identifier<Provider<Ws>>,
 }
 
-impl<'a> AuthenticationController<'a> {
-    pub async fn new(config: &'a Config, state: &'a State) -> AuthenticationController<'a> {
+impl AuthenticationController {
+    pub async fn new(config: Config) -> AuthenticationController {
         
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
-        let identity_service = IdentityService::new(&state);
+        let identity_service = IdentityService::new();
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 
         let ws_provider = Provider::<Ws>::connect(config.zksync_config.zksync_ws_url.to_owned()).await.unwrap();

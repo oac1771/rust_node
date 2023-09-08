@@ -1,23 +1,11 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
 use openssl::rsa::{Rsa, Padding};
 
-use crate::state::EncryptionState;
+pub struct EncryptionService {}
 
-pub struct EncryptionService<'a> {
-    pub private_keys: &'a Mutex<HashMap<String, String>>
-}
+impl EncryptionService {
 
-impl<'a> EncryptionService<'a> {
-
-    pub fn new(state: &EncryptionState ) -> EncryptionService {
-        return EncryptionService{
-            private_keys: &state.private_keys
-        }
-    }
-
-    pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
-        self.private_keys.lock().unwrap().insert(principal_address.to_string(), encryption_key.to_string());
+    pub fn new() -> EncryptionService {
+        return EncryptionService{}
     }
 
     pub fn encrypt(&self, content: String) -> (String, String) {

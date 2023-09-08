@@ -4,29 +4,32 @@ use std::str;
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
 use crate::config::Config;
-use crate::state::State;
 use crate::services::identity::IdentityService;
+use crate::services::state::StateService;
+
 
 use super::models::{Data, RegisterResponse};
 
-pub struct RegisterController<'a> {
+pub struct RegisterController {
     pub ipfs_client: IpfsClient,
     pub zksync_client: ZksyncClient,
-    pub identity_service: IdentityService<'a>
+    pub identity_service: IdentityService,
+    pub state_service: StateService
 }
 
-impl<'a> RegisterController<'a> {
+impl RegisterController {
 
-    pub async fn new(config: &'a Config, state: &'a State) -> RegisterController<'a> {
+    pub async fn new(config: &Config) -> RegisterController {
         
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
-        let identity_service = IdentityService::new(&state);
+        let identity_service = IdentityService::new();
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 
         let register_controller = RegisterController {
             ipfs_client,
             zksync_client,
-            identity_service
+            identity_service,
+            state_service: StateService {}
         };
         return register_controller
     }
@@ -52,7 +55,7 @@ impl<'a> RegisterController<'a> {
 
                 let tx_hash= self.zksync_client.register_identity(principal_address, &ipfs_response.Hash, &hash).await;
                 let token_id = self.zksync_client.get_token_id(principal_address).await;
-                self.identity_service.save_encryption_key(principal_address, &encryption_key);
+                self.state_service.save_encryption_key(principal_address, &encryption_key).await;
 
                 register_response.set_body(json!({
                     "tx_hash": tx_hash,

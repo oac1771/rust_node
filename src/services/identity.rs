@@ -2,24 +2,23 @@ use tempfile::NamedTempFile;
 use std::io::Write;
 
 use crate::controllers::models::Data;
-use crate::state::State;
 
 use super::encryption::EncryptionService;
 use super::hash::HashService;
 use super::models::Identity;
 
-pub struct IdentityService<'a> {
-    pub encryption_service: EncryptionService<'a>,
-    pub hash_service: HashService
+pub struct IdentityService {
+    pub encryption_service: EncryptionService,
+    pub hash_service: HashService,
 }
 
-impl<'a> IdentityService<'a> {
+impl IdentityService {
 
-    pub fn new(state: &State) -> IdentityService {
+    pub fn new() -> IdentityService {
 
         return IdentityService {
-            encryption_service: EncryptionService::new(&state.encryption_state),
-            hash_service: HashService::new()
+            encryption_service: EncryptionService::new(),
+            hash_service: HashService::new(),
         }
     }
  
@@ -39,10 +38,5 @@ impl<'a> IdentityService<'a> {
         let temp_file = NamedTempFile::new().unwrap();
         return temp_file
     }
-
-    pub fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
-        self.encryption_service.save_encryption_key(principal_address, encryption_key)
-    }
-
 
 }
