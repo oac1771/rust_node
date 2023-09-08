@@ -38,18 +38,27 @@ impl<'a> AuthenticationController<'a> {
         return authentication_controller
     }
 
+    async fn foo(&self) {
+
+    }
+
     pub async fn listen(&self) {
         
         let events = self.contract.events();
 
-        tokio::spawn(async move {
-            println!("Starting PubSub Thread...");
-            let mut stream = events.subscribe().await.unwrap();
+        // tokio::spawn(async move {
+        //     println!("Starting PubSub Thread...");
+
+        //     let mut stream = events.subscribe().await.unwrap();
     
-            while let Some(Ok(evt)) = stream.next().await {
-                println!("PubSub Thread: {:?}", evt);
-            }
-        });
+        //     while let Some(Ok(event)) = stream.next().await {
+        //         println!("Event: {:?}", event);
+        //         match event {
+        //             IdentifierEvents::AuthenticationRequestFilter(request) => {self.foo();},
+        //             _ => {}
+        //         }
+        //     }
+        // });
 
     }
 }
