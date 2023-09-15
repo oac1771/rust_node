@@ -36,9 +36,9 @@ impl RegisterController {
 
     pub async fn register(&self, data: Data, principal_address: &str) -> RegisterResponse {
 
-        let check_identity = self.zksync_client.check_identity(principal_address).await;
         let mut register_response = RegisterResponse::new();
 
+        let _check_identity = self.zksync_client.check_identity(principal_address).await;
         // if check_identity {
         //     register_response.set_error("Identity already exists".to_string());
         //     return register_response
@@ -46,8 +46,8 @@ impl RegisterController {
 
         let mut identity_file = self.identity_service.generate_identity_file();
         let (hash, encryption_key) = self.identity_service.encrypt_file_contents(data, &mut identity_file);
+        
         let identity_file_path = identity_file.path().to_str().unwrap().to_string();
-
         let response = self.ipfs_client.add_file(&identity_file_path).await;
 
         match response {
@@ -77,8 +77,8 @@ impl RegisterController {
     pub async fn remove(&self, principal_address: &str, token_id: u128) -> RegisterResponse {
 
         let mut register_response = RegisterResponse::new();
-        let check_identity = self.zksync_client.check_identity(principal_address).await;
-
+        
+        let _check_identity = self.zksync_client.check_identity(principal_address).await;
         // if !check_identity {
         //     register_response.set_error("Identity does not exist".to_string());
         //     return register_response

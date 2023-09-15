@@ -1,5 +1,5 @@
 use crypto::{sha2::Sha256, digest::Digest};
-use crate::controllers::models::Data;
+use serde::Serialize;
 
 pub struct HashService{}
 
@@ -9,7 +9,7 @@ impl HashService {
         return HashService {}
     }
 
-    pub fn hash(&self, data: Data) -> (String, String) {
+    pub fn hash(&self, data: impl Serialize) -> (String, String) {
         let content = serde_json::to_string(&data).unwrap();
 
         let mut hasher = Sha256::new();

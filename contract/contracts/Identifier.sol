@@ -16,7 +16,7 @@ contract Identifier is ERC721 {
     mapping (uint256 => Data) public tokenIdToData;
     address[] identities;
 
-    event AuthenticationRequest(string indexed ipfsAddress, string indexed dataHash);
+    event AuthenticationRequest(address indexed principal, string ipfsAddress, string dataHash);
     event IpfsDeletionRequest(address indexed principal, uint256 indexed token_id, string ipfsAddress);
 
     constructor() ERC721("Identity Token", "IDTKN") {
@@ -74,6 +74,6 @@ contract Identifier is ERC721 {
 
     function authenticate(uint256 tokenId) 
     public onlyTokenOwner(tokenId) {
-        emit AuthenticationRequest(tokenIdToData[tokenId].ipfs_addr, tokenIdToData[tokenId].data_hash);
+        emit AuthenticationRequest(msg.sender, tokenIdToData[tokenId].ipfs_addr, tokenIdToData[tokenId].data_hash);
     }
 }

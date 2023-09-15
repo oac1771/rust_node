@@ -4,7 +4,7 @@ tasks:
 
   cargo-run:
     cmds:
-      - CONTRACT_ADDRESS={{.CONTRACT_ADDRESS}} cargo run
+      - cargo run
     env:
       PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
       ZKSYNC_API_URL: http://localhost:3050
@@ -38,7 +38,6 @@ tasks:
       BUILD: '{{ .BUILD }}'
 
   deploy-ecosystem:
-    internal: true
     cmds:
       - helm upgrade --install --wait --timeout 3m node-ecosystem helm_chart/
       - helm test node-ecosystem
@@ -51,7 +50,6 @@ tasks:
       - colima status
 
   start-kind:
-    internal: true
     cmds:
       - kind create cluster --wait 45s
       - helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
@@ -63,7 +61,6 @@ tasks:
   load-docker-images:
     cmds:
       - kind load docker-image toolbox:latest
-      # - kind load docker-image rust_node:latest
 
   docker-build:
     cmds:

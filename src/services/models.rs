@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// make this struct take data as a field and make to_string() only serialize data to string
 #[derive(Deserialize, Serialize)]
 pub struct Identity {
     pub content: String,

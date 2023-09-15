@@ -8,7 +8,7 @@ impl EncryptionService {
         return EncryptionService{}
     }
 
-    pub fn encrypt(&self, content: String) -> (String, String) {
+    pub fn encrypt(&self, content: String) -> (Vec<u8>, String) {
 
         let rsa = Rsa::generate(2048).unwrap();
 
@@ -19,9 +19,20 @@ impl EncryptionService {
         let encrypted_len = rsa.public_encrypt(content.as_bytes(), &mut encrypted_content, Padding::PKCS1).unwrap();
         encrypted_content.truncate(encrypted_len);
 
-        let enc_content_string = String::from_utf8_lossy(&encrypted_content).to_string();
      
-        return (enc_content_string, priv_key_string)
+        return (encrypted_content, priv_key_string)
+    }
+
+    pub fn decrypt(&self, enc_content: Vec<u8>, priv_key: String) -> Vec<u8> {
+
+        let rsa = Rsa::private_key_from_pem(&priv_key.as_bytes().to_vec()).unwrap();
+
+        let mut decrypted_content = vec![0; rsa.size() as usize];
+        let decrypted_len = rsa.private_decrypt(&enc_content, &mut decrypted_content, Padding::PKCS1).unwrap();
+        decrypted_content.truncate(decrypted_len);
+
+
+        return decrypted_content
     }
 
 }

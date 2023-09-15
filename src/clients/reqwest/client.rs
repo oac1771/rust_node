@@ -2,7 +2,6 @@ use futures::{future::BoxFuture, FutureExt};
 use async_trait::async_trait;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use serde::{de::DeserializeOwned, Serialize};
 use crate::clients::reqwest::models::Error;
 
 pub struct ReqwestClient {
@@ -12,26 +11,30 @@ pub struct ReqwestClient {
 #[allow(dead_code)]
 impl ReqwestClient {
 
-    pub async fn post<H: DeserializeOwned + Serialize>(&self, url: &str) ->  Result<H, Error> {
+    pub async fn post(&self, url: &str) ->  Result<String, Error> {
         let request =  || async move {self.client.post(url).send().await}.boxed();
-        let response = self.call::<H>(request).await;
+        let response = self.call(request).await;
 
         return response
     }
 
-    pub async fn post_multipart<H: DeserializeOwned + Serialize>(&self, url: &str, file_name: &str) -> Result<H, Error>
+    pub async fn post_multipart(&self, url: &str, file_path: &str) -> Result<String, Error>
     {
 
-        let file = File::open(file_name).await.unwrap();
+        let file: File = File::open(file_path).await.unwrap();
         let stream = FramedRead::new(file, BytesCodec::new());
         
         let body = reqwest::Body::wrap_stream(stream);
         let part = reqwest::multipart::Part::stream(body);
         let form = reqwest::multipart::Form::new().part("file", part);
 
-        let request = || async move {self.client.post(url).multipart(form).send().await}.boxed();
-        let response = self.call::<H>(request).await;
-
+        let request = || async move {
+            self.client.post(url)
+            .multipart(form)
+            .header("Content-Type", "application/octet-stream")
+            .send().await
+        }.boxed();
+        let response = self.call(request).await;
 
         return response
 
@@ -39,8 +42,8 @@ impl ReqwestClient {
 
     // this fn could also take type to handle deserializing into a specific Error type E and return that instead clients::reqwest::models::Error
     // check if from_str().unwrap fails (add match case) and add test to check for this
-    pub async fn call<'a, H: DeserializeOwned + Serialize>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
-    Result<H, Error>
+    pub async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> 
+    Result<String, Error>
     {
 
         let r = request().await;
@@ -50,9 +53,7 @@ impl ReqwestClient {
                 match req.error_for_status() {
                     Ok(r) => {
                         let body = r.text().await.unwrap();
-                        let deserialized_response: H = serde_json::from_str(&body).unwrap();
-
-                        return Ok(deserialized_response)
+                        return Ok(body)
                     },
                     Err(e) => {
                         let error = Error::new(e);
@@ -82,8 +83,8 @@ impl ReqwestClient {
 
 #[async_trait]
 pub trait R {
-    async fn post<H: DeserializeOwned + Serialize + 'static>(&self, url: &str) -> Result<H, Error>;
-    async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
+    async fn post(&self, url: &str) -> Result<String, Error>;
+    async fn post_multipart(&self, url: &str, file_path: &str) -> Result<String, Error>;
 }
 
 #[cfg(test)]
@@ -95,7 +96,7 @@ mock!{
 
     #[async_trait]
     impl R for ReqwestClient {
-        async fn post<H: DeserializeOwned + Serialize + 'static>(&self, url: &str) -> Result<H, Error>;
-        async fn post_multipart<H: DeserializeOwned + Serialize + 'static>(&self, url: &str, file_name: &str) -> Result<H, Error>;
+        async fn post(&self, url: &str) -> Result<String, Error>;
+        async fn post_multipart(&self, url: &str, file_path: &str) -> Result<String, Error>;
     }
 }

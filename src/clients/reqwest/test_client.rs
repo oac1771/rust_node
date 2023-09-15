@@ -43,9 +43,9 @@ mod tests {
         let status_code = reqwest::StatusCode::OK;
 
         let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
-        let response = client.call::<TestResponse>(request).await.unwrap();
+        let response = client.call(request).await.unwrap();
 
-        assert_eq!(response.body, "success!");
+        assert_eq!(response, "success!");
     }
 
     #[tokio::test]
@@ -56,7 +56,7 @@ mod tests {
         let status_code = reqwest::StatusCode::NOT_FOUND;
 
         let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
-        let error = client.call::<TestResponse>(request).await.err().unwrap();
+        let error = client.call(request).await.err().unwrap();
 
         assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
     }
@@ -69,7 +69,7 @@ mod tests {
         let status_code = reqwest::StatusCode::NETWORK_AUTHENTICATION_REQUIRED;
 
         let request = || async move {build_error(body.to_string(), status_code).await}.boxed();
-        let error = client.call::<TestResponse>(request).await.err().unwrap();
+        let error = client.call(request).await.err().unwrap();
 
         assert_eq!(type_of(error), "rust_node::clients::reqwest::models::Error");
     }
