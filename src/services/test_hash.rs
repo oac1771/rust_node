@@ -4,7 +4,7 @@ mod tests {
     use serde_json::json;
 
     use super::super::hash::HashService;
-    use super::super::super::controllers::models::Data;
+    use super::super::models::Data;
 
     #[test]
     fn test_hash_should_return_hash_of_data() {
@@ -17,9 +17,8 @@ mod tests {
             })
         };
 
-        let (content, hash) = hash_service.hash(data);
+        let hash = hash_service.hash(&data.to_string());
 
-        assert_eq!(content, "{\"meta_data\":\"foo\",\"data\":{\"bar\":\"hi\"}}");
         assert_eq!(hash, "42d17f6ffe28ab0a8303e9aff0f016b0da9e45866717099d0f4d5b7505e28e2a");
 
     }

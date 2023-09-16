@@ -45,7 +45,7 @@ mod tests {
         let request = || async move {build_response(body.to_string(), status_code).await}.boxed();
         let response = client.call(request).await.unwrap();
 
-        assert_eq!(response, "success!");
+        assert_eq!(response, body);
     }
 
     #[tokio::test]

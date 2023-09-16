@@ -11,7 +11,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_id_should_return_id() {
-        let response = IpfsIdResponse{ID: IPFS_ID.to_string()};
+        let response = serde_json::to_string(&IpfsIdResponse{ID: IPFS_ID.to_string()}).unwrap();
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client.expect_post().return_once(|_| Ok(response));
@@ -29,7 +29,8 @@ mod tests {
     #[tokio::test]
     async fn test_get_id_should_add_file_to_ipfs_and_return_hash() {
 
-        let response = IpfsAddFileResponse{Name: IPFS_HASH.to_string(), Hash: IPFS_FILE_NAME.to_string()};
+        let response = serde_json::to_string(
+            &IpfsAddFileResponse{Name: IPFS_HASH.to_string(), Hash: IPFS_FILE_NAME.to_string()}).unwrap();
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client.expect_post_multipart().return_once(|_, _| Ok(response));
@@ -51,7 +52,7 @@ mod tests {
 
         let ipfs_removed_pins: Vec<String> = vec!["QmRPcXxhQ6tuPeRmei38GZeNsC3kQvxU9Wq65pN8az28Zz".to_string()];
 
-        let response = IpfsRemovePinResponse{Pins: ipfs_removed_pins};
+        let response = serde_json::to_string(&IpfsRemovePinResponse{Pins: ipfs_removed_pins}).unwrap();
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client.expect_post().return_once(|_| Ok(response));

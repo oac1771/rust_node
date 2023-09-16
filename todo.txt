@@ -1,17 +1,11 @@
 Rough plan:
 
-encrypt ipfs address and data hash
-    - push encrypted ipfs address and data hash to smart contract
-        - form -> {ipfs_address}:{data_hash}?
-    - on validation, publish event with ipfs_address and data_hash
-    - node reads that event, gets data from ipfs, validates data hash
-        and decides if request is valid or not
 
 make contract emit specific registration event to get token id instead of looking at transfer
 track gascost in zksync client
 
 refactor ideas:
-    - make remove identity publish empty data to ipfs network at same content identifier so its efectivel deleted
+    - make remove identity publish empty data to ipfs network at same content identifier so its effectively deleted
     - dont use hardhat and just use rust ethers 
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder

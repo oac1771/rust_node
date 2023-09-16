@@ -105,52 +105,12 @@ async fn bootstrap(contract_address: &str) {
 }
 
 
-#[post("/foo", data = "<data>")]
-async fn foo(data: Json<services::models::Data>) {
-
-
-    let config = services::config::read_config().await;
-    
-    let identity_service = services::identity::IdentityService::new();
-    let encryption_service = services::encryption::EncryptionService::new();
-    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-
-    let inner_data = data.into_inner();
-
-    let (identity_file, identity) = identity_service.generate_identity(&inner_data.to_string());
-    println!("content before encryption: {:?}", &inner_data.to_string());
-
-    // println!("content after encryption: {:?}", encrypted_content);
-    // println!("byte to string literal: {:?}", bytes_to_string_literal(&encrypted_content));
-
-    // println!("content after encryption as string: {:?}", String::from_utf8_lossy(&encrypted_content).to_string());
-
-    let file_contents = tokio::fs::read(identity_file.path().to_str().unwrap().to_string()).await.unwrap();
-    // println!("content from temp file: {:?}", file_contents);
-    // println!("content from temp file as string: {:?}", String::from_utf8_lossy(&file_contents).to_string());
-
-    let identity_file_path = identity_file.path().to_str().unwrap().to_string();
-    let add_file_response = ipfs_client.add_file(&identity_file_path).await.unwrap();
-    // println!("ipfs address: {:?}", add_file_response.Hash);
-
-    let get_file_response = ipfs_client.get(&add_file_response.Hash).await.unwrap();
-    println!("data from ipfs: {:?}", get_file_response);
-    println!("data from ipfs string literal to bytes: {:?}", utils::string_literal_to_bytes(&get_file_response));
-
-    let decoded_content = encryption_service.decrypt(utils::string_literal_to_bytes(&get_file_response).unwrap(), identity.encryption_key);
-    // println!("data from ipfs bytes to original string: {:?}", String::from_utf8_lossy(&decoded_content));
-
-    let reconstructed_data: services::models::Data = serde_json::from_str(&String::from_utf8_lossy(&decoded_content.unwrap())).unwrap();
-    println!("reconstructed identity: {:?}", reconstructed_data.to_string());
-
-}
-
 #[launch]
 async fn rocket() -> _ {
 
     services::config::create_config().await;
     services::state::StateService{}.create_state().await;
 
-    rocket::build().mount("/", routes![health, register, remove, ipfs_id, bootstrap, foo])
+    rocket::build().mount("/", routes![health, register, remove, ipfs_id, bootstrap])
 
 }
