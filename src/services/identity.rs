@@ -1,10 +1,8 @@
 use tempfile::NamedTempFile;
 use std::io::Write;
-use serde::Serialize;
 
 use super::encryption::EncryptionService;
 use super::hash::HashService;
-use super::models::Identity;
 
 pub struct IdentityService {
     pub encryption_service: EncryptionService,
@@ -26,17 +24,15 @@ impl IdentityService {
         }
     }
  
-    pub fn encrypt_file_contents(&self, data: impl Serialize, temp_file: &mut NamedTempFile) -> (String, String) {
+    pub fn encrypt_file_contents(&self, data: &str, temp_file: &mut NamedTempFile) -> (String, String) {
 
-        let (content, hash) = self.hash_service.hash(data);
+        let hash = self.hash_service.hash(data);
 
-        let identity = Identity::new(content, hash);
-
-        let (encrypted_content, priv_key) = self.encryption_service.encrypt(identity.to_string());
+        let (encrypted_content, priv_key) = self.encryption_service.encrypt(data);
 
         temp_file.write_all(&encrypted_content).expect("Unable to write to tempfile");
 
-        return (identity.hash.to_string(), priv_key);
+        return (hash, priv_key);
     }
 
     pub fn generate_identity_file(&self) -> NamedTempFile {

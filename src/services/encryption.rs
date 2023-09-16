@@ -8,7 +8,7 @@ impl EncryptionService {
         return EncryptionService{}
     }
 
-    pub fn encrypt(&self, content: String) -> (Vec<u8>, String) {
+    pub fn encrypt(&self, content: &str) -> (Vec<u8>, String) {
 
         let rsa = Rsa::generate(2048).unwrap();
 

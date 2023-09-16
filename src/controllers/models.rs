@@ -1,10 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
-#[derive(Deserialize, Serialize)]
-pub struct Data {
-    pub meta_data: String,
-    pub data: serde_json::Value 
-}
 
 #[derive(Serialize)]
 pub struct RegisterResponse {
