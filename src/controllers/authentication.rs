@@ -5,14 +5,15 @@ use ethers::{
 
 use std::sync::Arc;
 
+use crate::utils::string_literal_to_bytes;
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
-use crate::config::Config;
 use crate::services::{
     state::StateService,
-    encryption::EncryptionService
+    encryption::EncryptionService,
+    hash::HashService,
+    config::Config
 };
-
 use crate::identifier::{Identifier, 
     IdentifierEvents, 
     AuthenticationRequestFilter
@@ -23,6 +24,7 @@ pub struct AuthenticationController {
     pub zksync_client: ZksyncClient,
     pub state_service: StateService,
     pub encryption_service: EncryptionService,
+    pub hash_service: HashService,
     pub contract: Identifier<Provider<Ws>>,
 }
 
@@ -35,6 +37,7 @@ impl AuthenticationController {
 
         let state_service = StateService{};
         let encryption_service = EncryptionService::new();
+        let hash_service = HashService::new();
 
         let ws_provider = Provider::<Ws>::connect(config.zksync_config.zksync_ws_url.to_owned()).await.unwrap();
         let contract = Identifier::new(config.zksync_config.contract_address.to_owned(), Arc::new(ws_provider));
@@ -43,6 +46,7 @@ impl AuthenticationController {
             ipfs_client,
             zksync_client,
             state_service,
+            hash_service,
             encryption_service,
             contract
         };
@@ -74,8 +78,6 @@ impl AuthenticationController {
             }
         }
 
-
-
     }
 
     async fn authenticate(&self, request: AuthenticationRequestFilter) {
@@ -86,9 +88,23 @@ impl AuthenticationController {
 
                 let principal_address = format!("0x{}", encode(request.principal));
                 let encryption_key = self.state_service.get_encryption_key(&principal_address).await;
-                
-                let data = response.as_bytes().to_vec();
-                let decrypted_data = self.encryption_service.decrypt(data, encryption_key);
+
+                let decryption = self.encryption_service.decrypt(string_literal_to_bytes(&response).unwrap(), encryption_key);
+
+                if let Ok(decrypted_data) = decryption {
+
+                    let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
+
+                    if hash == request.data_hash {
+                        println!("Authentication Successful!");
+                    } else {
+                        println!("Authentication unsuccessful...");
+                    }
+
+
+                } else {
+                    println!("Decryption Error: {:?}", decryption)
+                }
 
             },
             Err(err) => {

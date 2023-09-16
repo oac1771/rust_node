@@ -9,7 +9,7 @@ use ethers::{
 
 use std::{convert::TryFrom, sync::Arc};
 
-use crate::config::ZksyncConfig;
+use crate::services::config::ZksyncConfig;
 use crate::identifier::{Identifier, IdentifierEvents};
 
 pub struct ZksyncClient {

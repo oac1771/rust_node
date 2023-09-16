@@ -3,16 +3,14 @@ use std::io::Write;
 
 use super::encryption::EncryptionService;
 use super::hash::HashService;
+use super::models::Identity;
+
+use crate::utils::bytes_to_string_literal;
 
 pub struct IdentityService {
     pub encryption_service: EncryptionService,
     pub hash_service: HashService,
 }
-
-// generate_identity_file should take in data, encrypt it and return (NamedTempFile, Identity)
-    // instead of calling these two functions
-    // Identity struct should hold hash, priv_key, content
-    // to_string() method should use json!() to write content and hash to encryption service
 
 impl IdentityService {
 
@@ -23,21 +21,20 @@ impl IdentityService {
             hash_service: HashService::new(),
         }
     }
- 
-    pub fn encrypt_file_contents(&self, data: &str, temp_file: &mut NamedTempFile) -> (String, String) {
+
+    pub fn generate_identity(&self, data: &str) -> (NamedTempFile, Identity) {
+
+        let mut temp_file = NamedTempFile::new().unwrap();
 
         let hash = self.hash_service.hash(data);
 
-        let (encrypted_content, priv_key) = self.encryption_service.encrypt(data);
+        let (encrypted_content, encryption_key) = self.encryption_service.encrypt(data);
+        let encrypted_string_literal = bytes_to_string_literal(encrypted_content);
+        temp_file.write_all(&encrypted_string_literal.as_bytes()).expect("Unable to write to tempfile");
 
-        temp_file.write_all(&encrypted_content).expect("Unable to write to tempfile");
+        let identity = Identity{hash, encryption_key};
 
-        return (hash, priv_key);
-    }
-
-    pub fn generate_identity_file(&self) -> NamedTempFile {
-        let temp_file = NamedTempFile::new().unwrap();
-        return temp_file
+        return (temp_file, identity)
     }
 
 }

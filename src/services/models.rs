@@ -11,3 +11,8 @@ impl Data {
         return serde_json::to_string(self).unwrap();
     }
 }
+
+pub struct Identity {
+    pub hash: String,
+    pub encryption_key: String 
+}

@@ -8,7 +8,7 @@ use crate::clients::reqwest::client::ReqwestClient;
 #[allow(unused_imports)]
 #[cfg(test)]
 use crate::clients::reqwest::client::R;
-use crate::config::IpfsConfig;
+use crate::services::config::IpfsConfig;
 
 pub struct IpfsClient {
     pub reqwest_client: ReqwestClient,
