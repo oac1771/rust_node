@@ -5,6 +5,8 @@ use ethers::{
     middleware::SignerMiddleware,
     types::{U256, Address, H256},
     signers::{LocalWallet, Signer},
+    prelude::FunctionCall, 
+    abi::Detokenize
 };
 
 use std::{convert::TryFrom, sync::Arc};
@@ -18,9 +20,6 @@ pub struct ZksyncClient {
 
 // change queries to use manual log filtering ones so you dont have to check all events, only specific ones you care about
 
-// make register_identity and remove_identity use same base send() method that does error handling
-    // just pass in self.contract.<method>
-// make check_identity, get_current_token use same base call() method that does error handling
 // make get_token_id use same base query() method that does error handling
 // this wont really matter until error handling on awaiting transactions are done
 
@@ -47,8 +46,8 @@ impl ZksyncClient {
         let call = self.contract.register_identity(principal, 
             ipfs_address.to_string(), 
             data_hash.to_string());
-        let tx = call.send().await.unwrap().await.unwrap();
-        let tx_hash = tx.unwrap().transaction_hash;
+
+        let tx_hash = self.send(call).await;
 
         return tx_hash
 
@@ -59,9 +58,7 @@ impl ZksyncClient {
         let token: U256 = U256::from(token_id);
 
         let call = self.contract.remove_identity(token, principal);
-        let tx = call.send().await.unwrap().await.unwrap();
-
-        let tx_hash = tx.unwrap().transaction_hash;
+        let tx_hash = self.send(call).await;
 
         return tx_hash
 
@@ -70,12 +67,16 @@ impl ZksyncClient {
     pub async fn check_identity(&self, principal_address: &str) -> bool {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
-        let call = self.contract.check_identity(principal).call().await.unwrap();
-        return call
+        let call = self.contract.check_identity(principal);
+        let identity_status = self.call::<bool>(call).await;
+
+        return identity_status
     }
 
     pub async fn get_current_token_id(&self) -> U256 {
-        let token_id = self.contract.get_current_token_id().call().await.unwrap();
+        let call = self.contract.get_current_token_id();
+        let token_id = self.call::<U256>(call).await; 
+
         return token_id
     }
 
@@ -115,5 +116,26 @@ impl ZksyncClient {
         return None
     }
 
+    async fn send(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
+        SignerMiddleware<Provider<Http>, 
+        LocalWallet>, ()>) -> H256 {
+        
+        let tx = call.send().await.unwrap().await.unwrap();
+        let tx_hash = tx.unwrap().transaction_hash;
+
+        return tx_hash
+
+    }
+
+    async fn call<T>(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
+        SignerMiddleware<Provider<Http>, 
+        LocalWallet>, T>) -> T 
+    where T: Detokenize    
+    {
+        
+        let result: T = call.call().await.unwrap();
+        return result
+
+    }
 
 }
