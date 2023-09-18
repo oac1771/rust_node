@@ -1,6 +1,5 @@
 Rough plan:
 
-refactor some zksync client methods
 track gascost in zksync client
 add tests for services and clients
 make authentication controller more robust to not break out of thread

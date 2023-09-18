@@ -88,7 +88,7 @@ impl RegisterController {
         // }
 
         let tx_hash = self.zksync_client.remove_identity(principal_address, token_id).await;
-        let ipfs_addr = self.zksync_client.get_ipfs_addr(principal_address, token_id).await.unwrap();
+        let ipfs_addr = self.zksync_client.get_ipfs_addr(principal_address, token_id).await.unwrap().to_string();
 
         let response = self.ipfs_client.rm_pin(&ipfs_addr).await;
 

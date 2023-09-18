@@ -106,7 +106,7 @@ async fn bootstrap(contract_address: &str) {
 
 #[post("/foo/<principal_address>", data = "<data>")]
 async fn foo(data: Json<services::models::Data>, 
-    principal_address: &str) {
+    principal_address: &str) -> Json<RegisterResponse> {
     use clients::zksync::client::ZksyncClient;
 
     let config = services::config::read_config().await;
@@ -117,6 +117,9 @@ async fn foo(data: Json<services::models::Data>,
 
     let token_id = client.get_token_id(principal_address).await;
     println!("token id: {:?}", token_id);
+    
+    return Json(_response)
+
 }
 
 

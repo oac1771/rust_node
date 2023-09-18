@@ -7,23 +7,18 @@ use ethers::{
     types::{U256, Address, H256, Filter},
     signers::{LocalWallet, Signer},
     prelude::FunctionCall, 
-    abi::Detokenize
+    abi::{Detokenize, Token}
 };
 
-use super::models::Registration;
+use super::models::{Event, Registration, IpfsDeletionRequest};
 
 use crate::services::config::ZksyncConfig;
-use crate::identifier::{Identifier, IdentifierEvents};
+use crate::identifier::Identifier;
 
 pub struct ZksyncClient {
     pub contract: Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
     pub api_url: String,
 }
-
-// change queries to use manual log filtering ones so you dont have to check all events, only specific ones you care about
-
-// make get_token_id use same base query() method that does error handling
-// this wont really matter until error handling on awaiting transactions are done
 
 impl ZksyncClient {
 
@@ -83,67 +78,38 @@ impl ZksyncClient {
         return token_id
     }
 
-    pub async fn get_token_id(&self, principal_address: &str) -> Option<U256> {
+    pub async fn get_token_id(&self, principal_address: &str) -> Option<Token> {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
-
-        let filter = Filter::new().from_block(0).address(self.contract.address()).event(&Registration::get_signature());
-        let http_provider = Provider::<Http>::try_from(&self.api_url).unwrap();
-        let logs = http_provider.get_logs(&filter).await.unwrap();
-    
-        println!("number of logs {}", logs.len());
-        for log in logs {
-            println!("log: {:?}", log);
-            let event = self.contract.decode_event::<Registration>(&Registration::get_name(), log.topics, log.data).unwrap();
-            println!("event: {:?}", event);
+        let condition = |event: Registration| -> Option<Token> {
             if event.principal == principal {
-                return Some(event.token_id)
+                return Some(Token::Uint(event.token_id));
+            } else {
+                return None;
             }
-    
-        }
+        };
 
-        return None
+        let token_id = self.query::<Registration>(condition).await;
 
-        // let events = self.contract.events().from_block(0).query().await.unwrap();
+        return token_id
 
-        // for event in events {
-        //     match event {
-        //         IdentifierEvents::TransferFilter(transfer) => {
-        //             if transfer.to == principal {
-        //                 return Some(transfer.token_id)
-        //             }
-        //         },
-        //         _ => {}
-        //     }
-        // }
-        // return None
     }
-    
-    async fn query<T>(&self, call: String) 
-    where T: Detokenize
-    {
-        let filter = Filter::new().from_block(0).address(self.contract.address()).event(&T::get_signature());
-        let http_provider = Provider::<Http>::try_from(&self.api_url).unwrap();
-        let logs = http_provider.get_logs(&filter).await.unwrap();
-    }
-    
 
-    pub async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<String>{
+    pub async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>{
         let principal: Address = principal_address.parse().expect("Invalid principal address");
         let token: U256 = U256::from(token_id);
 
-        let events = self.contract.events().from_block(0).query().await.unwrap();
-
-        for event in events {
-            match event {
-                IdentifierEvents::IpfsDeletionRequestFilter(request) => {
-                    if request.principal == principal && request.token_id == token {
-                        return Some(request.ipfs_address)
-                    }
-                },
-                _ => {}
+        let condition = |event: IpfsDeletionRequest| -> Option<Token> {
+            if event.principal == principal && event.token_id == token {
+                return Some(Token::String(event.ipfs_addr));
+            } else {
+                return None;
             }
-        }
-        return None
+        };
+
+        let ipfs_addr = self.query::<IpfsDeletionRequest>(condition).await;
+
+        return ipfs_addr
+
     }
 
     async fn send(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
@@ -166,6 +132,22 @@ impl ZksyncClient {
         let result: T = call.call().await.unwrap();
         return result
 
+    }
+
+    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token>) -> Option<Token>
+    where T: Detokenize + Event
+    {
+        let filter = Filter::new().from_block(0).address(self.contract.address()).event(&T::get_signature());
+        let http_provider = Provider::<Http>::try_from(&self.api_url).unwrap();
+        let logs = http_provider.get_logs(&filter).await.unwrap();
+
+        for log in logs {
+            let event = self.contract.decode_event::<T>(&T::get_name(), log.topics, log.data).unwrap();
+            if let Some(thing) = condition(event) {
+                return Some(thing);
+            }
+        }
+        return None
     }
 
 }
