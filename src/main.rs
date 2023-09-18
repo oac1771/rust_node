@@ -104,6 +104,21 @@ async fn bootstrap(contract_address: &str) {
     });
 }
 
+#[post("/foo/<principal_address>", data = "<data>")]
+async fn foo(data: Json<services::models::Data>, 
+    principal_address: &str) {
+    use clients::zksync::client::ZksyncClient;
+
+    let config = services::config::read_config().await;
+    let client = ZksyncClient::new(&config.zksync_config).await;
+
+    let register_controller = RegisterController::new(&config).await;
+    let _response = register_controller.register(data.into_inner(), principal_address).await;
+
+    let token_id = client.get_token_id(principal_address).await;
+    println!("token id: {:?}", token_id);
+}
+
 
 #[launch]
 async fn rocket() -> _ {
@@ -111,6 +126,6 @@ async fn rocket() -> _ {
     services::config::create_config().await;
     services::state::StateService{}.create_state().await;
 
-    rocket::build().mount("/", routes![health, register, remove, ipfs_id, bootstrap])
+    rocket::build().mount("/", routes![health, register, remove, ipfs_id, bootstrap, foo])
 
 }

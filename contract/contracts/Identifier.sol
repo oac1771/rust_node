@@ -16,6 +16,7 @@ contract Identifier is ERC721 {
     mapping (uint256 => Data) public tokenIdToData;
     address[] identities;
 
+    event Registration(address indexed principal, uint256 indexed token_id);
     event AuthenticationRequest(address indexed principal, string ipfsAddress, string dataHash);
     event IpfsDeletionRequest(address indexed principal, uint256 indexed token_id, string ipfsAddress);
 
@@ -35,6 +36,8 @@ contract Identifier is ERC721 {
         _safeMint(principal, currentTokenID);
         tokenIdToData[currentTokenID] = Data(ipfsAddress, dataHash);
         identities.push(principal);
+
+        emit Registration(principal, currentTokenID);
 
         currentTokenID++;  
     }

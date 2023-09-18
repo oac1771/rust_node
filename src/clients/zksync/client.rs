@@ -1,21 +1,23 @@
 use std::str;
+use std::{convert::TryFrom, sync::Arc};
 
 use ethers::{
     providers::{Provider, Http, Middleware},
     middleware::SignerMiddleware,
-    types::{U256, Address, H256},
+    types::{U256, Address, H256, Filter},
     signers::{LocalWallet, Signer},
     prelude::FunctionCall, 
     abi::Detokenize
 };
 
-use std::{convert::TryFrom, sync::Arc};
+use super::models::Registration;
 
 use crate::services::config::ZksyncConfig;
 use crate::identifier::{Identifier, IdentifierEvents};
 
 pub struct ZksyncClient {
     pub contract: Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    pub api_url: String,
 }
 
 // change queries to use manual log filtering ones so you dont have to check all events, only specific ones you care about
@@ -36,7 +38,8 @@ impl ZksyncClient {
         let contract = Identifier::new(config.contract_address, Arc::new(client));
 
         return ZksyncClient{
-            contract
+            contract,
+            api_url: config.zksync_api_url.to_string()
         }
     }
 
@@ -64,7 +67,7 @@ impl ZksyncClient {
 
     }
 
-    pub async fn check_identity(&self, principal_address: &str) -> bool {
+    pub async fn _check_identity(&self, principal_address: &str) -> bool {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
         let call = self.contract.check_identity(principal);
@@ -82,20 +85,47 @@ impl ZksyncClient {
 
     pub async fn get_token_id(&self, principal_address: &str) -> Option<U256> {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
-        let events = self.contract.events().from_block(0).query().await.unwrap();
 
-        for event in events {
-            match event {
-                IdentifierEvents::TransferFilter(transfer) => {
-                    if transfer.to == principal {
-                        return Some(transfer.token_id)
-                    }
-                },
-                _ => {}
+        let filter = Filter::new().from_block(0).address(self.contract.address()).event(&Registration::get_signature());
+        let http_provider = Provider::<Http>::try_from(&self.api_url).unwrap();
+        let logs = http_provider.get_logs(&filter).await.unwrap();
+    
+        println!("number of logs {}", logs.len());
+        for log in logs {
+            println!("log: {:?}", log);
+            let event = self.contract.decode_event::<Registration>(&Registration::get_name(), log.topics, log.data).unwrap();
+            println!("event: {:?}", event);
+            if event.principal == principal {
+                return Some(event.token_id)
             }
+    
         }
+
         return None
+
+        // let events = self.contract.events().from_block(0).query().await.unwrap();
+
+        // for event in events {
+        //     match event {
+        //         IdentifierEvents::TransferFilter(transfer) => {
+        //             if transfer.to == principal {
+        //                 return Some(transfer.token_id)
+        //             }
+        //         },
+        //         _ => {}
+        //     }
+        // }
+        // return None
     }
+    
+    async fn query<T>(&self, call: String) 
+    where T: Detokenize
+    {
+        let filter = Filter::new().from_block(0).address(self.contract.address()).event(&T::get_signature());
+        let http_provider = Provider::<Http>::try_from(&self.api_url).unwrap();
+        let logs = http_provider.get_logs(&filter).await.unwrap();
+    }
+    
 
     pub async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<String>{
         let principal: Address = principal_address.parse().expect("Invalid principal address");
