@@ -28,8 +28,58 @@ fn health() -> Json<Health> {
     })
 }
 
+#[post("/bootstrap/<contract_address>")]
+async fn bootstrap(contract_address: &str) {
+
+    services::config::set_contract_address(contract_address.to_string()).await;
+
+    tokio::spawn(async move {
+        let config = services::config::read_config().await;
+        let authentication_controller = AuthenticationController::new(&config).await;
+
+        authentication_controller.listen().await
+        
+    });
+}
+
 #[post("/register/<principal_address>", data = "<data>")]
 async fn register(data: Json<services::models::Data>, 
+    principal_address: &str) -> Json<RegisterResponse> {
+
+    let config = services::config::read_config().await;
+    
+    let register_controller = RegisterController::new(&config).await;
+    let response = register_controller.register(data.into_inner(), principal_address).await;
+
+    return Json(response)
+}
+
+#[delete("/remove/<principal_address>/<token_id>")]
+async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
+
+    let config = services::config::read_config().await;
+
+    let register_controller = RegisterController::new(&config).await;
+    let response = register_controller.remove(principal_address, token_id).await;
+
+    return Json(response)
+}
+
+#[post("/ipfs_id")]
+async fn ipfs_id() -> String {
+
+    let config = services::config::read_config().await;
+
+    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
+    let response = ipfs_client.get_id().await.unwrap();
+
+    return response.ID
+
+}
+
+
+#[post("/foo/<principal_address>", data = "<data>")]
+async fn foo(data: Json<services::models::Data>, 
     principal_address: &str) -> Json<RegisterResponse> {
     
     use ethers::{
@@ -62,63 +112,8 @@ async fn register(data: Json<services::models::Data>,
 
     println!("authentiating...");
     let _foo = contract.authenticate(token_id - 1).send().await.unwrap().await.unwrap().unwrap();
-
-    return Json(response)
-}
-
-
-#[delete("/remove/<principal_address>/<token_id>")]
-async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
-
-    let config = services::config::read_config().await;
-
-    let register_controller = RegisterController::new(&config).await;
-    let response = register_controller.remove(principal_address, token_id).await;
-
-    return Json(response)
-}
-
-#[post("/ipfs_id")]
-async fn ipfs_id() -> String {
-
-    let config = services::config::read_config().await;
-
-    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-    let response = ipfs_client.get_id().await.unwrap();
-
-    return response.ID
-
-}
-
-#[post("/bootstrap/<contract_address>")]
-async fn bootstrap(contract_address: &str) {
-
-    services::config::set_contract_address(contract_address.to_string()).await;
-
-    tokio::spawn(async move {
-        let config = services::config::read_config().await;
-        let authentication_controller = AuthenticationController::new(&config).await;
-
-        authentication_controller.listen().await
-        
-    });
-}
-
-#[post("/foo/<principal_address>", data = "<data>")]
-async fn foo(data: Json<services::models::Data>, 
-    principal_address: &str) -> Json<RegisterResponse> {
-    use clients::zksync::client::ZksyncClient;
-
-    let config = services::config::read_config().await;
-    let client = ZksyncClient::new(&config.zksync_config).await;
-
-    let register_controller = RegisterController::new(&config).await;
-    let _response = register_controller.register(data.into_inner(), principal_address).await;
-
-    let token_id = client.get_token_id(principal_address).await;
-    println!("token id: {:?}", token_id);
     
-    return Json(_response)
+    return Json(response)
 
 }
 

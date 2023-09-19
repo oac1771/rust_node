@@ -1,7 +1,10 @@
 Rough plan:
 
-track gascost in zksync client
 add tests for services and clients
+    - zksync client
+    - config
+    - state
+track gascost in zksync client
 make authentication controller more robust to not break out of thread
 mint session token NFT on authentication
 
