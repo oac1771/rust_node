@@ -1,15 +1,10 @@
 Rough plan:
 
 add tests for services and clients
-    - zksync client
-    - config
     - state
 track gascost in zksync client
 make authentication controller more robust to not break out of thread
 mint session token NFT on authentication
-
-
-make contract emit specific registration event to get token id instead of looking at transfer
 
 refactor ideas:
     - make remove identity publish empty data to ipfs network at same content identifier so its effectively deleted

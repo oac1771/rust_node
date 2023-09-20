@@ -53,7 +53,7 @@ pub async fn create_config() {
 
 }
 
-pub async fn set_contract_address(address: String) {
+pub async fn set_contract_address(address: &str) {
     let contract_address: Address = address.parse().expect("Invalid contract address");
 
     let mut config = read_config().await;

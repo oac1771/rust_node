@@ -31,7 +31,7 @@ fn health() -> Json<Health> {
 #[post("/bootstrap/<contract_address>")]
 async fn bootstrap(contract_address: &str) {
 
-    services::config::set_contract_address(contract_address.to_string()).await;
+    services::config::set_contract_address(contract_address).await;
 
     tokio::spawn(async move {
         let config = services::config::read_config().await;
