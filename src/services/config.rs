@@ -53,37 +53,29 @@ pub async fn create_config() {
         }
     });
 
-    // let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
-    // fs::create_dir_all(parent_directories[0]).unwrap();
+    let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
+    fs::create_dir_all(parent_directories[0]).unwrap();
+    fs::File::create(CONFIG_PATH);
 
-    write_config(config).await;
+    let mut file = get_locked_file();
+
+    write_config(config, &mut file).await;
 
 }
 
-pub async fn set_contract_address(address: &str) {
-    let contract_address: Address = address.parse().expect("Invalid contract address");
+pub async fn get_config() -> Config {
+    let mut file = get_locked_file();
 
-    let mut config = read_config().await;
-    config.zksync_config.contract_address = contract_address;
+    let config = read_config(&mut file).await;
 
-    write_config(config).await;
-    
+    return config;
+
 }
 
-pub async fn read_config() -> Config {
+pub async fn read_config(file: &mut fs::File) -> Config {
 
-    println!("reading config");
-    // let mut file = tokio::fs::File::open(CONFIG_PATH).await.unwrap().into_std().await;
-    let mut file = fs::File::open(CONFIG_PATH).unwrap();
-
-    while let Err(err) = file.try_lock_exclusive() {
-        println!("File is locked while trying to read: {:?}", err);
-        thread::sleep(time::Duration::from_secs(0.5 as u64));
-    }
     let mut contents = String::new();
-    let config_bytes = file.read_to_string(&mut contents).unwrap();
-    // let config_string = str::from_utf8(&config_bytes).unwrap();
-    println!("contents: {:?}", contents);
+    let _ = file.read_to_string(&mut contents).unwrap();
 
     let config = serde_json::from_str::<Config>(&contents).unwrap();
 
@@ -93,19 +85,34 @@ pub async fn read_config() -> Config {
 
 }
 
-pub async fn write_config(config: impl Serialize) {
+pub async fn write_config(config: impl Serialize, file: &mut fs::File) {
 
     let config = serde_json::to_string(&config).unwrap();
-    let mut file = fs::File::create(CONFIG_PATH).unwrap();
+    fs::write(CONFIG_PATH, config);
+    file.unlock();
 
+}
+
+fn get_locked_file() -> fs::File {
+
+    let mut file = fs::File::open(CONFIG_PATH).unwrap();
     while let Err(err) = file.try_lock_exclusive() {
-        println!("File is locked while trying to write: {:?}", err);
+        println!("File is locked: {:?}", err);
         thread::sleep(time::Duration::from_secs(0.5 as u64));
     }
 
-    file.write_all(config.as_bytes());
-    file.unlock();
-    println!("config written");
+    return file
+}
 
-    // tokio::fs::write(CONFIG_PATH, config).await.unwrap();
+pub async fn set_contract_address(address: &str) {
+
+    let mut file = get_locked_file();
+
+    let mut config = read_config(&mut file).await;
+    let contract_address: Address = address.parse().expect("Invalid contract address");
+    config.zksync_config.contract_address = contract_address;
+
+    file = get_locked_file();
+    write_config(config, &mut file).await;
+    
 }
