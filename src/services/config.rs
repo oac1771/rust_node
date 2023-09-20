@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use ethers::types::{Address, H160};
 
-const CONFIG_PATH: &str = "./var/config.json";
+pub const CONFIG_PATH: &str = "./var/config.json";
 
 #[derive(Deserialize, Serialize)]
 pub struct Config {
