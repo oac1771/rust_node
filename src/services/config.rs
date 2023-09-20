@@ -1,4 +1,11 @@
-use std::str;
+use std::{
+    str,
+    thread,
+    time, 
+    io::{Read, Write},
+    fs
+};
+use fs2::FileExt;
 
 use serde_json::json;
 use serde::{Deserialize, Serialize};
@@ -46,8 +53,8 @@ pub async fn create_config() {
         }
     });
 
-    let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
-    tokio::fs::create_dir_all(parent_directories[0]).await.unwrap();
+    // let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
+    // fs::create_dir_all(parent_directories[0]).unwrap();
 
     write_config(config).await;
 
@@ -65,15 +72,40 @@ pub async fn set_contract_address(address: &str) {
 
 pub async fn read_config() -> Config {
 
-    let config_bytes = tokio::fs::read(CONFIG_PATH).await.unwrap();
-    let config_string = str::from_utf8(&config_bytes).unwrap();
+    println!("reading config");
+    // let mut file = tokio::fs::File::open(CONFIG_PATH).await.unwrap().into_std().await;
+    let mut file = fs::File::open(CONFIG_PATH).unwrap();
 
-    let config = serde_json::from_str::<Config>(config_string).unwrap();
+    while let Err(err) = file.try_lock_exclusive() {
+        println!("File is locked while trying to read: {:?}", err);
+        thread::sleep(time::Duration::from_secs(0.5 as u64));
+    }
+    let mut contents = String::new();
+    let config_bytes = file.read_to_string(&mut contents).unwrap();
+    // let config_string = str::from_utf8(&config_bytes).unwrap();
+    println!("contents: {:?}", contents);
+
+    let config = serde_json::from_str::<Config>(&contents).unwrap();
+
+    file.unlock();
 
     return config
+
 }
 
 pub async fn write_config(config: impl Serialize) {
+
     let config = serde_json::to_string(&config).unwrap();
-    tokio::fs::write(CONFIG_PATH, config).await.unwrap();
+    let mut file = fs::File::create(CONFIG_PATH).unwrap();
+
+    while let Err(err) = file.try_lock_exclusive() {
+        println!("File is locked while trying to write: {:?}", err);
+        thread::sleep(time::Duration::from_secs(0.5 as u64));
+    }
+
+    file.write_all(config.as_bytes());
+    file.unlock();
+    println!("config written");
+
+    // tokio::fs::write(CONFIG_PATH, config).await.unwrap();
 }

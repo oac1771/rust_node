@@ -3082,6 +3082,7 @@ dependencies = [
  "async-trait",
  "ethers",
  "ethers-contract-abigen",
+ "fs2",
  "futures",
  "http",
  "mockall",
