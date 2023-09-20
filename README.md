@@ -27,3 +27,8 @@ yarn hardhat compile
 
 
 look into axum for rocket alternative
+
+## Dependencies
+
+colima
+nerdctl (colima install nerdctl)
