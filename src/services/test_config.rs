@@ -6,15 +6,16 @@ mod tests {
         marker::Send,
         path::Path,
         env,
-        future::Future
     };
-    use futures::FutureExt;
+    use futures::{FutureExt, future::BoxFuture};
     use ethers::types::{H160, Address};
 
     use super::super::config::*;
 
-    fn run_test(result: Result<(), Box<dyn Any + Send>>, teardown: impl FnOnce() -> dyn Future<Output = ()>) {
-        teardown();
+    async fn run_test<'a>(result: Result<(), Box<dyn Any + Send>>, teardown: impl FnOnce() -> BoxFuture<'a, ()>) 
+
+    {
+        teardown().await;
         assert!(result.is_ok());
     }
 
@@ -25,8 +26,11 @@ mod tests {
         env::set_var("ZKSYNC_WS_URL", "foo");
     }
 
-    async fn delete_config_file() {
-        _ = tokio::fs::remove_file(CONFIG_PATH).await;
+    async fn delete_config_file<'a>() -> impl FnOnce() -> BoxFuture<'a, ()> {
+        let teardown = || async move {
+            let _ = tokio::fs::remove_file(CONFIG_PATH).await;
+        }.boxed();
+        return teardown
     }
     
     #[tokio::test]
@@ -42,7 +46,7 @@ mod tests {
 
         let result = test.catch_unwind().await;
 
-        run_test(result, delete_config_file);
+        run_test(result, delete_config_file().await).await;
     }
 
     #[tokio::test]
@@ -64,7 +68,7 @@ mod tests {
 
         let result = test.catch_unwind().await;
 
-        run_test(result, delete_config_file);
+        run_test(result, delete_config_file().await).await;
     }
 
     #[tokio::test]
@@ -85,6 +89,6 @@ mod tests {
 
         let result = test.catch_unwind().await;
 
-        run_test(result, delete_config_file);
+        run_test(result, delete_config_file().await).await;
     }
 }
