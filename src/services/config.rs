@@ -1,11 +1,4 @@
-use std::{
-    str,
-    thread,
-    time, 
-    io::{Read, Write},
-    fs
-};
-use fs2::FileExt;
+use std::str;
 
 use serde_json::json;
 use serde::{Deserialize, Serialize};
@@ -54,65 +47,33 @@ pub async fn create_config() {
     });
 
     let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
-    fs::create_dir_all(parent_directories[0]).unwrap();
-    fs::File::create(CONFIG_PATH);
+    tokio::fs::create_dir_all(parent_directories[0]).await.unwrap();
 
-    let mut file = get_locked_file();
+    write_config(config).await;
 
-    write_config(config, &mut file).await;
-
-}
-
-pub async fn get_config() -> Config {
-    let mut file = get_locked_file();
-
-    let config = read_config(&mut file).await;
-
-    return config;
-
-}
-
-pub async fn read_config(file: &mut fs::File) -> Config {
-
-    let mut contents = String::new();
-    let _ = file.read_to_string(&mut contents).unwrap();
-
-    let config = serde_json::from_str::<Config>(&contents).unwrap();
-
-    file.unlock();
-
-    return config
-
-}
-
-pub async fn write_config(config: impl Serialize, file: &mut fs::File) {
-
-    let config = serde_json::to_string(&config).unwrap();
-    fs::write(CONFIG_PATH, config);
-    file.unlock();
-
-}
-
-fn get_locked_file() -> fs::File {
-
-    let mut file = fs::File::open(CONFIG_PATH).unwrap();
-    while let Err(err) = file.try_lock_exclusive() {
-        println!("File is locked: {:?}", err);
-        thread::sleep(time::Duration::from_secs(0.5 as u64));
-    }
-
-    return file
 }
 
 pub async fn set_contract_address(address: &str) {
-
-    let mut file = get_locked_file();
-
-    let mut config = read_config(&mut file).await;
     let contract_address: Address = address.parse().expect("Invalid contract address");
+
+    let mut config = read_config().await;
     config.zksync_config.contract_address = contract_address;
 
-    file = get_locked_file();
-    write_config(config, &mut file).await;
+    write_config(config).await;
     
+}
+
+pub async fn read_config() -> Config {
+
+    let config_bytes = tokio::fs::read(CONFIG_PATH).await.unwrap();
+    let config_string = str::from_utf8(&config_bytes).unwrap();
+
+    let config = serde_json::from_str::<Config>(config_string).unwrap();
+
+    return config
+}
+
+pub async fn write_config(config: impl Serialize) {
+    let config = serde_json::to_string(&config).unwrap();
+    tokio::fs::write(CONFIG_PATH, config).await.unwrap();
 }

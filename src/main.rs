@@ -34,7 +34,7 @@ async fn bootstrap(contract_address: &str) {
     services::config::set_contract_address(contract_address).await;
 
     tokio::spawn(async move {
-        let config = services::config::get_config().await;
+        let config = services::config::read_config().await;
         let authentication_controller = AuthenticationController::new(&config).await;
 
         authentication_controller.listen().await
@@ -46,7 +46,7 @@ async fn bootstrap(contract_address: &str) {
 async fn register(data: Json<services::models::Data>, 
     principal_address: &str) -> Json<RegisterResponse> {
 
-    let config = services::config::get_config().await;
+    let config = services::config::read_config().await;
     
     let register_controller = RegisterController::new(&config).await;
     let response = register_controller.register(data.into_inner(), principal_address).await;
@@ -57,7 +57,7 @@ async fn register(data: Json<services::models::Data>,
 #[delete("/remove/<principal_address>/<token_id>")]
 async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
 
-    let config = services::config::get_config().await;
+    let config = services::config::read_config().await;
 
     let register_controller = RegisterController::new(&config).await;
     let response = register_controller.remove(principal_address, token_id).await;
@@ -68,7 +68,7 @@ async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterRespons
 #[post("/ipfs_id")]
 async fn ipfs_id() -> String {
 
-    let config = services::config::get_config().await;
+    let config = services::config::read_config().await;
 
     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
     let response = ipfs_client.get_id().await.unwrap();
@@ -91,7 +91,7 @@ async fn foo(data: Json<services::models::Data>,
     use crate::identifier::Identifier;
     use std::{convert::TryFrom, sync::Arc};
 
-    let config = services::config::get_config().await;
+    let config = services::config::read_config().await;
     
     let register_controller = RegisterController::new(&config).await;
     let response = register_controller.register(data.into_inner(), principal_address).await;

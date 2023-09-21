@@ -6,19 +6,14 @@ mod tests {
         marker::Send,
         path::Path,
         env,
-        fs,
-        thread,
-        time
+        future::Future
     };
-
-    use fs2::FileExt;
     use futures::FutureExt;
     use ethers::types::{H160, Address};
 
     use super::super::config::*;
 
-    async fn run_test<'a>(result: Result<(), Box<dyn Any + Send>>, teardown: impl FnOnce() -> ()) 
-    {
+    fn run_test(result: Result<(), Box<dyn Any + Send>>, teardown: impl FnOnce() -> dyn Future<Output = ()>) {
         teardown();
         assert!(result.is_ok());
     }
@@ -30,103 +25,66 @@ mod tests {
         env::set_var("ZKSYNC_WS_URL", "foo");
     }
 
-    fn delete_config_file<'a>() -> impl FnOnce() -> () {
-        let teardown = || {
-
-            let file = fs::File::open(CONFIG_PATH);
-
-            match file {
-                Ok(file) => {
-                    while let Err(err) = file.try_lock_exclusive() {
-                        println!("File is locked while trying to cleanup: {:?}", err);
-                        thread::sleep(time::Duration::from_secs(0.5 as u64));
-                    }
-
-                    let parent_directories = CONFIG_PATH.split("/config.json").collect::<Vec<&str>>();
-                    fs::remove_dir_all(parent_directories[0]);
-                    file.unlock();
-                },
-                Err(_) => {}
-            }
-        };
-        return teardown
+    async fn delete_config_file() {
+        _ = tokio::fs::remove_file(CONFIG_PATH).await;
     }
     
-    // #[tokio::test]
-    // async fn should_create_config_file() {
-    //     // let test = async {
+    #[tokio::test]
+    async fn should_create_config_file() {
+        let test = async {
 
-    //     //     set_env_var();
-    //     //     create_config().await;
+            set_env_var();
+            create_config().await;
 
-    //     //     let path = Path::new(CONFIG_PATH);
-    //     //     assert_eq!(path.exists(), true);
-    //     // };
+            let path = Path::new(CONFIG_PATH);
+            assert_eq!(path.exists(), true);
+        };
 
-    //     // let result = test.catch_unwind().await;
-    //     // run_test(result, delete_config_file()).await;
+        let result = test.catch_unwind().await;
 
-    //     set_env_var();
-    //     create_config().await;
-
-    //     let path = Path::new(CONFIG_PATH);
-    //     assert_eq!(path.exists(), true);
-
-    // }
+        run_test(result, delete_config_file);
+    }
 
     #[tokio::test]
     async fn read_config_should_return_struct_with_correct_values() {
-        // let test = async {
+        let test = async {
 
-        //     set_env_var();
-        //     create_config().await;
+            set_env_var();
+            create_config().await;
 
-        //     let config = read_config().await;
+            let config = read_config().await;
 
-        //     assert_eq!(config.ipfs_config.ipfs_base_url, "foo".to_string());
-        //     assert_eq!(config.zksync_config.private_key, "foo".to_string());
-        //     assert_eq!(config.zksync_config.zksync_api_url, "foo".to_string());
-        //     assert_eq!(config.zksync_config.zksync_ws_url, "foo".to_string());
-        //     assert_eq!(config.zksync_config.contract_address, H160::zero());
+            assert_eq!(config.ipfs_config.ipfs_base_url, "foo".to_string());
+            assert_eq!(config.zksync_config.private_key, "foo".to_string());
+            assert_eq!(config.zksync_config.zksync_api_url, "foo".to_string());
+            assert_eq!(config.zksync_config.zksync_ws_url, "foo".to_string());
+            assert_eq!(config.zksync_config.contract_address, H160::zero());
 
-        // };
+        };
 
-        // let result = test.catch_unwind().await;
+        let result = test.catch_unwind().await;
 
-        // run_test(result, delete_config_file()).await;
-
-        set_env_var();
-        create_config().await;
-
-        let config = get_config().await;
-
-        assert_eq!(config.ipfs_config.ipfs_base_url, "foo".to_string());
-        assert_eq!(config.zksync_config.private_key, "foo".to_string());
-        assert_eq!(config.zksync_config.zksync_api_url, "foo".to_string());
-        assert_eq!(config.zksync_config.zksync_ws_url, "foo".to_string());
-        assert_eq!(config.zksync_config.contract_address, H160::zero());
-
-        delete_config_file()();
+        run_test(result, delete_config_file);
     }
 
-    // #[tokio::test]
-    // async fn set_contract_address_should_add_address_to_config() {
-    //     let test = async {
-    //         let address = "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92";
-    //         let expected_address: Address = address.parse().expect("Invalid contract address");
+    #[tokio::test]
+    async fn set_contract_address_should_add_address_to_config() {
+        let test = async {
+            let address = "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92";
+            let expected_address: Address = address.parse().expect("Invalid contract address");
 
-    //         set_env_var();
-    //         create_config().await;
-    //         set_contract_address(address).await;
+            set_env_var();
+            create_config().await;
+            set_contract_address(address).await;
 
-    //         let config = read_config().await;
+            let config = read_config().await;
 
-    //         assert_eq!(config.zksync_config.contract_address, expected_address);
+            assert_eq!(config.zksync_config.contract_address, expected_address);
 
-    //     };
+        };
 
-    //     let result = test.catch_unwind().await;
+        let result = test.catch_unwind().await;
 
-    //     run_test(result, delete_config_file()).await;
-    // }
+        run_test(result, delete_config_file);
+    }
 }

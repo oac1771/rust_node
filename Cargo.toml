@@ -20,7 +20,6 @@ tempfile = "3.5.0"
 openssl = { version = "*", features = ["vendored"] } 
 rust-crypto = "0.2.36"
 ethers = { version = "2.0.9", features = ["ws", "legacy"] }
-fs2 = "0.4.3"
 
 [dependencies.rocket]
 version = "0.5.0-rc.3"
