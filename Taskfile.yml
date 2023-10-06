@@ -1,12 +1,14 @@
 version: '3'
 
+env:
+  PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
+
 tasks:
 
   cargo-run:
     cmds:
       - cargo run
     env:
-      PRIVATE_KEY: "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3"
       ZKSYNC_API_URL: http://localhost:3050
       ZKSYNC_WS_URL: ws://localhost:3051
       IPFS_BASE_URL: http://localhost:5001
@@ -20,40 +22,39 @@ tasks:
 
   start-local:
     cmds:
-      - task: start-colima
       - task build-images
+      - task: start-k8s
       - task: deploy-ecosystem
     env:
       BUILD: '{{ .BUILD }}'
 
   deploy-ecosystem:
     cmds:
-      - helm upgrade --install --wait --timeout 3m node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 10m --set privateKey=$PRIVATE_KEY node-ecosystem helm_chart/
       - helm test node-ecosystem
 
-  start-colima:
+  start-k8s:
     cmds:
       - cp colima.yaml ~/.colima/_templates/colima.yaml
-      - colima start --cpu 4 --memory 8 --runtime containerd --kubernetes
-      # - colima start --cpu 2 --memory 3 --runtime containerd --kubernetes
+      - colima start --cpu 2 --memory 3 --runtime containerd --kubernetes
     status:
       - colima status
 
   build-images:
     cmds:
-      # - colima stop
-      # - colima start --cpu 4 --memory 8 --runtime containerd
+      - colima stop || true
+      - colima start --cpu 4 --memory 8 --runtime containerd
+
       - nerdctl build -f images/toolbox.Dockerfile . -t toolbox:latest --namespace k8s.io
       - nerdctl build -f images/rust_node_builder.Dockerfile . -t rust_node_builder:latest --namespace k8s.io
       - |
         nerdctl run --namespace k8s.io --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
           /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
       - nerdctl build -f images/rust_node.Dockerfile . -t rust_node:latest --namespace k8s.io
-      # - colima stop
-      # - task start-colima
+
+      - colima stop
     env:
       BUILD: true
-      CONTAINERD_NAMESPACE: k8s.io
     status:
       - |
         if [ "$BUILD" != "true" ]
