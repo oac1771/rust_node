@@ -6,10 +6,16 @@ install [rtx](https://github.com/jdx/rtx) in order to install and manage tooling
 brew install rtx
 ```
 
-initialize rtx in current shell. This can be added to your bash/zshrc file:
+initialize rtx in current shell.
 
+if using zshell:
 ```shell
 rtx activate zsh
+```
+
+if using bashrc:
+```shell
+rtx activate bash
 ```
 
 (Optional) Add this to your bash/zshrc file:
@@ -23,6 +29,11 @@ install tooling:
 rtx install
 ```
 
+install qemu as your emulator and virtualizer:
+```shell
+brew install qemu
+```
+
 (MacOS only) install nerdctl. You first have to start a colima vm with a containerd runtime in order to install nerdctl on a non linux system.
 
 ```shell
@@ -33,6 +44,10 @@ colima start --runtime containerd
 colima nerdctl install
 ```
 
+```shell
+colima delete
+```
+
 ## Deploy node and blockchain dependencies to K8s
 
 Run the following command to build the container images and deploy the node and all its dependencies to a local instance of k8s. This will also run helm tests post deployment:
@@ -40,7 +55,9 @@ Run the following command to build the container images and deploy the node and 
 ```shell
 task start-local BUILD=true
 ```
-The first time you run this command it will take a long time, as the binary run in the node pod is using a statically compiled 
+The first time you run this command it will take a long time, as the binary running in the node pod is statically compiled using musl. Subsequent runs should be much faster
+
+Once your images are built, you can just start the
 
 
 ## helpful cmds
