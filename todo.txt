@@ -1,8 +1,5 @@
 Rough plan:
 
-modify colima to increase resource allocation
-    - make it back to normal after build
-try using rtx
 make readme
 
 clean up main.rs file

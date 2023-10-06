@@ -1,0 +1,6 @@
+[tools]
+rust = '1.69'
+task = '3.24.0'
+helm = '3.10.2'
+kubectl = '1.25'
+colima = '0.5.6'
