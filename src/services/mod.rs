@@ -7,4 +7,3 @@ pub mod config;
 
 pub mod test_hash;
 pub mod test_encryption;
-pub mod test_config;

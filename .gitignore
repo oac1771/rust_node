@@ -1,6 +1,7 @@
 /target
 old_stuff.txt
 /var
+.DS_Store
 
 # Logs
 logs

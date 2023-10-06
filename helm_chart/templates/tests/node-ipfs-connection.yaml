@@ -16,5 +16,5 @@ spec:
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - curl -X POST http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/id | jq ".ID" -e
+        - curl -X POST http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/ipfs_id | jq ".ID" -e
   restartPolicy: Never

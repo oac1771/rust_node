@@ -66,14 +66,14 @@ async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterRespons
 }
 
 #[post("/ipfs_id")]
-async fn ipfs_id() -> String {
+async fn ipfs_id() -> Json<crate::clients::ipfs::models::IpfsIdResponse> {
 
     let config = services::config::read_config().await;
 
     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
     let response = ipfs_client.get_id().await.unwrap();
 
-    return response.ID
+    return Json(response)
 
 }
 

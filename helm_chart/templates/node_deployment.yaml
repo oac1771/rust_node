@@ -28,8 +28,12 @@ spec:
             value: "0.0.0.0"
           - name: IPFS_BASE_URL
             value: http://{{ .Values.ipfs.containerName}}.{{ .Values.ipfs.namespace}}:{{ .Values.ipfs.apiPort }}
-          - name: ZKSYNC_BASE_HTTP_URL
+          - name: ZKSYNC_API_URL
             value: http://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.httpPort}}
+          - name: ZKSYNC_WS_URL
+            value: ws://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.websocketPort}}
+          - name: PRIVATE_KEY
+            value: {{ .Values.node.privateKey }}
       initContainers:
         - name: init
           image: "{{ .Values.node.initContainerRespository }}:{{ .Values.node.initContainerTag }}"

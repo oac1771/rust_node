@@ -16,5 +16,5 @@ spec:
       imagePullPolicy: IfNotPresent
       command: ['sh', '-c']
       args:
-        - curl http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/health | jq ".status_code" -e
+        - curl http://{{ .Values.node.containerName }}.{{ .Values.node.namespace}}:{{ .Values.node.apiPort}}/health | jq ".status" -e
   restartPolicy: Never
