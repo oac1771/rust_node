@@ -1,7 +1,7 @@
 Rough plan:
 
 make readme
-
+add yarn hardhat compile
 clean up main.rs file
 
 mint session token NFT on authentication
@@ -14,8 +14,5 @@ refactor ideas:
     - dont use hardhat and just use rust ethers 
     - make responses from main.rs return error codes in terminal (echo $?) 
         - https://rocket.rs/v0.5-rc/guide/responses/#responder
+    - look into axum instead or rocket
 
-Questions:
-    - how are pvc and pv linked?
-    - volumeMount meaning in statefulset
-    
