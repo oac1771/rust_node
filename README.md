@@ -64,6 +64,19 @@ task start-local
 ```
 
 
+## Clean up
+
+To stop your k8s cluster run the following command:
+
+```shell
+colima stop
+```
+
+To destroy all local resources, run the following command:
+```shell
+task destroy-local
+```
+
 ## Helpful Commands
 
 ### General
