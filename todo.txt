@@ -1,7 +1,8 @@
 Rough plan:
 
+clean up yarn task to hit authentication method in contract
 make readme
-add yarn hardhat compile
+
 clean up main.rs file
 
 mint session token NFT on authentication

@@ -10,18 +10,15 @@ initialize rtx in current shell.
 
 if using zshell:
 ```shell
-rtx activate zsh
+eval "$(rtx activate zsh)"
 ```
 
 if using bashrc:
 ```shell
-rtx activate bash
+eval "$(rtx activate bash)"
 ```
 
-(Optional) Add this to your bash/zshrc file:
-```shell
-eval "$(rtx activate zsh)"
-```
+(Optional) Add previous command to your bash/zshrc file:
 
 install tooling:
 
@@ -29,7 +26,6 @@ install tooling:
 rtx install
 ```
 
-install qemu as your emulator and virtualizer:
 ```shell
 brew install qemu
 ```
@@ -57,7 +53,7 @@ task start-local BUILD=true
 ```
 The first time you run this command it will take a long time, as the binary running in the node pod is statically compiled using musl. Subsequent runs should be much faster
 
-Once your images are built, you can just start the k8s cluster and deploy with:
+Once your images are built, you can start the k8s cluster and deploy with:
 
 ```shell
 task start-local
