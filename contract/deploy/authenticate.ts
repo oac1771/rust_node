@@ -11,17 +11,15 @@ import * as ContractArtifact from "../artifacts-zk/contracts/Identifier.sol/Iden
 
 const PRIVATE_KEY = process.env.WALLET_PRIVATE_KEY || "";
 const PRINCIPAL_CREDS = {
-  "privateKey": "0x3eb15da85647edd9a1159a4a13b9e7c56877c4eb33f614546d4db06a51868b1c",
-  "address": "0xE90E12261CCb0F3F7976Ae611A29e84a6A85f424"
+  "privateKey": "0xf12e28c0eb1ef4ff90478f6805b68d63737b7f33abfa091601140805da450d93",
+  "address": "0x8002cd98cfb563492a6fb3e7c82"
 }
-const DATA_HASH = "aGFzaGVkX3N0cmluZw=="
-const IPFS_ADDRESS = "https://ipfs.io/ipfs/Qme7ss3ARVgxv6rXqVPiikMJ8u2NLgmgszg13pYrDKEoiu"
 
 if (!PRIVATE_KEY)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 
 // Address of the contract on zksync testnet
-const CONTRACT_ADDRESS = "0x4da8b63F2Ce2331065E9EE1ED79Fe157B2Bd3286";
+const CONTRACT_ADDRESS = "0x8b6E8186dE74fe0128C0a6a3B2733c1365f4c9e2";
 
 if (!CONTRACT_ADDRESS) throw "⛔️ Contract address not provided";
 

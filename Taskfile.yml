@@ -30,7 +30,7 @@ tasks:
 
   deploy-ecosystem:
     cmds:
-      - helm upgrade --install --wait --timeout 10m --set privateKey=$PRIVATE_KEY node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 10m --set node.privateKey=$PRIVATE_KEY node-ecosystem helm_chart/
       - helm test node-ecosystem
 
   start-k8s:
