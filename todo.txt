@@ -1,9 +1,4 @@
-Rough plan:
-
-clean up yarn task to hit authentication method in contract
-make readme
-
-clean up main.rs file
+Rough plan: 
 
 mint session token NFT on authentication
 

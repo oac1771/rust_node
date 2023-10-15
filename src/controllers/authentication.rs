@@ -87,28 +87,35 @@ impl AuthenticationController {
             Ok(response) => {
 
                 let principal_address = format!("0x{}", encode(request.principal));
-                let encryption_key = self.state_service.get_encryption_key(&principal_address).await;
 
-                let decryption = self.encryption_service.decrypt(string_literal_to_bytes(&response).unwrap(), encryption_key);
+                if let Some(encryption_key) = self.state_service.get_encryption_key(&principal_address).await {
 
-                if let Ok(decrypted_data) = decryption {
+                    if let Some(encrypted_bytes) = string_literal_to_bytes(&response) {
+                        let decryption = self.encryption_service.decrypt(encrypted_bytes, encryption_key);
 
-                    let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
-
-                    if hash == request.data_hash {
-                        println!("Authentication Successful!");
+                        if let Ok(decrypted_data) = decryption {
+                            let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
+    
+                            if hash == request.data_hash {
+                                println!("Authentication Successful!");
+                            } else {
+                                println!("Authentication unsuccessful...");
+                            }
+                            
+                        } else {
+                            println!("Decryption Error: {:?}", decryption)
+                        }
                     } else {
-                        println!("Authentication unsuccessful...");
+                        println!("String literal is not in byte form")
                     }
-
-
+    
                 } else {
-                    println!("Decryption Error: {:?}", decryption)
+                    println!("Encryption key does not exist")
                 }
 
             },
             Err(err) => {
-                println!("Error: {:?}", err.body);
+                println!("Error retreiving data from ipfs: {:?}", err.body);
             }
         }
 

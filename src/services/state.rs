@@ -57,10 +57,10 @@ impl StateService {
     }
 
     // check what happens if principal_address does not exist
-    pub async fn get_encryption_key(&self, principal_address: &str) -> String {
+    pub async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
         let state = self.read_state().await;
-        let encryption_key = state.encryption_keys.get(principal_address).unwrap();
+        let encryption_key = state.encryption_keys.get(principal_address)?;
 
-        return encryption_key.to_string()
+        return Some(encryption_key.to_string())
     }
 }
