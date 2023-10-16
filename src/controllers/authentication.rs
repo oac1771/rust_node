@@ -5,7 +5,7 @@ use ethers::{
 
 use std::sync::Arc;
 
-use crate::utils::string_literal_to_bytes;
+use crate::{utils::string_literal_to_bytes, clients::reqwest::models::Error};
 use crate::clients::ipfs::client::IpfsClient;
 use crate::clients::zksync::client::ZksyncClient;
 use crate::services::{
@@ -67,7 +67,11 @@ impl AuthenticationController {
                     println!("Event: {:?}", event);
                     match event {
                         IdentifierEvents::AuthenticationRequestFilter(request) => {
-                            self.authenticate(request).await
+                            let authentication = self.authenticate(request).await;
+                            match authentication {
+                                Ok(()) => {println!("Authentication Successful!")},
+                                Err(err) => {println!("Authentication Unsuccessful: {:?}", err)}
+                            }
                         },
                         _ => {}
                     }
@@ -80,45 +84,75 @@ impl AuthenticationController {
 
     }
 
-    async fn authenticate(&self, request: AuthenticationRequestFilter) {
-        let ipfs_data = self.ipfs_client.get(&request.ipfs_address).await;
+    async fn authenticate(&self, request: AuthenticationRequestFilter) -> Result<(), Error> {
+        let ipfs_data = self.ipfs_client.get(&request.ipfs_address).await?;
+        let principal_address = format!("0x{}", encode(request.principal));
 
-        match ipfs_data {
-            Ok(response) => {
+        let decrypted_data = self.decrypt_data(&principal_address, &ipfs_data).await;
 
-                let principal_address = format!("0x{}", encode(request.principal));
+        // let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
 
-                if let Some(encryption_key) = self.state_service.get_encryption_key(&principal_address).await {
 
-                    if let Some(encrypted_bytes) = string_literal_to_bytes(&response) {
-                        let decryption = self.encryption_service.decrypt(encrypted_bytes, encryption_key);
+        return Ok(())
 
-                        if let Ok(decrypted_data) = decryption {
-                            let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
+        // match ipfs_data {
+        //     Ok(response) => {
+
+                // let principal_address = format!("0x{}", encode(request.principal));
+
+                // if let Some(encryption_key) = self.state_service.get_encryption_key(&principal_address).await {
+
+                //     if let Some(encrypted_bytes) = string_literal_to_bytes(&response) {
+                //         let decryption = self.encryption_service.decrypt(encrypted_bytes, encryption_key);
+
+                //         if let Ok(decrypted_data) = decryption {
+                //             let hash = self.hash_service.hash(&String::from_utf8(decrypted_data).unwrap());
     
-                            if hash == request.data_hash {
-                                println!("Authentication Successful!");
-                            } else {
-                                println!("Authentication unsuccessful...");
-                            }
-                            
-                        } else {
-                            println!("Decryption Error: {:?}", decryption)
-                        }
-                    } else {
-                        println!("String literal is not in byte form")
-                    }
-    
-                } else {
-                    println!("Encryption key does not exist")
-                }
+                //             if hash == request.data_hash {
+                //                 println!("Authentication Successful!");
+                //                 return Ok(())
+                //             } else {
+                //                 println!("Authentication unsuccessful...");
+                //             }
 
+                //         } else {
+                //             println!("Decryption Error: {:?}", decryption)
+                //         }
+                //     } else {
+                //         println!("String literal is not in byte form")
+                //     }
+    
+                // } else {
+                //     println!("Encryption key does not exist")
+                // }
+
+            // },
+            // Err(err) => {
+            //     println!("Error retreiving data from ipfs: {:?}", err.body);
+            // }
+        // }
+
+    }
+
+    async fn decrypt_data(&self, principal_address: &str, ipfs_data: &str) -> Result<String, AuthenticationResponse> {
+
+        let encryption_key = self.state_service.get_encryption_key(principal_address).await;
+        let encrypted_bytes = string_literal_to_bytes(ipfs_data);
+
+        match (encryption_key, encrypted_bytes) {
+            (Some(key), Some(bytes)) => {
+                let decrypted_data = self.encryption_service.decrypt(bytes, key);
+                // &String::from_utf8(decrypted_data).unwrap()
             },
-            Err(err) => {
-                println!("Error retreiving data from ipfs: {:?}", err.body);
-            }
+            (Some(key), None) => {return Err(AuthenticationResponse::DecryptionError("encryption key does not exist".to_string()))},
+            (None, Some(byte)) => {return Err(AuthenticationResponse::DecryptionError("Ipfs Data not in byte form".to_string()))},
+            _ => {return Err(AuthenticationResponse::DecryptionError("Unable to retreive Key and Byte Data".to_string()))}
         }
 
     }
 
+}
+
+enum AuthenticationResponse {
+    DecryptionError(String)
 }
