@@ -1,6 +1,6 @@
 use crate::clients::reqwest::models::Error;
 use futures::{future::BoxFuture, FutureExt};
-use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
@@ -8,7 +8,7 @@ pub struct ReqwestClient {
     client: reqwest::Client,
 }
 
-
+#[allow(dead_code)]
 impl ReqwestClient {
     pub fn new() -> ReqwestClient {
         let client = reqwest::Client::new();
@@ -17,9 +17,9 @@ impl ReqwestClient {
         return reqwest_client;
     }
 
-    pub async fn post<'a, R>(&self, url: &str) -> Result<R, Error>
+    pub async fn post<R>(&self, url: &str) -> Result<R, Error>
     where
-        R: Deserialize<'a>,
+        R: DeserializeOwned,
     {
         let request = || async move { self.client.post(url).send().await }.boxed();
         let response = self.call(request).await?;
@@ -28,9 +28,9 @@ impl ReqwestClient {
         return r;
     }
 
-    pub async fn post_multipart<'a, R>(&self, url: &str, file_path: &str) -> Result<R, Error>
+    pub async fn post_multipart<R>(&self, url: &str, file_path: &str) -> Result<R, Error>
     where
-        R: Deserialize<'a>,
+        R: DeserializeOwned,
     {
         let file: File = File::open(file_path).await.unwrap();
         let stream = FramedRead::new(file, BytesCodec::new());
@@ -83,9 +83,9 @@ impl ReqwestClient {
         }
     }
 
-    pub async fn handle<'de, R>(&self, response: &'de str) -> Result<R, Error>
+    pub async fn handle<R>(&self, response: &str) -> Result<R, Error>
     where
-        R: Deserialize<'de>,
+        R: DeserializeOwned,
     {
         serde_json::from_str::<R>(response).map_err(|e| Error::new(e.to_string()))
     }
