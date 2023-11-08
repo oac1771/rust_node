@@ -94,16 +94,17 @@ impl AuthenticationController {
             .map_err(|e| AuthenticationResponse::IpfsGetError(e.body))?;
         let principal_address = format!("0x{}", encode(request.principal));
 
-        let decrypted_data = self.decrypt_data(&principal_address, &ipfs_data).await?;
+        let decrypted_data = self.decrypt_data(&principal_address, &ipfs_data.data).await?;
 
         let hash = self.hash_service.hash(&decrypted_data);
 
         if hash == request.data_hash {
             return Ok(());
         } else {
-            return Err(AuthenticationResponse::HashMismatch("Hashes do not match".to_string()));
+            return Err(AuthenticationResponse::HashMismatch(
+                "Hashes do not match".to_string(),
+            ));
         }
-
     }
 
     async fn decrypt_data(
@@ -150,5 +151,5 @@ impl AuthenticationController {
 enum AuthenticationResponse {
     DecryptionError(String),
     IpfsGetError(String),
-    HashMismatch(String)
+    HashMismatch(String),
 }

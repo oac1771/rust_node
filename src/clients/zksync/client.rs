@@ -66,14 +66,14 @@ impl ZksyncClient {
         let principal: Address = principal_address.parse().expect("Invalid principal address");
 
         let call = self.contract.check_identity(principal);
-        let identity_status = self.call::<bool>(call).await;
+        let identity_status = self._call::<bool>(call).await;
 
         return identity_status
     }
 
-    pub async fn get_current_token_id(&self) -> U256 {
+    pub async fn _get_current_token_id(&self) -> U256 {
         let call = self.contract.get_current_token_id();
-        let token_id = self.call::<U256>(call).await; 
+        let token_id = self._call::<U256>(call).await; 
 
         return token_id
     }
@@ -123,7 +123,7 @@ impl ZksyncClient {
 
     }
 
-    async fn call<T>(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
+    async fn _call<T>(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
         SignerMiddleware<Provider<Http>, 
         LocalWallet>, T>) -> T 
     where T: Detokenize    

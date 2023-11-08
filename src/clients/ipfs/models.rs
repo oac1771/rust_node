@@ -1,4 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
+
+// probalby dont need serialize
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
@@ -17,6 +19,21 @@ pub struct IpfsAddFileResponse {
 #[derive(Deserialize, Serialize)]
 pub struct IpfsRemovePinResponse {
     pub Pins: Vec<String>,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct IpfsGetResponse {
+    pub data: String,
+}
+
+impl<'de> Deserialize<'de> for IpfsGetResponse {
+    fn deserialize<D>(deserializer: D) -> Result<IpfsGetResponse, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let data = String::deserialize(deserializer)?;
+        Ok(IpfsGetResponse { data })
+    }
 }
 
 #[allow(non_snake_case)]
