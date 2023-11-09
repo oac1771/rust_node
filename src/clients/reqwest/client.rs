@@ -30,9 +30,9 @@ impl ReqwestClient {
     pub async fn post_multipart<D, E>(&self, url: &str, file_path: &str) -> Result<D, E>
     where
         D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error>
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>
     {
-        let file: File = File::open(file_path).await.unwrap();
+        let file: File = File::open(file_path).await?;
         let stream = FramedRead::new(file, BytesCodec::new());
 
         let body = reqwest::Body::wrap_stream(stream);

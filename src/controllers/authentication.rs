@@ -124,6 +124,7 @@ impl AuthenticationController {
                     .encryption_service
                     .decrypt(bytes, key)
                     .map_err(|e| AuthenticationResponse::DecryptionError(e.to_string()))?;
+                
                 let data = String::from_utf8(decrypted_data)
                     .map_err(|e| AuthenticationResponse::DecryptionError(e.to_string()))?;
                 return Ok(data);

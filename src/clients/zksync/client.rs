@@ -123,13 +123,13 @@ impl ZksyncClient {
 
     }
 
-    async fn _call<T>(&self, call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
+    async fn _call<T>(&self, func_call: FunctionCall<Arc<SignerMiddleware<Provider<Http>, LocalWallet>>, 
         SignerMiddleware<Provider<Http>, 
         LocalWallet>, T>) -> T 
     where T: Detokenize    
     {
         
-        let result: T = call.call().await.unwrap();
+        let result: T = func_call.call().await.unwrap();
         return result
 
     }

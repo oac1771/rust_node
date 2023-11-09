@@ -54,3 +54,11 @@ impl From<serde_json::Error> for IpfsClientError {
         }
     }
 }
+
+impl From<std::io::Error> for IpfsClientError {
+    fn from(error: std::io::Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
