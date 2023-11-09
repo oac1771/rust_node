@@ -9,14 +9,14 @@ pub struct IpfsIdResponse {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 pub struct IpfsAddFileResponse {
     pub Name: String,
     pub Hash: String
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 pub struct IpfsRemovePinResponse {
     pub Pins: Vec<String>,
 }
@@ -37,7 +37,7 @@ impl<'de> Deserialize<'de> for IpfsGetResponse {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize)]
 pub struct IpfsClientErrorResponse {
     pub Body: String,
 }
