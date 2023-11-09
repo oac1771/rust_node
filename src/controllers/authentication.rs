@@ -91,7 +91,7 @@ impl AuthenticationController {
             .ipfs_client
             .get(&request.ipfs_address)
             .await
-            .map_err(|e| AuthenticationResponse::IpfsGetError(e.body))?;
+            .map_err(|e| AuthenticationResponse::IpfsGetError(e.err))?;
         let principal_address = format!("0x{}", encode(request.principal));
 
         let decrypted_data = self.decrypt_data(&principal_address, &ipfs_data.data).await?;

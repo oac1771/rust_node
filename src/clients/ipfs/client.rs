@@ -3,7 +3,6 @@ use mockall_double::double;
 use crate::clients::ipfs::models::*;
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
-use crate::clients::reqwest::models::Error;
 use crate::services::config::IpfsConfig;
 
 #[allow(unused_imports)]
@@ -26,36 +25,42 @@ impl IpfsClient {
         return ipfs_client;
     }
 
-    pub async fn get_id(&self) -> Result<IpfsIdResponse, Error> {
+    pub async fn get_id(&self) -> Result<IpfsIdResponse, IpfsClientError> {
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
-        let response = self.reqwest_client.post::<IpfsIdResponse>(&url).await;
+        let response = self
+            .reqwest_client
+            .post::<IpfsIdResponse, IpfsClientError>(&url)
+            .await;
 
         return response;
     }
 
-    pub async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, Error> {
+    pub async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, IpfsClientError> {
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/add");
         let response = self
             .reqwest_client
-            .post_multipart::<IpfsAddFileResponse>(&url, file_path)
+            .post_multipart::<IpfsAddFileResponse, IpfsClientError>(&url, file_path)
             .await;
 
         return response;
     }
 
-    pub async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, Error> {
+    pub async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, IpfsClientError> {
         let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/pin/rm?arg=", hash);
         let response = self
             .reqwest_client
-            .post::<IpfsRemovePinResponse>(&url)
+            .post::<IpfsRemovePinResponse, IpfsClientError>(&url)
             .await;
 
         return response;
     }
 
-    pub async fn get(&self, hash: &str) -> Result<IpfsGetResponse, Error> {
+    pub async fn get(&self, hash: &str) -> Result<IpfsGetResponse, IpfsClientError> {
         let url = format!("{}{}{}", self.ipfs_base_url, "/api/v0/cat?arg=", hash);
-        let response = self.reqwest_client.post::<IpfsGetResponse>(&url).await;
+        let response = self
+            .reqwest_client
+            .post::<IpfsGetResponse, IpfsClientError>(&url)
+            .await;
 
         return response;
     }

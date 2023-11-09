@@ -1,6 +1,4 @@
-use serde::{Deserialize, Serialize, Deserializer};
-
-// probalby dont need serialize
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
@@ -12,7 +10,7 @@ pub struct IpfsIdResponse {
 #[derive(Deserialize)]
 pub struct IpfsAddFileResponse {
     pub Name: String,
-    pub Hash: String
+    pub Hash: String,
 }
 
 #[allow(non_snake_case)]
@@ -36,8 +34,23 @@ impl<'de> Deserialize<'de> for IpfsGetResponse {
     }
 }
 
-#[allow(non_snake_case)]
-#[derive(Deserialize)]
-pub struct IpfsClientErrorResponse {
-    pub Body: String,
+#[derive(Deserialize, Debug)]
+pub struct IpfsClientError {
+    pub err: String,
+}
+
+impl From<reqwest::Error> for IpfsClientError {
+    fn from(error: reqwest::Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<serde_json::Error> for IpfsClientError {
+    fn from(error: serde_json::Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
 }

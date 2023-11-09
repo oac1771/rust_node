@@ -17,7 +17,7 @@ mod tests {
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
-            .expect_post()
+            .expect_post::<IpfsIdResponse, IpfsClientError>()
             .return_once(|_| Ok(response));
 
         let ipfs_client = IpfsClient {
@@ -38,7 +38,7 @@ mod tests {
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
-            .expect_post_multipart()
+            .expect_post_multipart::<IpfsAddFileResponse, IpfsClientError>()
             .return_once(|_, _| Ok(response));
 
         let ipfs_client = IpfsClient {
@@ -63,7 +63,7 @@ mod tests {
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
-            .expect_post()
+            .expect_post::<IpfsRemovePinResponse, IpfsClientError>()
             .return_once(|_| Ok(response));
 
         let ipfs_client = IpfsClient {

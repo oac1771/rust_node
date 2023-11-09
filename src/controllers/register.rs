@@ -68,7 +68,7 @@ impl RegisterController {
                 }))
             },
             Err(err) => {
-                register_response.set_error(err.body.to_string());
+                register_response.set_error(err.err.to_string());
             }
         }
 
@@ -101,7 +101,7 @@ impl RegisterController {
                 }))
             },
             Err(err) => {
-                register_response.set_error(err.body.to_string());
+                register_response.set_error(err.err.to_string());
             }
         }
 

@@ -1,9 +1,10 @@
 Rough plan: 
 
+continue to do general refactor
+    - make authentication error enum thing do this trait impl to be able to use ? operation https://doc.rust-lang.org/std/convert/trait.From.html
 mint session token NFT on authentication
-
 track gascost in zksync client
-make authentication controller more robust to not break out of thread
+
 
 refactor ideas:
     - make remove identity publish empty data to ipfs network at same content identifier so its effectively deleted

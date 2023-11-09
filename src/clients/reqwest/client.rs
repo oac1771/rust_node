@@ -1,4 +1,3 @@
-use crate::clients::reqwest::models::Error;
 use futures::{future::BoxFuture, FutureExt};
 use serde::de::DeserializeOwned;
 use tokio::fs::File;
@@ -17,19 +16,21 @@ impl ReqwestClient {
         return reqwest_client;
     }
 
-    pub async fn post<R>(&self, url: &str) -> Result<R, Error>
+    pub async fn post<D, E>(&self, url: &str) -> Result<D, E>
     where
-        R: DeserializeOwned,
+        D: DeserializeOwned,
+        E: From<reqwest::Error> + From<serde_json::Error>
     {
         let request = || async move { self.client.post(url).send().await }.boxed();
-        let response = self.call::<R>(request).await;
+        let response = self.call::<D, E>(request).await;
 
         return response;
     }
 
-    pub async fn post_multipart<R>(&self, url: &str, file_path: &str) -> Result<R, Error>
+    pub async fn post_multipart<D, E>(&self, url: &str, file_path: &str) -> Result<D, E>
     where
-        R: DeserializeOwned,
+        D: DeserializeOwned,
+        E: From<reqwest::Error> + From<serde_json::Error>
     {
         let file: File = File::open(file_path).await.unwrap();
         let stream = FramedRead::new(file, BytesCodec::new());
@@ -49,33 +50,25 @@ impl ReqwestClient {
             }
             .boxed()
         };
-        let response = self.call::<R>(request).await;
+        let response = self.call::<D, E>(request).await;
 
         return response;
     }
 
-    pub async fn call<'a, R>(
+    pub async fn call<'a, D, E>(
         &self,
         request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>,
-    ) -> Result<R, Error>
+    ) -> Result<D, E>
     where
-        R: DeserializeOwned,
+        D: DeserializeOwned,
+        E: From<reqwest::Error> + From<serde_json::Error>
     {
-        let response = request().await.map_err(|e| Error::new(e.to_string()))?;
-        let resp = response
-            .error_for_status()
-            .map_err(|e| Error::new(e.to_string()))?;
-        let body = resp.text().await.map_err(|e| Error::new(e.to_string()))?;
-        let r = serde_json::from_str::<R>(&body).map_err(|e| Error::new(e.to_string()));
+        let response = request().await?;
+        let resp = response.error_for_status()?;
+        let body = resp.text().await?;
+        let r = serde_json::from_str::<D>(&body)?;
 
-        return r;
-    }
-
-    pub fn handle<R>(&self, response: &str) -> Result<R, Error>
-    where
-        R: DeserializeOwned,
-    {
-        serde_json::from_str::<R>(response).map_err(|e| Error::new(e.to_string()))
+        return Ok(r);
     }
 }
 
@@ -87,12 +80,8 @@ use mockall::mock;
 #[cfg(test)]
 #[async_trait]
 pub trait R {
-    async fn post<D>(&self, url: &str) -> Result<D, Error>
-    where
-        D: 'static;
-    async fn post_multipart<D>(&self, url: &str, file_path: &str) -> Result<D, Error>
-    where
-        D: 'static;
+    async fn post<D: 'static, E: 'static>(&self, url: &str) -> Result<D, E>;
+    async fn post_multipart<D: 'static, E: 'static>(&self, url: &str, file_path: &str) -> Result<D, E>;
 }
 
 #[cfg(test)]
@@ -100,11 +89,7 @@ mock! {
     pub ReqwestClient{}
     #[async_trait]
     impl R for ReqwestClient {
-        async fn post<D>(&self, url: &str) -> Result<D, Error>
-        where
-            D: 'static;
-        async fn post_multipart<D>(&self, url: &str, file_path: &str) -> Result<D, Error>
-        where
-            D: 'static;
+        async fn post<D: 'static, E: 'static>(&self, url: &str) -> Result<D, E>;
+        async fn post_multipart<D: 'static, E: 'static>(&self, url: &str, file_path: &str) -> Result<D, E>;
     }
 }

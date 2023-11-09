@@ -3,13 +3,35 @@ mod tests {
 
     use futures::FutureExt;
     use http;
-    use serde::{Deserialize, Serialize};
+    use serde::Deserialize;
 
     use crate::clients::reqwest::client::ReqwestClient;
 
-    #[derive(Deserialize, Serialize)]
+    #[derive(Deserialize)]
     pub struct TestResponse {
         pub body: String,
+    }
+
+    #[derive(Debug)]
+
+    pub struct TestError {
+        pub err: String
+    }
+    
+    impl From<reqwest::Error> for TestError {
+        fn from(error: reqwest::Error) -> Self {
+            Self {
+                err: error.to_string(),
+            }
+        }
+    }
+
+    impl From<serde_json::Error> for TestError {
+        fn from(error: serde_json::Error) -> Self {
+            Self {
+                err: error.to_string(),
+            }
+        }
     }
 
     async fn build_response(
@@ -44,7 +66,7 @@ mod tests {
         let status_code = reqwest::StatusCode::OK;
 
         let request = || async move { build_response(body.to_string(), status_code).await }.boxed();
-        let response = client.call::<TestResponse>(request).await.unwrap();
+        let response = client.call::<TestResponse, TestError>(request).await.unwrap();
 
         assert_eq!(response.body, "success!");
     }
@@ -56,10 +78,10 @@ mod tests {
         let status_code = reqwest::StatusCode::NOT_FOUND;
 
         let request = || async move { build_response(body.to_string(), status_code).await }.boxed();
-        let error = client.call::<TestResponse>(request).await.err().unwrap();
+        let error = client.call::<TestResponse, TestError>(request).await.err().unwrap();
 
         assert_eq!(
-            error.body,
+            error.err,
             "HTTP status client error (404 Not Found) for url (http://no.url.provided.local/)"
         );
     }
@@ -71,8 +93,8 @@ mod tests {
         let status_code = reqwest::StatusCode::GATEWAY_TIMEOUT;
 
         let request = || async move { build_error(body.to_string(), status_code).await }.boxed();
-        let error = client.call::<TestResponse>(request).await.err().unwrap();
+        let error = client.call::<TestResponse, TestError>(request).await.err().unwrap();
 
-        assert_eq!(error.body, "HTTP status server error (504 Gateway Timeout) for url (http://no.url.provided.local/)");
+        assert_eq!(error.err, "HTTP status server error (504 Gateway Timeout) for url (http://no.url.provided.local/)");
     }
 }
