@@ -22,10 +22,9 @@ impl ReqwestClient {
         R: DeserializeOwned,
     {
         let request = || async move { self.client.post(url).send().await }.boxed();
-        let response = self.call(request).await?;
-        let r = self.handle(&response).await;
+        let response = self.call::<R>(request).await;
 
-        return r;
+        return response;
     }
 
     pub async fn post_multipart<R>(&self, url: &str, file_path: &str) -> Result<R, Error>
@@ -50,40 +49,29 @@ impl ReqwestClient {
             }
             .boxed()
         };
-        let response = self.call(request).await?;
-        let r = self.handle(&response).await;
+        let response = self.call::<R>(request).await;
+
+        return response;
+    }
+
+    pub async fn call<'a, R>(
+        &self,
+        request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>,
+    ) -> Result<R, Error>
+    where
+        R: DeserializeOwned,
+    {
+        let response = request().await.map_err(|e| Error::new(e.to_string()))?;
+        let resp = response
+            .error_for_status()
+            .map_err(|e| Error::new(e.to_string()))?;
+        let body = resp.text().await.map_err(|e| Error::new(e.to_string()))?;
+        let r = serde_json::from_str::<R>(&body).map_err(|e| Error::new(e.to_string()));
 
         return r;
     }
 
-    pub async fn call<'a>(
-        &self,
-        request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>,
-    ) -> Result<String, Error> {
-        let request = request().await;
-
-        match request {
-            Ok(req) => match req.error_for_status() {
-                Ok(r) => {
-                    if let Ok(body) = r.text().await {
-                        return Ok(body);
-                    }
-
-                    return Err(Error::new("unable to read text".to_string()));
-                }
-                Err(e) => {
-                    let error = Error::new(e.to_string());
-                    return Err(error);
-                }
-            },
-            Err(err) => {
-                let error = Error::new(err.to_string());
-                return Err(error);
-            }
-        }
-    }
-
-    pub async fn handle<R>(&self, response: &str) -> Result<R, Error>
+    pub fn handle<R>(&self, response: &str) -> Result<R, Error>
     where
         R: DeserializeOwned,
     {
