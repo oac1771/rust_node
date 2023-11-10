@@ -14,6 +14,8 @@ use crate::services::{
 
 use super::models::RegisterResponse;
 
+
+// maybe put this check identity flag behind env var check read from config?
 pub struct RegisterController {
     pub ipfs_client: IpfsClient,
     pub zksync_client: ZksyncClient,
@@ -48,7 +50,7 @@ impl RegisterController {
         //     return register_response
         // } 
 
-        let (identity_file, identity) = self.identity_service.generate_identity(&data.to_string());
+        let (identity_file, identity) = self.identity_service.create_identity(&data.to_string()).unwrap();
         
         let identity_file_path = identity_file.path().to_str().unwrap().to_string();
         let response = self.ipfs_client.add_file(&identity_file_path).await;

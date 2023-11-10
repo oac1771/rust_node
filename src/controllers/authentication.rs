@@ -83,6 +83,9 @@ impl AuthenticationController {
         }
     }
 
+    // make identity service have a validate identity to not have to do all this work in here
+        // and can just take an identity service instead of hash and encryption service
+
     async fn authenticate(
         &self,
         request: AuthenticationRequestFilter,
@@ -122,7 +125,7 @@ impl AuthenticationController {
             (Some(key), Some(bytes)) => {
                 let decrypted_data = self
                     .encryption_service
-                    .decrypt(bytes, key)
+                    .decrypt(bytes, &key)
                     .map_err(|e| AuthenticationResponse::DecryptionError(e.to_string()))?;
                 
                 let data = String::from_utf8(decrypted_data)

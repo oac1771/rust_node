@@ -15,7 +15,7 @@ mod tests {
             data: json!({"foo": "bar"})
         };
 
-        let (enc_content, _) = encryption_service.encrypt(&content.to_string());
+        let (enc_content, _) = encryption_service.encrypt(&content.to_string()).unwrap();
 
         assert_ne!(serde_json::to_string(&content).unwrap().as_bytes(), enc_content);
         assert_ne!("".to_string().as_bytes(), enc_content);
@@ -31,8 +31,8 @@ mod tests {
             data: json!({"foo": "bar"})
         };
 
-        let (enc_content, priv_key) = encryption_service.encrypt(&content.to_string());
-        let decrypted_content = encryption_service.decrypt(enc_content, priv_key);
+        let (enc_content, priv_key) = encryption_service.encrypt(&content.to_string()).unwrap();
+        let decrypted_content = encryption_service.decrypt(enc_content, &priv_key);
 
         assert_eq!(content.to_string().as_bytes(), decrypted_content.unwrap());
     }

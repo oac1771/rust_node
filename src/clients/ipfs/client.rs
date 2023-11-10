@@ -1,9 +1,10 @@
 use mockall_double::double;
 
-use crate::clients::ipfs::models::*;
+use super::models::*;
+use crate::services::config::IpfsConfig;
+
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
-use crate::services::config::IpfsConfig;
 
 #[allow(unused_imports)]
 #[cfg(test)]
