@@ -1,12 +1,14 @@
 Rough plan: 
 
-add test_identity.rs
-config.rs has unwraps :(
-data in models.rs has unwrap :(
+refactor controllers and add tests
+
+files that are a mess:
+    config.rs
+    state.rs
+    data in models.rs (has unwrap)
 
 
 continue to do general refactor
-    - look at services and do error handling there. get rid of unwraps
     - make authentication error enum thing do this trait impl to be able to use ? operation https://doc.rust-lang.org/std/convert/trait.From.html
     - tests for controllers
 create integration test
@@ -19,7 +21,6 @@ mint session token NFT on authentication
 track gascost in zksync client
     - maybe when you instantiate zksync client you create empty gas tracker
         so per reqwest 
-
 
 
 refactor ideas:

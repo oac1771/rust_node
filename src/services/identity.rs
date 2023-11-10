@@ -30,14 +30,13 @@ impl IdentityService {
 
         let (encrypted_content, encryption_key) = self.encryption_service.encrypt(data)?;
         let encrypted_string_literal = bytes_to_string_literal(encrypted_content);
-        println!("key: {:?}", encryption_key);
 
         temp_file.write_all(&encrypted_string_literal.as_bytes())?;
 
         let identity = Identity {
             hash,
             encryption_key,
-            data: encrypted_string_literal
+            data: encrypted_string_literal,
         };
 
         return Ok((temp_file, identity));
@@ -49,25 +48,24 @@ impl IdentityService {
         encrypted_data: &str,
     ) -> Result<Identity, IdentityServiceError> {
 
-        let encrypted_bytes = string_literal_to_bytes(&encrypted_data);
+        if let Some(encrtyped_bytes) = string_literal_to_bytes(&encrypted_data) {
+            let decrypted_data = self
+                .encryption_service
+                .decrypt(encrtyped_bytes, encryption_key)?;
 
-        if let None = encrypted_bytes {
-            return Err(IdentityServiceError{err: "Unable to transform string literal to bytes".to_string()})
+            let data = String::from_utf8(decrypted_data)?;
+            let hash = self.hash_service.hash(&data);
+
+            let identity = Identity {
+                hash,
+                encryption_key: encryption_key.to_string(),
+                data,
+            };
+
+            return Ok(identity);
         }
-
-        let decrypted_data = self
-            .encryption_service
-            .decrypt(encrypted_bytes.unwrap(), encryption_key)?;
-
-        let data = String::from_utf8(decrypted_data)?;
-        let hash = self.hash_service.hash(&data);
-
-        let identity = Identity {
-            hash,
-            encryption_key: encryption_key.to_string(),
-            data
-        };
-
-        return Ok(identity);
+        return Err(IdentityServiceError {
+            err: "Unable to transform string literal to bytes".to_string(),
+        });
     }
 }
