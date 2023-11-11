@@ -6,7 +6,6 @@ use crate::services::config::IpfsConfig;
 #[double]
 use crate::clients::reqwest::client::ReqwestClient;
 
-#[allow(unused_imports)]
 #[cfg(test)]
 use crate::clients::reqwest::client::R;
 
@@ -14,7 +13,6 @@ pub struct IpfsClient {
     pub reqwest_client: ReqwestClient,
     pub ipfs_base_url: String,
 }
-
 impl IpfsClient {
     pub fn new(config: &IpfsConfig) -> IpfsClient {
         let reqwest_client: ReqwestClient = ReqwestClient::new();
@@ -64,5 +62,33 @@ impl IpfsClient {
             .await;
 
         return response;
+    }
+}
+
+#[cfg(test)]
+use async_trait::async_trait;
+#[cfg(test)]
+use mockall::mock;
+
+#[cfg(test)]
+#[async_trait]
+pub trait I {
+    fn new(config: &IpfsConfig) -> MockIpfsClient;
+    async fn get_id(&self) -> Result<IpfsIdResponse, IpfsClientError>;
+    async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, IpfsClientError>;
+    async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, IpfsClientError>;
+    async fn get(&self, hash: &str) -> Result<IpfsGetResponse, IpfsClientError>;
+}
+
+#[cfg(test)]
+mock! {
+    pub IpfsClient{}
+    #[async_trait]
+    impl I for IpfsClient {
+        fn new(config: &IpfsConfig) -> MockIpfsClient;
+        async fn get_id(&self) -> Result<IpfsIdResponse, IpfsClientError>;
+        async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, IpfsClientError>;
+        async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, IpfsClientError>;
+        async fn get(&self, hash: &str) -> Result<IpfsGetResponse, IpfsClientError>;
     }
 }

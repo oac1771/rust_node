@@ -1,3 +1,5 @@
+use mockall_double::double;
+
 use ethers::{
     providers::{Provider, StreamExt, Ws},
     utils::hex::encode,
@@ -5,10 +7,19 @@ use ethers::{
 
 use std::sync::Arc;
 
-use crate::clients::ipfs::{client::IpfsClient, models::IpfsClientError};
-use crate::clients::zksync::client::ZksyncClient;
+#[double]
+use crate::clients::{ipfs::client::IpfsClient, zksync::client::ZksyncClient};
+#[double]
+use crate::services::{identity::IdentityService, state::StateService};
+
+#[cfg(test)]
+use crate::clients::{ipfs::client::I, zksync::client::Z};
+#[cfg(test)]
+use crate::services::{identity::Id, state::St};
+
+use crate::clients::ipfs::models::IpfsClientError;
 use crate::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvents};
-use crate::services::{config::Config, identity::IdentityService, state::StateService, models::IdentityServiceError};
+use crate::services::{config::Config, models::IdentityServiceError};
 
 pub struct AuthenticationController {
     pub ipfs_client: IpfsClient,
@@ -23,7 +34,7 @@ impl AuthenticationController {
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 
-        let state_service = StateService {};
+        let state_service = StateService::new();
         let identity_service = IdentityService::new();
 
         let ws_provider = Provider::<Ws>::connect(config.zksync_config.zksync_ws_url.to_owned())
@@ -81,22 +92,21 @@ impl AuthenticationController {
         &self,
         request: AuthenticationRequestFilter,
     ) -> Result<(), AuthenticationResponse> {
-
-        let ipfs_data = self
-            .ipfs_client
-            .get(&request.ipfs_address)
-            .await?;
+        let ipfs_data = self.ipfs_client.get(&request.ipfs_address).await?;
 
         let principal_address = format!("0x{}", encode(request.principal));
 
         let encryption_key = self
             .state_service
             .get_encryption_key(&principal_address)
-            .await.ok_or(AuthenticationResponse::DecryptionError(
+            .await
+            .ok_or(AuthenticationResponse::DecryptionError(
                 "Encryption Key is not in Saved State".to_string(),
             ))?;
-            
-        let identity = self.identity_service.regenerate_identity(&encryption_key, &ipfs_data.data)?;
+
+        let identity = self
+            .identity_service
+            .regenerate_identity(&encryption_key, &ipfs_data.data)?;
 
         if identity.hash == request.data_hash {
             return Ok(());
@@ -105,10 +115,7 @@ impl AuthenticationController {
                 "Hashes do not match".to_string(),
             ));
         }
-
-
     }
-
 }
 
 #[derive(Debug)]
@@ -119,15 +126,13 @@ enum AuthenticationResponse {
 }
 
 impl From<IpfsClientError> for AuthenticationResponse {
-    
     fn from(err: IpfsClientError) -> AuthenticationResponse {
-        return AuthenticationResponse::IpfsGetError(err.err)
+        return AuthenticationResponse::IpfsGetError(err.err);
     }
 }
 
 impl From<IdentityServiceError> for AuthenticationResponse {
-    
     fn from(err: IdentityServiceError) -> AuthenticationResponse {
-        return AuthenticationResponse::DecryptionError(err.err)
+        return AuthenticationResponse::DecryptionError(err.err);
     }
 }

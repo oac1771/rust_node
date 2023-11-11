@@ -69,3 +69,39 @@ impl IdentityService {
         });
     }
 }
+
+#[cfg(test)]
+use async_trait::async_trait;
+#[cfg(test)]
+use mockall::mock;
+
+#[cfg(test)]
+#[async_trait]
+pub trait Id {
+    fn create_identity(
+        &self,
+        data: &str,
+    ) -> Result<(NamedTempFile, Identity), IdentityServiceError>;
+    fn regenerate_identity(
+        &self,
+        encryption_key: &str,
+        encrypted_data: &str,
+    ) -> Result<Identity, IdentityServiceError>;
+}
+
+#[cfg(test)]
+mock! {
+    pub IdentityService{}
+    #[async_trait]
+    impl Id for IdentityService {
+        fn create_identity(
+            &self,
+            data: &str,
+        ) -> Result<(NamedTempFile, Identity), IdentityServiceError>;
+        fn regenerate_identity(
+            &self,
+            encryption_key: &str,
+            encrypted_data: &str,
+        ) -> Result<Identity, IdentityServiceError>;
+    }
+}

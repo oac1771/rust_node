@@ -1,7 +1,7 @@
 ## Install Dependencies
 
 install [rtx](https://github.com/jdx/rtx) in order to install and manage tooling:
-
+ (MacOs)
 ```shell
 brew install rtx
 ```
@@ -26,6 +26,7 @@ install tooling:
 rtx install
 ```
 
+(MacOs)
 ```shell
 brew install qemu
 ```

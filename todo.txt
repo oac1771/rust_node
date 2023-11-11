@@ -1,7 +1,8 @@
 Rough plan: 
 
+re-investigate if you can have controllers have fields that implement traits to make mocking easier
 refactor controllers and add tests
-
+figure out how to fix editor to not see cfg[test] thing first
 files that are a mess:
     config.rs
     state.rs
