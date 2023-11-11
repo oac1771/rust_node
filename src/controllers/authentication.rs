@@ -7,8 +7,9 @@ use ethers::{
 
 use std::sync::Arc;
 
-#[double]
-use crate::clients::{ipfs::client::IpfsClient, zksync::client::ZksyncClient};
+
+use crate::clients::{ipfs::client as ipfs_client, zksync::client::ZksyncClient, reqwest::client::ReqwestClient};
+
 #[double]
 use crate::services::{identity::IdentityService, state::StateService};
 
@@ -22,7 +23,7 @@ use crate::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvent
 use crate::services::{config::Config, models::IdentityServiceError};
 
 pub struct AuthenticationController {
-    pub ipfs_client: IpfsClient,
+    pub ipfs_client: ipfs_client::IpfsClient<ReqwestClient>,
     pub zksync_client: ZksyncClient,
     pub state_service: StateService,
     pub contract: Identifier<Provider<Ws>>,
@@ -31,7 +32,7 @@ pub struct AuthenticationController {
 
 impl AuthenticationController {
     pub async fn new(config: &Config) -> AuthenticationController {
-        let ipfs_client = IpfsClient::new(&config.ipfs_config);
+        let ipfs_client = ipfs_client::new(&config.ipfs_config);
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 
         let state_service = StateService::new();

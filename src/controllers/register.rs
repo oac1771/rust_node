@@ -1,9 +1,10 @@
 use serde_json::json;
 use std::str;
 
+use crate::clients::reqwest::client::ReqwestClient;
 use crate::clients::{
     zksync::client::ZksyncClient,
-    ipfs::client::IpfsClient
+    ipfs::client as ipfs_client,
 };
 use crate::services::{
     state::StateService,
@@ -17,7 +18,7 @@ use super::models::RegisterResponse;
 
 // maybe put this check identity flag behind env var check read from config?
 pub struct RegisterController {
-    pub ipfs_client: IpfsClient,
+    pub ipfs_client: ipfs_client::IpfsClient<ReqwestClient>,
     pub zksync_client: ZksyncClient,
     pub identity_service: IdentityService,
     pub state_service: StateService
@@ -25,9 +26,9 @@ pub struct RegisterController {
 
 impl RegisterController {
 
-    pub async fn new(config: &Config) -> RegisterController {
+    pub async fn new(config: &Config) -> RegisterController{
         
-        let ipfs_client = IpfsClient::new(&config.ipfs_config);
+        let ipfs_client = ipfs_client::new(&config.ipfs_config);
         let identity_service = IdentityService::new();
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
 

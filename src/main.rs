@@ -70,7 +70,7 @@ async fn ipfs_id() -> Json<crate::clients::ipfs::models::IpfsIdResponse> {
 
     let config = services::config::read_config().await;
 
-    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
+    let ipfs_client = clients::ipfs::client::new(&config.ipfs_config);
     let response = ipfs_client.get_id().await.unwrap();
 
     return Json(response)
