@@ -23,7 +23,7 @@ impl ReqwestClient {
     ) -> Result<D, E>
     where
         D: DeserializeOwned,
-        E   : From<reqwest::Error> + From<serde_json::Error>
+        E: From<reqwest::Error> + From<serde_json::Error>,
     {
         let response = request().await?;
         let resp = response.error_for_status()?;
@@ -36,11 +36,10 @@ impl ReqwestClient {
 
 #[async_trait]
 impl Req for ReqwestClient {
-
     async fn post<D, E>(&self, url: &str) -> Result<D, E>
     where
         D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error>
+        E: From<reqwest::Error> + From<serde_json::Error>,
     {
         let request = || async move { self.client.post(url).send().await }.boxed();
         let response = self.call::<D, E>(request).await;
@@ -51,7 +50,7 @@ impl Req for ReqwestClient {
     async fn post_multipart<D, E>(&self, url: &str, file_path: &str) -> Result<D, E>
     where
         D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>,
     {
         let file: File = File::open(file_path).await?;
         let stream = FramedRead::new(file, BytesCodec::new());
@@ -75,9 +74,7 @@ impl Req for ReqwestClient {
 
         return response;
     }
-
 }
-
 
 #[async_trait]
 pub trait Req {
@@ -92,27 +89,60 @@ pub trait Req {
 }
 
 #[cfg(test)]
-pub struct MockReqwestClient<D, E> {
-    pub post_response: Result<D, E>
+pub struct MockReqwestClient {
+    expectations: std::collections::HashMap<String, Box<dyn Expect>>,
+}
+
+#[cfg(test)]
+impl MockReqwestClient {
+
+    pub fn new() -> MockReqwestClient {
+        return MockReqwestClient {expectations: std::collections::HashMap::new()};
+    }
+
+    pub fn expect_post<D, E>(&self) -> &mut Expectation<D, E>
+    where
+        D: DeserializeOwned,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>,
+    {
+        let mut expectation = Expectation { func: None };
+        self.expectations.insert("post".to_string(), Box::new(expectation));
+
+        return &mut expectation;
+    }
 }
 
 // #[cfg(test)]
-// struct PostResponse<D, E>
-// where
-//     D: DeserializeOwned,
-//     E: From<reqwest::Error> + From<serde_json::Error>
-// {
-//     field: Result<D, E>
+// #[async_trait]
+// impl Req for MockReqwestClient {
+//     async fn post<D, E>(&self, url: &str) -> Result<D, E>
+//     where
+//         D: DeserializeOwned,
+//         E: From<reqwest::Error> + From<serde_json::Error>
+//     {
+//         let expecation = (self.expectations.get("post").unwrap()().unwrap())();
+//     }
 // }
 
 #[cfg(test)]
-#[async_trait]
-impl<D, E> Req for MockReqwestClient<D, E> {
-    async fn post<D, E>(&self, url: &str) -> Result<D, E>
-    where
+trait Expect {}
+
+#[cfg(test)]
+pub struct Expectation<D, E> {
+    pub func: Option<Box<dyn FnOnce() -> Result<D, E>>>,
+}
+
+#[cfg(test)]
+impl<D, E> Expect for Expectation<D, E> {}
+
+
+#[cfg(test)]
+impl<
         D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error>
-    {
-        return self.post_response;
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>,
+    > Expectation<D, E>
+{
+    pub fn returns(&mut self, func: impl FnOnce() -> Result<D, E>) {
+        self.func = Some(Box::new(func));
     }
 }
