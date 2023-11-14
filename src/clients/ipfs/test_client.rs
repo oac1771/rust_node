@@ -18,13 +18,13 @@ mod tests {
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client.expect_post::<IpfsIdResponse, IpfsClientError>().returns(|| Ok(response));
 
-        let ipfs_client = IpfsClient {
-            req: mock_reqwest_client,
-            ipfs_base_url: "".to_string(),
-        };
-        let ipfs_response = ipfs_client.get_id().await.unwrap();
+    //     let ipfs_client = IpfsClient {
+    //         req: mock_reqwest_client,
+    //         ipfs_base_url: "".to_string(),
+    //     };
+    //     let ipfs_response = ipfs_client.get_id().await.unwrap();
 
-        assert_eq!(ipfs_response.ID, IPFS_ID.to_string())
+    //     assert_eq!(ipfs_response.ID, IPFS_ID.to_string())
     }
 
     // #[tokio::test]

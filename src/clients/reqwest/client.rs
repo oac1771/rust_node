@@ -90,59 +90,62 @@ pub trait Req {
 
 #[cfg(test)]
 pub struct MockReqwestClient {
-    expectations: std::collections::HashMap<String, Box<dyn Expect>>,
+    expectations: std::collections::HashMap<String, Box<dyn std::any::Any>>,
 }
 
 #[cfg(test)]
 impl MockReqwestClient {
-
     pub fn new() -> MockReqwestClient {
-        return MockReqwestClient {expectations: std::collections::HashMap::new()};
+        return MockReqwestClient {
+            expectations: std::collections::HashMap::new(),
+        };
     }
 
-    pub fn expect_post<D, E>(&self) -> &mut Expectation<D, E>
+    pub fn expect_post<D, E>(&mut self) -> &mut Expectation<D, E>
     where
-        D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>,
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static,
     {
-        let mut expectation = Expectation { func: None };
-        self.expectations.insert("post".to_string(), Box::new(expectation));
-
-        return &mut expectation;
+        self.expectations
+            .entry("post".to_string())
+            .or_insert_with(|| Box::new(Expectation::<D, E> { func: || {} }))
+            .downcast_mut::<Expectation<D, E>>()
+            .unwrap()
     }
 }
 
-// #[cfg(test)]
-// #[async_trait]
-// impl Req for MockReqwestClient {
-//     async fn post<D, E>(&self, url: &str) -> Result<D, E>
-//     where
-//         D: DeserializeOwned,
-//         E: From<reqwest::Error> + From<serde_json::Error>
-//     {
-//         let expecation = (self.expectations.get("post").unwrap()().unwrap())();
-//     }
-// }
-
 #[cfg(test)]
-trait Expect {}
+// #[async_trait]
+impl MockReqwestClient {
+    async fn post<D, E>(&self, url: &str) -> Result<D, E>
+    where
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + 'static,
+    {
+        let expectation = self
+            .expectations
+            .get("post")
+            .unwrap()
+            .downcast_ref::<Expectation<D, E>>()
+            .unwrap();
+        let result = (expectation.func)();
+
+        return result;
+    }
+}
 
 #[cfg(test)]
 pub struct Expectation<D, E> {
-    pub func: Option<Box<dyn FnOnce() -> Result<D, E>>>,
+    pub func: Box<dyn Fn() -> Result<D, E>>,
 }
 
 #[cfg(test)]
-impl<D, E> Expect for Expectation<D, E> {}
-
-
-#[cfg(test)]
 impl<
-        D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>,
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static,
     > Expectation<D, E>
 {
-    pub fn returns(&mut self, func: impl FnOnce() -> Result<D, E>) {
-        self.func = Some(Box::new(func));
+    pub fn returns(&mut self, func: impl Fn() -> Result<D, E> + 'static) {
+        self.func = Box::new(func);
     }
 }
