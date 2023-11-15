@@ -5,6 +5,17 @@ use serde::de::DeserializeOwned;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};
 
+#[async_trait]
+pub trait Req {
+    async fn post<D, E>(&self, url: &str) -> Result<D, E>
+    where
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + 'static;
+    async fn post_multipart<D, E>(&self, url: &str, file_path: &str) -> Result<D, E>
+    where
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static;
+}
 pub struct ReqwestClient {
     client: reqwest::Client,
 }
@@ -76,21 +87,12 @@ impl Req for ReqwestClient {
     }
 }
 
-#[async_trait]
-pub trait Req {
-    async fn post<D, E>(&self, url: &str) -> Result<D, E>
-    where
-        D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error>;
-    async fn post_multipart<D, E>(&self, url: &str, file_path: &str) -> Result<D, E>
-    where
-        D: DeserializeOwned,
-        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error>;
-}
-
 #[cfg(test)]
 pub struct MockReqwestClient {
-    expectations: std::collections::HashMap<String, Box<dyn std::any::Any>>,
+    expectations: std::collections::HashMap<
+        String,
+        Box<dyn std::any::Any + std::marker::Sync + std::marker::Send>,
+    >,
 }
 
 #[cfg(test)]
@@ -108,16 +110,28 @@ impl MockReqwestClient {
     {
         self.expectations
             .entry("post".to_string())
-            .or_insert_with(|| Box::new(Expectation::<D, E> { func: || {} }))
+            .or_insert_with(|| Box::new(Expectation::<D, E> { func: None }))
+            .downcast_mut::<Expectation<D, E>>()
+            .unwrap()
+    }
+
+    pub fn expect_post_multipart<D, E>(&mut self) -> &mut Expectation<D, E>
+    where
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static,
+    {
+        self.expectations
+            .entry("post_multipart".to_string())
+            .or_insert_with(|| Box::new(Expectation::<D, E> { func: None }))
             .downcast_mut::<Expectation<D, E>>()
             .unwrap()
     }
 }
 
 #[cfg(test)]
-// #[async_trait]
-impl MockReqwestClient {
-    async fn post<D, E>(&self, url: &str) -> Result<D, E>
+#[async_trait]
+impl Req for MockReqwestClient {
+    async fn post<D, E>(&self, _url: &str) -> Result<D, E>
     where
         D: DeserializeOwned + 'static,
         E: From<reqwest::Error> + From<serde_json::Error> + 'static,
@@ -128,7 +142,23 @@ impl MockReqwestClient {
             .unwrap()
             .downcast_ref::<Expectation<D, E>>()
             .unwrap();
-        let result = (expectation.func)();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
+    }
+
+    async fn post_multipart<D, E>(&self, _url: &str, _file_path: &str) -> Result<D, E>
+    where
+        D: DeserializeOwned + 'static,
+        E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static,
+    {
+        let expectation = self
+            .expectations
+            .get("post_multipart")
+            .unwrap()
+            .downcast_ref::<Expectation<D, E>>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
 
         return result;
     }
@@ -136,7 +166,7 @@ impl MockReqwestClient {
 
 #[cfg(test)]
 pub struct Expectation<D, E> {
-    pub func: Box<dyn Fn() -> Result<D, E>>,
+    pub func: Option<Box<dyn Fn() -> Result<D, E> + std::marker::Sync + std::marker::Send>>,
 }
 
 #[cfg(test)]
@@ -145,7 +175,10 @@ impl<
         E: From<reqwest::Error> + From<serde_json::Error> + From<std::io::Error> + 'static,
     > Expectation<D, E>
 {
-    pub fn returns(&mut self, func: impl Fn() -> Result<D, E> + 'static) {
-        self.func = Box::new(func);
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> Result<D, E> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
     }
 }
