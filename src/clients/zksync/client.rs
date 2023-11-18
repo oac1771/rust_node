@@ -10,9 +10,11 @@ use ethers::{
     types::{Address, Filter, H256, U256},
 };
 
-use super::models::{Event, IpfsDeletionRequest, Registration};
+use super::{
+    contracts::identifier::Identifier,
+    models::{Event, IpfsDeletionRequest, Registration},
+};
 
-use crate::identifier::Identifier;
 use crate::services::config::ZksyncConfig;
 
 pub struct ZksyncClient {
