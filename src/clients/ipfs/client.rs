@@ -8,14 +8,16 @@ pub struct IpfsClient<R> {
     pub ipfs_base_url: String,
 }
 
-pub fn new(config: &IpfsConfig) -> IpfsClient<ReqwestClient> {
-    let req = ReqwestClient::new();
-
-    let ipfs_client = IpfsClient {
-        req: req,
-        ipfs_base_url: config.ipfs_base_url.to_string(),
-    };
-    return ipfs_client;
+impl IpfsClient<ReqwestClient> {
+    pub fn new(config: &IpfsConfig) -> IpfsClient<ReqwestClient> {
+        let req = ReqwestClient::new();
+    
+        let ipfs_client = IpfsClient {
+            req: req,
+            ipfs_base_url: config.ipfs_base_url.to_string(),
+        };
+        return ipfs_client;
+    }
 }
 
 impl<R: Req> IpfsClient<R> {

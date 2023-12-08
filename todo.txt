@@ -25,6 +25,7 @@ track gascost in zksync client
 
 
 refactor ideas:
+    - ethers-rs being deprecated: https://github.com/gakonst/ethers-rs/issues/2667
     - make remove identity publish empty data to ipfs network at same content identifier so its effectively deleted
     - dont use hardhat and just use rust ethers 
     - make responses from main.rs return error codes in terminal (echo $?) 
