@@ -14,8 +14,6 @@ use crate::clients::{ipfs::client::IpfsClient, reqwest::client::ReqwestClient};
 use crate::services::{identity::IdentityService, state::StateService};
 
 #[cfg(test)]
-use crate::clients::{ipfs::client::I, zksync::client::Z};
-#[cfg(test)]
 use crate::services::{identity::Id, state::St};
 
 use crate::clients::ipfs::models::IpfsClientError;

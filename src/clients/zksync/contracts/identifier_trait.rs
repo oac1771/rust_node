@@ -75,6 +75,20 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
 
         return tx_hash;
     }
+    async fn _call<T>(
+        &self,
+        call: FunctionCall<
+            Arc<SignerMiddleware<Provider<Http>, LocalWallet>>,
+            SignerMiddleware<Provider<Http>, LocalWallet>,
+            T,
+        >,
+    ) -> T
+    where
+        T: Detokenize,
+    {
+        let result: T = call.call().await.unwrap();
+        return result;
+    }
 }
 
 #[cfg(test)]
@@ -187,9 +201,9 @@ impl MockIdentifier {
 impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
     async fn register_identity(
         &self,
-        principal_address: Address,
-        ipfs_addaress: String,
-        data_hash: String,
+        _principal_address: Address,
+        _ipfs_addaress: String,
+        _data_hash: String,
     ) -> H256 {
         let expectation = self
             .expectations
@@ -204,8 +218,8 @@ impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
 
     async fn remove_identity(
         &self,
-        principal_address: Address,
-        token_id: U256,
+        _principal_address: Address,
+        _token_id: U256,
     ) -> H256 {
         let expectation = self
             .expectations
@@ -230,7 +244,7 @@ impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
         return result;
     }
 
-    fn decode<D>(&self, name: &str, topics: Vec<H256>, data: Bytes) -> Result<D, AbiError>
+    fn decode<D>(&self, _name: &str, _topics: Vec<H256>, _data: Bytes) -> Result<D, AbiError>
     where
         D: Detokenize + 'static,
     {
