@@ -2,16 +2,16 @@ use ethers::{
     abi::{AbiError, Detokenize},
     contract::FunctionCall,
     middleware::SignerMiddleware,
-    providers::{Http, Provider},
+    providers::{Http, Middleware, Provider, ProviderError},
     signers::LocalWallet,
-    types::{Address, Bytes, H256, U256},
+    types::{Address, Bytes, Filter, Log, H256, U256},
 };
 use std::sync::Arc;
 
 use super::identifier::Identifier;
 
 #[async_trait]
-pub trait Iden<T> {
+pub trait Iden {
     async fn register_identity(
         &self,
         principal_address: Address,
@@ -29,9 +29,7 @@ pub trait Iden<T> {
 }
 
 #[async_trait]
-impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>>
-    for Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>
-{
+impl Iden for Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
     async fn register_identity(
         &self,
         principal_address: Address,
@@ -40,13 +38,13 @@ impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>>
     ) -> H256 {
         let call = self.register_identity(principal_address, ipfs_addaress, data_hash);
         let tx_hash = self.send(call).await;
-        return tx_hash
+        return tx_hash;
     }
 
     async fn remove_identity(&self, principal_address: Address, token_id: U256) -> H256 {
         let call = self.remove_identity(token_id, principal_address);
         let tx_hash = self.send(call).await;
-        return tx_hash
+        return tx_hash;
     }
 
     fn get_address(&self) -> Address {
@@ -91,6 +89,18 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
     }
 }
 
+#[async_trait]
+pub trait HttpProvider {
+    async fn logs(&self, filter: &Filter) -> Result<Vec<Log>, ProviderError>;
+}
+
+#[async_trait]
+impl HttpProvider for Provider<Http> {
+    async fn logs(&self, filter: &Filter) -> Result<Vec<Log>, ProviderError> {
+        return self.get_logs(filter).await;
+    }
+}
+
 #[cfg(test)]
 pub struct MockIdentifier {
     expectations: std::collections::HashMap<
@@ -101,12 +111,7 @@ pub struct MockIdentifier {
 
 #[cfg(test)]
 pub struct Expectation {
-    pub func: Option<
-        Box<
-            dyn Fn() -> H256 + std::marker::Sync
-                + std::marker::Send,
-        >,
-    >,
+    pub func: Option<Box<dyn Fn() -> H256 + std::marker::Sync + std::marker::Send>>,
     pub address: Option<Address>,
 }
 
@@ -120,10 +125,7 @@ impl Expectation {
     }
     pub fn returns(
         &mut self,
-        func: impl Fn() -> H256
-            + 'static
-            + std::marker::Sync
-            + std::marker::Send,
+        func: impl Fn() -> H256 + 'static + std::marker::Sync + std::marker::Send,
     ) {
         self.func = Some(Box::new(func));
     }
@@ -198,7 +200,7 @@ impl MockIdentifier {
 
 #[cfg(test)]
 #[async_trait]
-impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
+impl Iden for MockIdentifier {
     async fn register_identity(
         &self,
         _principal_address: Address,
@@ -216,11 +218,7 @@ impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
         return result;
     }
 
-    async fn remove_identity(
-        &self,
-        _principal_address: Address,
-        _token_id: U256,
-    ) -> H256 {
+    async fn remove_identity(&self, _principal_address: Address, _token_id: U256) -> H256 {
         let expectation = self
             .expectations
             .get("remove_identity")
@@ -256,6 +254,66 @@ impl Iden<SignerMiddleware<Provider<Http>, LocalWallet>> for MockIdentifier {
             .unwrap();
         let result = (expectation.func.as_ref().unwrap())();
 
+        return result;
+    }
+}
+
+#[cfg(test)]
+pub struct MockHttpProvider {
+    expectations: std::collections::HashMap<
+        String,
+        Box<dyn std::any::Any + std::marker::Sync + std::marker::Send>,
+    >,
+}
+
+#[cfg(test)]
+pub struct HttpProviderExpectation {
+    pub func: Option<Box<dyn Fn() -> Result<Vec<Log>, ProviderError> + std::marker::Sync + std::marker::Send>>,
+}
+
+#[cfg(test)]
+impl HttpProviderExpectation {
+    pub fn new() -> Self {
+        return Self { func: None };
+    }
+
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> Result<Vec<Log>, ProviderError> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl MockHttpProvider {
+    pub fn new() -> Self {
+        return Self {
+            expectations: std::collections::HashMap::new(),
+        };
+    }
+
+    pub fn expect_logs(&mut self) -> &mut HttpProviderExpectation {
+        self.expectations
+            .entry("logs".to_string())
+            .or_insert_with(|| Box::new(HttpProviderExpectation::new()))
+            .downcast_mut::<HttpProviderExpectation>()
+            .unwrap()
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl HttpProvider for MockHttpProvider {
+    async fn logs(&self, _filter: &Filter) -> Result<Vec<Log>, ProviderError> {
+        let expectation = self
+            .expectations
+            .get("logs")
+            .unwrap()
+            .downcast_ref::<HttpProviderExpectation>()
+            .unwrap();
+
+        let result = (expectation.func.as_ref().unwrap())();
         return result;
     }
 }

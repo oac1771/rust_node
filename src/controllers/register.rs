@@ -21,7 +21,7 @@ use super::models::RegisterResponse;
 // maybe put this check identity flag behind env var check read from config?
 pub struct RegisterController {
     pub ipfs_client: IpfsClient<ReqwestClient>,
-    pub zksync_client: ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Http>,
+    pub zksync_client: ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
     pub identity_service: IdentityService,
     pub state_service: StateService,
 }

@@ -1,2 +1,2 @@
 pub mod identifier;
-pub mod identifier_trait;
+pub mod ethers_traits;

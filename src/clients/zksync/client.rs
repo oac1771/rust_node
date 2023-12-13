@@ -4,27 +4,29 @@ use std::{convert::TryFrom, sync::Arc};
 use ethers::{
     abi::{Detokenize, Token},
     middleware::SignerMiddleware,
-    providers::{Http, HttpClientError, JsonRpcClient, Middleware, Provider},
+    providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer},
     types::{Address, Filter, H256, U256},
 };
 
+use super::contracts::ethers_traits::HttpProvider;
 use super::{
-    contracts::{identifier::Identifier, identifier_trait::Iden},
+    contracts::{ethers_traits::Iden, identifier::Identifier},
     models::{Event, IpfsDeletionRequest, Registration},
 };
 
 use crate::services::config::ZksyncConfig;
-pub struct ZksyncClient<I, J> {
+pub struct ZksyncClient<I, H> {
     pub contract: I,
     pub api_url: String,
-    pub http_provider: Provider<J>,
+    pub http_provider: H,
 }
 
-impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Http> {
+impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>> {
     pub async fn new(
         config: &ZksyncConfig,
-    ) -> ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Http> {
+    ) -> ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>
+    {
         let http_provider = Provider::<Http>::try_from(&config.zksync_api_url).unwrap();
         let chain_id = http_provider.get_chainid().await.unwrap().as_u64();
 
@@ -45,11 +47,7 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Htt
     }
 }
 
-impl<
-        I: Iden<SignerMiddleware<Provider<Http>, LocalWallet>>,
-        J: JsonRpcClient<Error = HttpClientError>,
-    > ZksyncClient<I, J>
-{
+impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
     pub async fn register_identity(
         &self,
         principal_address: &str,
@@ -123,7 +121,7 @@ impl<
             .from_block(0)
             .address(self.contract.get_address())
             .event(&T::get_signature());
-        let logs = self.http_provider.get_logs(&filter).await.unwrap();
+        let logs = self.http_provider.logs(&filter).await.unwrap();
 
         for log in logs {
             let event = self
