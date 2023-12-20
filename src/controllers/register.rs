@@ -7,27 +7,44 @@ use ethers::{
     signers::LocalWallet,
 };
 
-use crate::clients::reqwest::client::ReqwestClient;
 use crate::clients::{
     ipfs::client::IpfsClient,
-    zksync::{client::ZksyncClient, contracts::identifier::Identifier},
+    zksync::{client::{ZksyncClient, ZClient}, contracts::identifier::Identifier},
 };
 use crate::services::{
     config::Config, identity::IdentityService, models::Data, state::StateService,
 };
+use crate::{
+    clients::{ipfs::client::IClient, reqwest::client::ReqwestClient},
+    services::{identity::IdService, state::StService},
+};
 
 use super::models::RegisterResponse;
 
-// maybe put this check identity flag behind env var check read from config?
-pub struct RegisterController {
-    pub ipfs_client: IpfsClient<ReqwestClient>,
-    pub zksync_client: ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
-    pub identity_service: IdentityService,
-    pub state_service: StateService,
+pub struct RegisterController<IC, ZC, IS, SS> {
+    pub ipfs_client: IC,
+    pub zksync_client: ZC,
+    pub identity_service: IS,
+    pub state_service: SS,
+    check_identity: bool,
 }
 
-impl RegisterController {
-    pub async fn new(config: &Config) -> RegisterController {
+impl
+    RegisterController<
+        IpfsClient<ReqwestClient>,
+        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
+        IdentityService,
+        StateService,
+    >
+{
+    pub async fn new(
+        config: &Config,
+    ) -> RegisterController<
+        IpfsClient<ReqwestClient>,
+        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
+        IdentityService,
+        StateService,
+    > {
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
         let identity_service = IdentityService::new();
         let zksync_client = ZksyncClient::new(&config.zksync_config).await;
@@ -37,18 +54,21 @@ impl RegisterController {
             zksync_client,
             identity_service,
             state_service: StateService {},
+            check_identity: config.check_identity,
         };
         return register_controller;
     }
-
+}
+impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<IC, ZC, IS, SS> {
     pub async fn register(&self, data: Data, principal_address: &str) -> RegisterResponse {
         let mut register_response = RegisterResponse::new();
 
-        // let check_identity = self.zksync_client.check_identity(principal_address).await;
-        // if check_identity {
-        //     register_response.set_error("Identity already exists".to_string());
-        //     return register_response
-        // }
+        if self.check_identity {
+            if self.zksync_client.check_identity(principal_address).await {
+                register_response.set_error("Identity already exists".to_string());
+                return register_response
+            }
+        }
 
         let (identity_file, identity) = self
             .identity_service
@@ -87,11 +107,12 @@ impl RegisterController {
     pub async fn remove(&self, principal_address: &str, token_id: u128) -> RegisterResponse {
         let mut register_response = RegisterResponse::new();
 
-        // let check_identity = self.zksync_client.check_identity(principal_address).await;
-        // if !check_identity {
-        //     register_response.set_error("Identity does not exist".to_string());
-        //     return register_response
-        // }
+        if self.check_identity {
+            if self.zksync_client.check_identity(principal_address).await {
+                register_response.set_error("Identity does not exist".to_string());
+                return register_response
+            };
+        }
 
         let tx_hash = self
             .zksync_client

@@ -16,6 +16,24 @@ use super::{
 };
 
 use crate::services::config::ZksyncConfig;
+
+#[async_trait]
+pub trait ZClient {
+    async fn register_identity(
+        &self,
+        principal_address: &str,
+        ipfs_address: &str,
+        data_hash: &str,
+    ) -> H256;
+    async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256;
+    async fn get_token_id(&self, principal_address: &str) -> Option<Token>;
+    async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>;
+    async fn check_identity(&self, principal_address: &str) -> bool;
+    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token> + std::marker::Send) -> Option<Token>
+    where
+        T: Detokenize + Event + 'static;
+}
+
 pub struct ZksyncClient<I, H> {
     pub contract: I,
     pub api_url: String,
@@ -47,8 +65,13 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
     }
 }
 
-impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
-    pub async fn register_identity(
+#[async_trait]
+impl<
+        I: Iden + std::marker::Sync + std::marker::Send,
+        H: HttpProvider + std::marker::Sync + std::marker::Send,
+    > ZClient for ZksyncClient<I, H>
+{
+    async fn register_identity(
         &self,
         principal_address: &str,
         ipfs_address: &str,
@@ -66,7 +89,7 @@ impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
         return tx_hash;
     }
 
-    pub async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256 {
+    async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256 {
         let principal: Address = principal_address
             .parse()
             .expect("Invalid principal address");
@@ -77,7 +100,17 @@ impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
         return tx_hash;
     }
 
-    pub async fn get_token_id(&self, principal_address: &str) -> Option<Token> {
+    async fn check_identity(&self, principal_address: &str) -> bool {
+        let principal: Address = principal_address
+            .parse()
+            .expect("Invalid principal address");
+
+        let identity_status = self.contract.check_identity(principal).await;
+
+        return identity_status;
+    }
+
+    async fn get_token_id(&self, principal_address: &str) -> Option<Token> {
         let principal: Address = principal_address
             .parse()
             .expect("Invalid principal address");
@@ -94,7 +127,7 @@ impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
         return token_id;
     }
 
-    pub async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token> {
+    async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token> {
         let principal: Address = principal_address
             .parse()
             .expect("Invalid principal address");
@@ -113,7 +146,7 @@ impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
         return ipfs_addr;
     }
 
-    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token>) -> Option<Token>
+    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token> + std::marker::Send) -> Option<Token>
     where
         T: Detokenize + Event + 'static,
     {
@@ -135,54 +168,4 @@ impl<I: Iden, H: HttpProvider> ZksyncClient<I, H> {
         return None;
     }
 
-    // pub async fn _check_identity(&self, principal_address: &str) -> bool {
-    //     let principal: Address = principal_address
-    //         .parse()
-    //         .expect("Invalid principal address");
-
-    //     let call = self.contract.check_identity(principal);
-    //     let identity_status = self._call::<bool>(call).await;
-
-    //     return identity_status;
-    // }
-
-    // pub async fn _get_current_token_id(&self) -> U256 {
-    //     let call = self.contract.get_current_token_id();
-    //     let token_id = self._call::<U256>(call).await;
-
-    //     return token_id;
-    // }
-}
-
-#[cfg(test)]
-use async_trait::async_trait;
-#[cfg(test)]
-use mockall::mock;
-
-#[cfg(test)]
-#[async_trait]
-pub trait Z {
-    async fn new(config: &ZksyncConfig) -> MockZksyncClient;
-    async fn register_identity(
-        &self,
-        principal_address: &str,
-        ipfs_address: &str,
-        data_hash: &str,
-    ) -> H256;
-    async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256;
-    async fn get_token_id(&self, principal_address: &str) -> Option<Token>;
-    async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>;
-}
-
-#[cfg(test)]
-mock! {
-    pub ZksyncClient{}
-    #[async_trait]
-    impl Z for ZksyncClient {
-        async fn new(config: &ZksyncConfig) -> MockZksyncClient;
-        async fn register_identity(&self, principal_address: &str, ipfs_address: &str, data_hash: &str) -> H256;
-        async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256;
-        async fn get_token_id(&self, principal_address: &str) -> Option<Token>;
-        async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>;
-    }
 }

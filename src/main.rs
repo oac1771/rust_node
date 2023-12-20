@@ -13,8 +13,11 @@ use rocket::serde::json::Json;
 
 use ethers::providers::{Provider, Ws};
 
-use controllers::authentication::AuthenticationController;
 use clients::zksync::contracts::identifier::Identifier;
+use controllers::{
+    authentication::AuthenticationController, models::RegisterResponse,
+    register::RegisterController,
+};
 
 #[derive(Serialize)]
 pub struct Health {
@@ -47,28 +50,32 @@ async fn bootstrap(contract_address: &str) {
     });
 }
 
-// #[post("/register/<principal_address>", data = "<data>")]
-// async fn register(data: Json<services::models::Data>,
-//     principal_address: &str) -> Json<RegisterResponse> {
+#[post("/register/<principal_address>", data = "<data>")]
+async fn register(
+    data: Json<services::models::Data>,
+    principal_address: &str,
+) -> Json<RegisterResponse> {
+    let config = services::config::read_config().await;
 
-//     let config = services::config::read_config().await;
+    let register_controller = RegisterController::new(&config).await;
+    let response = register_controller
+        .register(data.into_inner(), principal_address)
+        .await;
 
-//     let register_controller = RegisterController::new(&config).await;
-//     let response = register_controller.register(data.into_inner(), principal_address).await;
+    return Json(response);
+}
 
-//     return Json(response)
-// }
+#[delete("/remove/<principal_address>/<token_id>")]
+async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
+    let config = services::config::read_config().await;
 
-// #[delete("/remove/<principal_address>/<token_id>")]
-// async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
+    let register_controller = RegisterController::new(&config).await;
+    let response = register_controller
+        .remove(principal_address, token_id)
+        .await;
 
-//     let config = services::config::read_config().await;
-
-//     let register_controller = RegisterController::new(&config).await;
-//     let response = register_controller.remove(principal_address, token_id).await;
-
-//     return Json(response)
-// }
+    return Json(response);
+}
 
 #[post("/ipfs_id")]
 async fn ipfs_id() -> Json<crate::clients::ipfs::models::IpfsIdResponse> {
@@ -85,5 +92,5 @@ async fn rocket() -> _ {
     services::config::create_config().await;
     services::state::StateService {}.create_state().await;
 
-    rocket::build().mount("/", routes![health, ipfs_id, bootstrap])
+    rocket::build().mount("/", routes![health, ipfs_id, bootstrap, remove, register])
 }

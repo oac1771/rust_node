@@ -11,12 +11,10 @@ futures = "0.3.27"
 serde_json = "1.0.94"
 tokio = "1.27.0"
 tokio-util = "0.7.7"
-mockall_double = "0.3.0"
 tempfile = "3.5.0"
 openssl = { version = "*", features = ["vendored"] } 
 rust-crypto = "0.2.36"
 ethers = { version = "2.0.9", features = ["ws", "legacy"] }
-mockall = "0.11.4"
 async-trait = "0.1.68"
 
 [dependencies.rocket]

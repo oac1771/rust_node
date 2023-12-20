@@ -2,7 +2,7 @@
 mod tests {
 
     use crate::clients::zksync::{
-        client::ZksyncClient,
+        client::{ZksyncClient, ZClient},
         contracts::ethers_traits::{MockHttpProvider, MockIdentifier},
         models::{IpfsDeletionRequest, Registration},
     };
@@ -162,5 +162,24 @@ mod tests {
         let returned_ipfs_addr = client.get_ipfs_addr(principal, 0).await.unwrap().into_string();
 
         assert_eq!(returned_ipfs_addr, Some(ipfs_addr.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_check_identity_should_return_bool() {
+        let mut mock_contract = MockIdentifier::new();
+        let mock_http_proiver = MockHttpProvider::new();
+
+        mock_contract.expect_check_identity().returns_bool(true);
+
+        let client = ZksyncClient {
+            api_url: "".to_string(),
+            contract: mock_contract,
+            http_provider: mock_http_proiver,
+        };
+
+        let result = client
+            .check_identity(&"0x36615Cf349d7F6344891B1e7CA7C72883F5dc049")
+            .await;
+        assert_eq!(result, true)
     }
 }

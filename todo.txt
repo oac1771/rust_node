@@ -5,6 +5,7 @@ refactor controllers and add tests
     - get rid of unwraps in:
         - register controllers
         - identifier traits
+    - authentication listen function should take event stream and not contract obj
 files that are a mess:
     config.rs
     state.rs

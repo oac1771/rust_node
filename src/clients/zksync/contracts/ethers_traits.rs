@@ -23,6 +23,8 @@ pub trait Iden {
 
     fn get_address(&self) -> Address;
 
+    async fn check_identity(&self, principal_address: Address) -> bool;
+
     fn decode<D>(&self, name: &str, topics: Vec<H256>, data: Bytes) -> Result<D, AbiError>
     where
         D: Detokenize + 'static;
@@ -51,6 +53,11 @@ impl Iden for Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
         return self.address();
     }
 
+    async fn check_identity(&self, principal_address: Address) -> bool {
+        let call = self.check_identity(principal_address);
+        return self.call::<bool>(call).await;
+    }
+
     fn decode<D>(&self, name: &str, topics: Vec<H256>, data: Bytes) -> Result<D, AbiError>
     where
         D: Detokenize,
@@ -73,7 +80,7 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
 
         return tx_hash;
     }
-    async fn _call<T>(
+    async fn call<T>(
         &self,
         call: FunctionCall<
             Arc<SignerMiddleware<Provider<Http>, LocalWallet>>,
@@ -113,6 +120,7 @@ pub struct MockIdentifier {
 pub struct Expectation {
     pub func: Option<Box<dyn Fn() -> H256 + std::marker::Sync + std::marker::Send>>,
     pub address: Option<Address>,
+    pub val: bool,
 }
 
 #[cfg(test)]
@@ -121,6 +129,7 @@ impl Expectation {
         return Expectation {
             func: None,
             address: None,
+            val: true,
         };
     }
     pub fn returns(
@@ -132,6 +141,10 @@ impl Expectation {
 
     pub fn returns_const(&mut self, address: Address) {
         self.address = Some(address)
+    }
+
+    pub fn returns_bool(&mut self, val: bool) {
+        self.val = val
     }
 }
 
@@ -196,6 +209,14 @@ impl MockIdentifier {
             .downcast_mut::<Expectation>()
             .unwrap()
     }
+
+    pub fn expect_check_identity(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("check_identity".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
 }
 
 #[cfg(test)]
@@ -242,6 +263,17 @@ impl Iden for MockIdentifier {
         return result;
     }
 
+    async fn check_identity(&self, _principal_address: Address) -> bool {
+        let expectation = self
+            .expectations
+            .get("check_identity")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = expectation.val;
+        return result
+    }
+
     fn decode<D>(&self, _name: &str, _topics: Vec<H256>, _data: Bytes) -> Result<D, AbiError>
     where
         D: Detokenize + 'static,
@@ -268,7 +300,9 @@ pub struct MockHttpProvider {
 
 #[cfg(test)]
 pub struct HttpProviderExpectation {
-    pub func: Option<Box<dyn Fn() -> Result<Vec<Log>, ProviderError> + std::marker::Sync + std::marker::Send>>,
+    pub func: Option<
+        Box<dyn Fn() -> Result<Vec<Log>, ProviderError> + std::marker::Sync + std::marker::Send>,
+    >,
 }
 
 #[cfg(test)]
@@ -279,7 +313,10 @@ impl HttpProviderExpectation {
 
     pub fn returns(
         &mut self,
-        func: impl Fn() -> Result<Vec<Log>, ProviderError> + 'static + std::marker::Sync + std::marker::Send,
+        func: impl Fn() -> Result<Vec<Log>, ProviderError>
+            + 'static
+            + std::marker::Sync
+            + std::marker::Send,
     ) {
         self.func = Some(Box::new(func));
     }

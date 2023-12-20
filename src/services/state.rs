@@ -6,6 +6,7 @@ const STATE_PATH: &str = "./var/state.json";
 #[async_trait]
 pub trait StService {
     async fn get_encryption_key(&self, hash: &str) -> Option<String>;
+    async fn save_encryption_key(&self, principal_address: &str, encryption_key: &str);
 }
 pub struct StateService {}
 
@@ -54,24 +55,25 @@ impl StateService {
         tokio::fs::write(STATE_PATH, state_string).await.unwrap();
     }
 
-    pub async fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
+}
+
+#[async_trait]
+impl StService for StateService {
+
+    async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
+        let state = self.read_state().await;
+        let encryption_key = state.encryption_keys.get(principal_address)?;
+
+        return Some(encryption_key.to_string());
+    }
+
+    async fn save_encryption_key(&self, principal_address: &str, encryption_key: &str) {
         let mut state = self.read_state().await;
         state
             .encryption_keys
             .insert(principal_address.to_lowercase(), encryption_key.to_string());
 
         self.write_state(state).await;
-    }
-}
-
-#[async_trait]
-impl StService for StateService {
-    // check what happens if principal_address does not exist
-    async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
-        let state = self.read_state().await;
-        let encryption_key = state.encryption_keys.get(principal_address)?;
-
-        return Some(encryption_key.to_string());
     }
 }
 
@@ -113,7 +115,7 @@ impl MockStateService {
 #[cfg(test)]
 #[async_trait]
 impl StService for MockStateService {
-    async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
+    async fn get_encryption_key(&self, _principal_address: &str) -> Option<String> {
         let expectation = self
             .expectations
             .get("get_encryption_key")
@@ -124,4 +126,6 @@ impl StService for MockStateService {
 
         return result;
     }
+
+    async fn save_encryption_key(&self, _principal_address: &str, _encryption_key: &str) {}
 }
