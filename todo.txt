@@ -2,16 +2,14 @@ Rough plan:
 
 re-investigate if you can have controllers have fields that implement traits to make mocking easier
 refactor controllers and add tests
-figure out how to fix editor to not see cfg[test] thing first
+    - get rid of unwraps in:
+        - register controllers
+        - identifier traits
 files that are a mess:
     config.rs
     state.rs
     data in models.rs (has unwrap)
 
-
-continue to do general refactor
-    - make authentication error enum thing do this trait impl to be able to use ? operation https://doc.rust-lang.org/std/convert/trait.From.html
-    - tests for controllers
 create integration test
     - deploy contract
     - register

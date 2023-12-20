@@ -3,6 +3,10 @@ use std::collections::HashMap;
 
 const STATE_PATH: &str = "./var/state.json";
 
+#[async_trait]
+pub trait StService {
+    async fn get_encryption_key(&self, hash: &str) -> Option<String>;
+}
 pub struct StateService {}
 
 #[derive(Deserialize, Serialize)]
@@ -19,9 +23,8 @@ impl State {
 }
 
 impl StateService {
-
     pub fn new() -> Self {
-        return Self{}
+        return Self {};
     }
 
     pub async fn create_state(&self) {
@@ -43,9 +46,9 @@ impl StateService {
         return state;
     }
 
-    async fn write_state<S>(&self, state: S) 
+    async fn write_state<S>(&self, state: S)
     where
-        S: Serialize
+        S: Serialize,
     {
         let state_string = serde_json::to_string(&state).unwrap();
         tokio::fs::write(STATE_PATH, state_string).await.unwrap();
@@ -59,9 +62,12 @@ impl StateService {
 
         self.write_state(state).await;
     }
+}
 
+#[async_trait]
+impl StService for StateService {
     // check what happens if principal_address does not exist
-    pub async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
+    async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
         let state = self.read_state().await;
         let encryption_key = state.encryption_keys.get(principal_address)?;
 
@@ -70,29 +76,52 @@ impl StateService {
 }
 
 #[cfg(test)]
-use async_trait::async_trait;
-#[cfg(test)]
-use mockall::mock;
-
-#[cfg(test)]
-#[async_trait]
-pub trait St {
-    async fn create_state(&self);
-    async fn read_state(&self) -> State;
-    async fn write_state<S>(&self, state: S) where S: std::marker::Send + 'static;
-    async fn save_encryption_key(&self, principal_address: &str, encryption_key: &str);
-    async fn get_encryption_key(&self, principal_address: &str) -> Option<String>;
+pub struct MockStateService {
+    expectations: std::collections::HashMap<
+        String,
+        Box<dyn std::any::Any + std::marker::Sync + std::marker::Send>,
+    >,
 }
 
 #[cfg(test)]
-mock! {
-    pub StateService{}
-    #[async_trait]
-    impl St for StateService {
-        async fn create_state(&self);
-        async fn read_state(&self) -> State;
-        async fn write_state<S>(&self, state: S) where S: std::marker::Send + 'static;
-        async fn save_encryption_key(&self, principal_address: &str, encryption_key: &str);
-        async fn get_encryption_key(&self, principal_address: &str) -> Option<String>;
+pub struct Expectation {
+    pub func:
+        Option<Box<dyn Fn() -> Option<String> + 'static + std::marker::Sync + std::marker::Send>>,
+}
+
+#[cfg(test)]
+impl Expectation {
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> Option<String> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl MockStateService {
+    pub fn expect_get_encryption_key(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("get_encryption_key".to_string())
+            .or_insert_with(|| Box::new(Expectation { func: None }))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl StService for MockStateService {
+    async fn get_encryption_key(&self, principal_address: &str) -> Option<String> {
+        let expectation = self
+            .expectations
+            .get("get_encryption_key")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
     }
 }

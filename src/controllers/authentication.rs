@@ -1,59 +1,47 @@
-use mockall_double::double;
-
 use ethers::{
     providers::{Provider, StreamExt, Ws},
     utils::hex::encode,
 };
 
-use std::sync::Arc;
+use crate::clients::{
+    ipfs::{client::{IpfsClient, IClient}, models::IpfsClientError},
+    reqwest::client::ReqwestClient,
+    zksync::contracts::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvents}
+};
 
+use crate::services::{
+    config::Config, identity::{IdentityService, IdService}, models::IdentityServiceError, state::{StateService, StService},
+};
 
-use crate::clients::{ipfs::client::IpfsClient, reqwest::client::ReqwestClient};
-
-#[double]
-use crate::services::{identity::IdentityService, state::StateService};
-
-#[cfg(test)]
-use crate::services::{identity::Id, state::St};
-
-use crate::clients::ipfs::models::IpfsClientError;
-use crate::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvents};
-use crate::services::{config::Config, models::IdentityServiceError};
-
-pub struct AuthenticationController {
-    pub ipfs_client: IpfsClient<ReqwestClient>,
-    pub state_service: StateService,
-    pub contract: Identifier<Provider<Ws>>,
-    pub identity_service: IdentityService,
+pub struct AuthenticationController<IC, S, I> {
+    pub ipfs_client: IC,
+    pub state_service: S,
+    pub identity_service: I,
 }
 
-impl AuthenticationController {
-    pub async fn new(config: &Config) -> AuthenticationController {
-        let ipfs_client = IpfsClient::new(&config.ipfs_config);
+impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
+    pub async fn new(
+        config: &Config,
+    ) -> AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
 
+        let ipfs_client = IpfsClient::new(&config.ipfs_config);
         let state_service = StateService::new();
         let identity_service = IdentityService::new();
-
-        let ws_provider = Provider::<Ws>::connect(config.zksync_config.zksync_ws_url.to_owned())
-            .await
-            .unwrap();
-        let contract = Identifier::new(
-            config.zksync_config.contract_address.to_owned(),
-            Arc::new(ws_provider),
-        );
 
         let authentication_controller = AuthenticationController {
             ipfs_client,
             state_service,
-            contract,
             identity_service,
         };
 
         return authentication_controller;
     }
+}
 
-    pub async fn listen(&self) {
-        let events = self.contract.events();
+impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I> {
+
+    pub async fn listen(&self, contract: Identifier<Provider<Ws>>) {
+        let events = contract.events();
         let event_stream = events.subscribe().await;
 
         match event_stream {

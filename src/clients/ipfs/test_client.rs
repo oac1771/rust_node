@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::clients::ipfs::client::IpfsClient;
+    use crate::clients::ipfs::client::{IpfsClient, IClient};
     use crate::clients::ipfs::models::*;
     use crate::clients::reqwest::client::MockReqwestClient;
 
