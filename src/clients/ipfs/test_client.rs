@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use crate::clients::ipfs::client::IpfsClient;
+    use crate::clients::ipfs::client::{IpfsClient, IClient};
     use crate::clients::ipfs::models::*;
     use crate::clients::reqwest::client::MockReqwestClient;
 
@@ -11,17 +11,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_id_should_return_id() {
-        let response = IpfsIdResponse {
-            ID: IPFS_ID.to_string(),
-        };
-
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
             .expect_post::<IpfsIdResponse, IpfsClientError>()
-            .return_once(|_| Ok(response));
+            .returns(|| {
+                Ok(IpfsIdResponse {
+                    ID: IPFS_ID.to_string(),
+                })
+            });
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client,
+            req: mock_reqwest_client,
             ipfs_base_url: "".to_string(),
         };
         let ipfs_response = ipfs_client.get_id().await.unwrap();
@@ -31,18 +31,19 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_id_should_add_file_to_ipfs_and_return_hash() {
-        let response = IpfsAddFileResponse {
-            Name: IPFS_HASH.to_string(),
-            Hash: IPFS_FILE_NAME.to_string(),
-        };
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
             .expect_post_multipart::<IpfsAddFileResponse, IpfsClientError>()
-            .return_once(|_, _| Ok(response));
+            .returns(|| {
+                Ok(IpfsAddFileResponse {
+                    Name: IPFS_HASH.to_string(),
+                    Hash: IPFS_FILE_NAME.to_string(),
+                })
+            });
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client,
+            req: mock_reqwest_client,
             ipfs_base_url: "".to_string(),
         };
 
@@ -54,20 +55,16 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_id_should_rm_object_from_pinned_list() {
-        let ipfs_removed_pins: Vec<String> =
-            vec!["QmRPcXxhQ6tuPeRmei38GZeNsC3kQvxU9Wq65pN8az28Zz".to_string()];
-
-        let response = IpfsRemovePinResponse {
-            Pins: ipfs_removed_pins,
-        };
 
         let mut mock_reqwest_client = MockReqwestClient::new();
         mock_reqwest_client
             .expect_post::<IpfsRemovePinResponse, IpfsClientError>()
-            .return_once(|_| Ok(response));
+            .returns(|| Ok(IpfsRemovePinResponse {
+                Pins: vec!["QmRPcXxhQ6tuPeRmei38GZeNsC3kQvxU9Wq65pN8az28Zz".to_string()],
+            }));
 
         let ipfs_client = IpfsClient {
-            reqwest_client: mock_reqwest_client,
+            req: mock_reqwest_client,
             ipfs_base_url: "".to_string(),
         };
 

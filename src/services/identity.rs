@@ -7,6 +7,17 @@ use super::models::{Identity, IdentityServiceError};
 
 use crate::utils::{bytes_to_string_literal, string_literal_to_bytes};
 
+pub trait IdService {
+    fn create_identity(
+        &self,
+        data: &str,
+    ) -> Result<(NamedTempFile, Identity), IdentityServiceError>;
+    fn regenerate_identity(
+        &self,
+        encryption_key: &str,
+        encrypted_data: &str,
+    ) -> Result<Identity, IdentityServiceError>;
+}
 pub struct IdentityService {
     pub encryption_service: EncryptionService,
     pub hash_service: HashService,
@@ -19,8 +30,10 @@ impl IdentityService {
             hash_service: HashService::new(),
         };
     }
+}
 
-    pub fn create_identity(
+impl IdService for IdentityService {
+    fn create_identity(
         &self,
         data: &str,
     ) -> Result<(NamedTempFile, Identity), IdentityServiceError> {
@@ -42,12 +55,11 @@ impl IdentityService {
         return Ok((temp_file, identity));
     }
 
-    pub fn regenerate_identity(
+    fn regenerate_identity(
         &self,
         encryption_key: &str,
         encrypted_data: &str,
     ) -> Result<Identity, IdentityServiceError> {
-
         if let Some(encrtyped_bytes) = string_literal_to_bytes(&encrypted_data) {
             let decrypted_data = self
                 .encryption_service
@@ -71,37 +83,113 @@ impl IdentityService {
 }
 
 #[cfg(test)]
-use async_trait::async_trait;
-#[cfg(test)]
-use mockall::mock;
-
-#[cfg(test)]
-#[async_trait]
-pub trait Id {
-    fn create_identity(
-        &self,
-        data: &str,
-    ) -> Result<(NamedTempFile, Identity), IdentityServiceError>;
-    fn regenerate_identity(
-        &self,
-        encryption_key: &str,
-        encrypted_data: &str,
-    ) -> Result<Identity, IdentityServiceError>;
+pub struct MockIdentityService {
+    expectations: std::collections::HashMap<
+        String,
+        Box<dyn std::any::Any + std::marker::Sync + std::marker::Send>,
+    >,
 }
 
 #[cfg(test)]
-mock! {
-    pub IdentityService{}
-    #[async_trait]
-    impl Id for IdentityService {
-        fn create_identity(
+pub struct CreateIdExpectation {
+    pub func: Option<
+        Box<
+            dyn Fn() -> Result<(NamedTempFile, Identity), IdentityServiceError>
+                + std::marker::Sync
+                + std::marker::Send,
+        >,
+    >,
+}
+
+#[cfg(test)]
+pub struct RegenerateIDExpectation {
+    pub func: Option<
+        Box<
+            dyn Fn() -> Result<Identity, IdentityServiceError>
+                + std::marker::Sync
+                + std::marker::Send,
+        >,
+    >,
+}
+
+#[cfg(test)]
+impl CreateIdExpectation {
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> Result<(NamedTempFile, Identity), IdentityServiceError>
+            + 'static
+            + std::marker::Sync
+            + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl RegenerateIDExpectation {
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> Result<Identity, IdentityServiceError>
+            + 'static
+            + std::marker::Sync
+            + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl MockIdentityService {
+    pub fn new() -> Self {
+        return Self {
+            expectations: std::collections::HashMap::new(),
+        };
+    }
+
+    pub fn expect_create_identity(&mut self) -> &mut CreateIdExpectation {
+        self.expectations
+            .entry("create_id".to_string())
+            .or_insert_with(|| Box::new(CreateIdExpectation { func: None }))
+            .downcast_mut::<CreateIdExpectation>()
+            .unwrap()
+    }
+
+    pub fn expect_regenerate_identity(&mut self) -> &mut RegenerateIDExpectation {
+        self.expectations
+            .entry("regenerate_id".to_string())
+            .or_insert_with(|| Box::new(RegenerateIDExpectation { func: None }))
+            .downcast_mut::<RegenerateIDExpectation>()
+            .unwrap()
+    }
+}
+
+#[cfg(test)]
+impl IdService for MockIdentityService {
+    fn create_identity(&self, _data: &str) -> Result<(NamedTempFile, Identity), IdentityServiceError> {
+        let expectation = self
+            .expectations
+            .get("create_id")
+            .unwrap()
+            .downcast_ref::<CreateIdExpectation>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
+    }
+
+    fn regenerate_identity(
             &self,
-            data: &str,
-        ) -> Result<(NamedTempFile, Identity), IdentityServiceError>;
-        fn regenerate_identity(
-            &self,
-            encryption_key: &str,
-            encrypted_data: &str,
-        ) -> Result<Identity, IdentityServiceError>;
+            _encryption_key: &str,
+            _encrypted_data: &str,
+        ) -> Result<Identity, IdentityServiceError> {
+        let expectation = self
+            .expectations
+            .get("regenerate_id")
+            .unwrap()
+            .downcast_ref::<RegenerateIDExpectation>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
     }
 }

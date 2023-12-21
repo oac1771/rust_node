@@ -10,7 +10,8 @@ pub const CONFIG_PATH: &str = "./var/config.json";
 #[derive(Deserialize, Serialize)]
 pub struct Config {
     pub ipfs_config: IpfsConfig,
-    pub zksync_config: ZksyncConfig
+    pub zksync_config: ZksyncConfig,
+    pub check_identity: bool
 }
 
 #[derive(Deserialize, Serialize)]
@@ -28,6 +29,8 @@ pub struct ZksyncConfig {
 
 pub async fn create_config() {
 
+    let check_identity = std::env::var("CHECK_ID").expect("CHECK_ID not set").parse::<bool>().unwrap();
+
     let ipfs_base_url = std::env::var("IPFS_BASE_URL").expect("IPFS_BASE_URL not set");
 
     let private_key = std::env::var("PRIVATE_KEY").expect("PRIVATE_KEY not set");
@@ -43,7 +46,8 @@ pub async fn create_config() {
             "private_key": private_key,
             "zksync_api_url": zksync_api_url,
             "zksync_ws_url": zksync_ws_url
-        }
+        },
+        "check_identity": check_identity
     });
 
     let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();

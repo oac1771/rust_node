@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
 
-    use super::super::identity::IdentityService;
+    use super::super::identity::{IdentityService, IdService};
     use std::path::Path;
 
     #[test]
