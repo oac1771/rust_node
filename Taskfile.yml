@@ -12,6 +12,7 @@ tasks:
       ZKSYNC_API_URL: http://localhost:3050
       ZKSYNC_WS_URL: ws://localhost:3051
       IPFS_BASE_URL: http://localhost:5001
+      CHECK_ID: false
 
   destroy-local:
     cmds:
@@ -30,7 +31,7 @@ tasks:
 
   deploy-ecosystem:
     cmds:
-      - helm upgrade --install --wait --timeout 10m --set node.privateKey=$PRIVATE_KEY node-ecosystem helm_chart/
+      - helm upgrade --install --wait --timeout 10m --set node.privateKey=$PRIVATE_KEY --set node.checkID=false node-ecosystem helm_chart/
       - helm test node-ecosystem
 
   start-k8s:
@@ -44,7 +45,7 @@ tasks:
   build-images:
     cmds:
       - colima stop || true
-      - colima start --arch x86_64 --cpu 4 --memory 8 --runtime containerd
+      - colima start --arch x86_64 --cpu 4 --memory 10 --runtime containerd
       - task compile-contract
       - nerdctl build -f images/toolbox.Dockerfile . -t toolbox:latest --namespace k8s.io
       - nerdctl build -f images/rust_node_builder.Dockerfile . -t rust_node_builder:latest --namespace k8s.io

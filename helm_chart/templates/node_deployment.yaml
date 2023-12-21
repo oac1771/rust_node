@@ -34,6 +34,8 @@ spec:
             value: ws://{{ .Values.zksync.containerName }}.{{ .Values.zksync.namespace}}:{{ .Values.zksync.websocketPort}}
           - name: PRIVATE_KEY
             value: {{ .Values.node.privateKey }}
+          - name: CHECK_ID
+            value: {{ .Values.node.checkID }}
       initContainers:
         - name: init
           image: "{{ .Values.node.initContainerRespository }}:{{ .Values.node.initContainerTag }}"

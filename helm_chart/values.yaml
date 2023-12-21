@@ -24,6 +24,7 @@ node:
   namespace: default
 
   privateKey: ""
+  checkID: ""
 
 geth:
   repository: matterlabs/geth
