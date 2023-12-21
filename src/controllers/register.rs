@@ -26,7 +26,7 @@ pub struct RegisterController<IC, ZC, IS, SS> {
     pub zksync_client: ZC,
     pub identity_service: IS,
     pub state_service: SS,
-    check_identity: bool,
+    pub check_identity: bool,
 }
 
 impl

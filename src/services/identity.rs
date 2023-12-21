@@ -101,6 +101,7 @@ pub struct CreateIdExpectation {
     >,
 }
 
+#[cfg(test)]
 pub struct RegenerateIDExpectation {
     pub func: Option<
         Box<
