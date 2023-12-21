@@ -103,6 +103,12 @@ impl Expectation {
 
 #[cfg(test)]
 impl MockStateService {
+    pub fn new() -> MockStateService {
+        return Self {
+            expectations: HashMap::new()
+        }
+    }
+
     pub fn expect_get_encryption_key(&mut self) -> &mut Expectation {
         self.expectations
             .entry("get_encryption_key".to_string())

@@ -152,6 +152,14 @@ impl MockIdentityService {
             .downcast_mut::<CreateIdExpectation>()
             .unwrap()
     }
+
+    pub fn expect_regenerate_identity(&mut self) -> &mut RegenerateIDExpectation {
+        self.expectations
+            .entry("regenerate_id".to_string())
+            .or_insert_with(|| Box::new(RegenerateIDExpectation { func: None }))
+            .downcast_mut::<RegenerateIDExpectation>()
+            .unwrap()
+    }
 }
 
 #[cfg(test)]
@@ -175,7 +183,7 @@ impl IdService for MockIdentityService {
         ) -> Result<Identity, IdentityServiceError> {
         let expectation = self
             .expectations
-            .get("create_id")
+            .get("regenerate_id")
             .unwrap()
             .downcast_ref::<RegenerateIDExpectation>()
             .unwrap();

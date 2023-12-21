@@ -72,7 +72,7 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
         }
     }
 
-    async fn authenticate(
+    pub async fn authenticate(
         &self,
         request: AuthenticationRequestFilter,
     ) -> Result<(), AuthenticationResponse> {
@@ -103,7 +103,7 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
 }
 
 #[derive(Debug)]
-enum AuthenticationResponse {
+pub enum AuthenticationResponse {
     DecryptionError(String),
     IpfsGetError(String),
     HashMismatch(String),

@@ -26,10 +26,13 @@ pub trait ZClient {
         data_hash: &str,
     ) -> H256;
     async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256;
+    async fn check_identity(&self, principal_address: &str) -> bool;
     async fn get_token_id(&self, principal_address: &str) -> Option<Token>;
     async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>;
-    async fn check_identity(&self, principal_address: &str) -> bool;
-    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token> + std::marker::Send) -> Option<Token>
+    async fn query<T>(
+        &self,
+        condition: impl Fn(T) -> Option<Token> + std::marker::Send,
+    ) -> Option<Token>
     where
         T: Detokenize + Event + 'static;
 }
@@ -146,7 +149,10 @@ impl<
         return ipfs_addr;
     }
 
-    async fn query<T>(&self, condition: impl Fn(T) -> Option<Token> + std::marker::Send) -> Option<Token>
+    async fn query<T>(
+        &self,
+        condition: impl Fn(T) -> Option<Token> + std::marker::Send,
+    ) -> Option<Token>
     where
         T: Detokenize + Event + 'static,
     {
@@ -167,5 +173,170 @@ impl<
         }
         return None;
     }
+}
 
+#[cfg(test)]
+pub struct MockZksyncClient {
+    expectations: std::collections::HashMap<
+        String,
+        Box<dyn std::any::Any + std::marker::Sync + std::marker::Send>,
+    >,
+}
+
+#[cfg(test)]
+pub struct Expectation {
+    pub func: Option<Box<dyn Fn() -> H256 + std::marker::Sync + std::marker::Send>>,
+    pub token: Option<Box<dyn Fn() -> Option<Token> + std::marker::Sync + std::marker::Send>>,
+    pub val: bool,
+}
+
+#[cfg(test)]
+impl Expectation {
+    fn new() -> Expectation {
+        return Self {
+            func: None,
+            val: false,
+            token: None,
+        };
+    }
+    pub fn returns(
+        &mut self,
+        func: impl Fn() -> H256 + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func = Some(Box::new(func));
+    }
+
+    pub fn returns_token(
+        &mut self,
+        func: impl Fn() -> Option<Token> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.token = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl MockZksyncClient {
+    pub fn new() -> Self {
+        return Self {
+            expectations: std::collections::HashMap::new(),
+        };
+    }
+
+    pub fn expect_register_identity(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("register_identity".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+
+    pub fn expect_remove_identity(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("remove_identity".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+
+    pub fn expect_check_identity(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("check_identity".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+
+    pub fn expect_get_token_id(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("get_token_id".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+
+    pub fn expect_get_ipfs_addr(&mut self) -> &mut Expectation {
+        self.expectations
+            .entry("get_ipfs_addr".to_string())
+            .or_insert_with(|| Box::new(Expectation::new()))
+            .downcast_mut::<Expectation>()
+            .unwrap()
+    }
+}
+
+#[cfg(test)]
+#[async_trait]
+impl ZClient for MockZksyncClient {
+    async fn register_identity(
+        &self,
+        _principal_address: &str,
+        _ipfs_address: &str,
+        _data_hash: &str,
+    ) -> H256 {
+        let expectation = self
+            .expectations
+            .get("register_identity")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
+    }
+
+    async fn remove_identity(&self, _principal_address: &str, _token_id: u128) -> H256 {
+        let expectation = self
+            .expectations
+            .get("remove_identity")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = (expectation.func.as_ref().unwrap())();
+
+        return result;
+    }
+
+    async fn check_identity(&self, _principal_address: &str) -> bool {
+        let expectation = self
+            .expectations
+            .get("check_identity")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = expectation.val;
+
+        return result;
+    }
+
+    async fn get_token_id(&self, _principal_address: &str) -> Option<Token> {
+        let expectation = self
+            .expectations
+            .get("get_token_id")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = (expectation.token.as_ref().unwrap())();
+
+        return result;
+    }
+
+    async fn get_ipfs_addr(&self, _principal_address: &str, _token_id: u128) -> Option<Token> {
+        let expectation = self
+            .expectations
+            .get("get_ipfs_addr")
+            .unwrap()
+            .downcast_ref::<Expectation>()
+            .unwrap();
+        let result = (expectation.token.as_ref().unwrap())();
+
+        return result;
+    }
+    async fn query<T>(
+        &self,
+        _condition: impl Fn(T) -> Option<Token> + std::marker::Send,
+    ) -> Option<Token>
+    where
+        T: Detokenize + Event + 'static,
+    {
+        return None;
+    }
 }
