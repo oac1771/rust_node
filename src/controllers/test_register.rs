@@ -2,7 +2,10 @@
 mod tests {
 
     use crate::clients::{
-        ipfs::{client::MockIpfsClient, models::IpfsAddFileResponse},
+        ipfs::{
+            client::MockIpfsClient,
+            models::{IpfsAddFileResponse, IpfsRemovePinResponse},
+        },
         zksync::client::MockZksyncClient,
     };
 
@@ -19,7 +22,7 @@ mod tests {
     use tempfile::NamedTempFile;
 
     #[tokio::test]
-    async fn test_authenticate_returns_ok_enum() {
+    async fn test_register_returns_response_without_error() {
         let mut mock_ipfs_client = MockIpfsClient::new();
         let mock_state_service = MockStateService::new();
         let mut mock_zksync_client = MockZksyncClient::new();
@@ -44,7 +47,7 @@ mod tests {
             return Ok((temp_file, identity));
         });
 
-        mock_ipfs_client.expec_add_file().returns(|| {
+        mock_ipfs_client.expect_add_file().returns(|| {
             let response = IpfsAddFileResponse {
                 Name: "name".to_string(),
                 Hash: ipfs_address.to_string(),
@@ -52,9 +55,11 @@ mod tests {
             return Ok(response);
         });
 
-        mock_zksync_client.expect_register_identity().returns(move || {
-            return tx_hash;
-        });
+        mock_zksync_client
+            .expect_register_identity()
+            .returns(move || {
+                return tx_hash;
+            });
         mock_zksync_client
             .expect_get_token_id()
             .returns_token(|| return Some(Token::Uint(U256::zero())));
@@ -74,6 +79,53 @@ mod tests {
             "token_id": Token::Uint(U256::zero()).to_string(),
             "ipfs_address": ipfs_address,
             "encryption_key": encryption_key
+        });
+
+        assert_eq!(response.error, None);
+        assert_eq!(response.body, Some(expected_response));
+    }
+
+    #[tokio::test]
+    async fn test_remove_returns_response_without_error() {
+        let mut mock_ipfs_client = MockIpfsClient::new();
+        let mock_state_service = MockStateService::new();
+        let mut mock_zksync_client = MockZksyncClient::new();
+        let mock_identity_service = MockIdentityService::new();
+
+        let principal_address = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049";
+        let token_id = 0;
+        let tx_hash = H256::zero();
+
+        mock_zksync_client
+            .expect_remove_identity()
+            .returns(move || {
+                return tx_hash;
+            });
+        mock_zksync_client
+            .expect_get_ipfs_addr()
+            .returns_token(|| return Some(Token::String(String::new())));
+
+        mock_ipfs_client.expect_rm_pin().returns(|| {
+            let pins = vec![];
+            let response = IpfsRemovePinResponse { Pins: pins };
+            return Ok(response);
+        });
+
+        let register_controller = RegisterController {
+            ipfs_client: mock_ipfs_client,
+            state_service: mock_state_service,
+            identity_service: mock_identity_service,
+            zksync_client: mock_zksync_client,
+            check_identity: false,
+        };
+
+        let response = register_controller
+            .remove(principal_address, token_id)
+            .await;
+
+        let expected_response = serde_json::json!({
+            "tx_hash": tx_hash,
+            "removed_pins": Vec::<String>::new()
         });
 
         assert_eq!(response.error, None);

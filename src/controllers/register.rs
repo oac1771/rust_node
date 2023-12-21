@@ -9,7 +9,10 @@ use ethers::{
 
 use crate::clients::{
     ipfs::client::IpfsClient,
-    zksync::{client::{ZksyncClient, ZClient}, contracts::identifier::Identifier},
+    zksync::{
+        client::{ZClient, ZksyncClient},
+        contracts::identifier::Identifier,
+    },
 };
 use crate::services::{
     config::Config, identity::IdentityService, models::Data, state::StateService,
@@ -66,7 +69,7 @@ impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<
         if self.check_identity {
             if self.zksync_client.check_identity(principal_address).await {
                 register_response.set_error("Identity already exists".to_string());
-                return register_response
+                return register_response;
             }
         }
 
@@ -110,7 +113,7 @@ impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<
         if self.check_identity {
             if self.zksync_client.check_identity(principal_address).await {
                 register_response.set_error("Identity does not exist".to_string());
-                return register_response
+                return register_response;
             };
         }
 

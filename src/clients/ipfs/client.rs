@@ -112,7 +112,7 @@ impl MockIpfsClient {
             .unwrap()
     }
 
-    pub fn expec_add_file(&mut self) -> &mut Expectation<IpfsAddFileResponse>
+    pub fn expect_add_file(&mut self) -> &mut Expectation<IpfsAddFileResponse>
     {
         self.expectations
             .entry("add_file".to_string())
