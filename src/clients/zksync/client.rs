@@ -6,10 +6,11 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer},
-    types::{Address, Filter, H256, U256},
+    types::{Address, Filter, U256},
 };
 
 use super::contracts::ethers_traits::HttpProvider;
+use super::models::ZksyncClientError;
 use super::{
     contracts::{ethers_traits::Iden, identifier::Identifier},
     models::{Event, IpfsDeletionRequest, Registration},
@@ -24,15 +25,26 @@ pub trait ZClient {
         principal_address: &str,
         ipfs_address: &str,
         data_hash: &str,
-    ) -> H256;
-    async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256;
-    async fn check_identity(&self, principal_address: &str) -> bool;
-    async fn get_token_id(&self, principal_address: &str) -> Option<Token>;
-    async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token>;
+    ) -> Result<String, ZksyncClientError>;
+    async fn remove_identity(
+        &self,
+        principal_address: &str,
+        token_id: u128,
+    ) -> Result<String, ZksyncClientError>;
+    async fn check_identity(&self, principal_address: &str) -> Result<bool, ZksyncClientError>;
+    async fn get_token_id(
+        &self,
+        principal_address: &str,
+    ) -> Result<Option<u64>, ZksyncClientError>;
+    async fn get_ipfs_addr(
+        &self,
+        principal_address: &str,
+        token_id: u128,
+    ) -> Result<Option<String>, ZksyncClientError>;
     async fn query<T>(
         &self,
         condition: impl Fn(T) -> Option<Token> + std::marker::Send,
-    ) -> Option<Token>
+    ) -> Result<Option<Token>, ZksyncClientError>
     where
         T: Detokenize + Event + 'static;
 }
@@ -46,25 +58,26 @@ pub struct ZksyncClient<I, H> {
 impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>> {
     pub async fn new(
         config: &ZksyncConfig,
-    ) -> ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>
-    {
-        let http_provider = Provider::<Http>::try_from(&config.zksync_api_url).unwrap();
-        let chain_id = http_provider.get_chainid().await.unwrap().as_u64();
+    ) -> Result<
+        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
+        ZksyncClientError,
+    > {
+        let http_provider = Provider::<Http>::try_from(&config.zksync_api_url)?;
+        let chain_id = http_provider.get_chainid().await?.as_u64();
 
         let wallet = config
             .private_key
-            .parse::<LocalWallet>()
-            .unwrap()
+            .parse::<LocalWallet>()?
             .with_chain_id(chain_id);
         let client = SignerMiddleware::new(http_provider, wallet);
 
         let contract = Identifier::new(config.contract_address, Arc::new(client));
 
-        return ZksyncClient {
+        return Ok(ZksyncClient {
             contract,
             api_url: config.zksync_api_url.to_string(),
-            http_provider: Provider::<Http>::try_from(&config.zksync_api_url).unwrap(),
-        };
+            http_provider: Provider::<Http>::try_from(&config.zksync_api_url)?,
+        });
     }
 }
 
@@ -79,80 +92,93 @@ impl<
         principal_address: &str,
         ipfs_address: &str,
         data_hash: &str,
-    ) -> H256 {
-        let principal: Address = principal_address
-            .parse()
-            .expect("Invalid principal address");
+    ) -> Result<String, ZksyncClientError> {
+        let principal: Address = principal_address.parse()?;
 
         let tx_hash = self
             .contract
             .register_identity(principal, ipfs_address.to_string(), data_hash.to_string())
-            .await;
+            .await
+            .to_string();
 
-        return tx_hash;
+        return Ok(tx_hash);
     }
 
-    async fn remove_identity(&self, principal_address: &str, token_id: u128) -> H256 {
-        let principal: Address = principal_address
-            .parse()
-            .expect("Invalid principal address");
+    async fn remove_identity(
+        &self,
+        principal_address: &str,
+        token_id: u128,
+    ) -> Result<String, ZksyncClientError> {
+        let principal: Address = principal_address.parse()?;
         let token: U256 = U256::from(token_id);
 
-        let tx_hash = self.contract.remove_identity(principal, token).await;
+        let tx_hash = self
+            .contract
+            .remove_identity(principal, token)
+            .await
+            .to_string();
 
-        return tx_hash;
+        return Ok(tx_hash);
     }
 
-    async fn check_identity(&self, principal_address: &str) -> bool {
-        let principal: Address = principal_address
-            .parse()
-            .expect("Invalid principal address");
+    async fn check_identity(&self, principal_address: &str) -> Result<bool, ZksyncClientError> {
+        let principal: Address = principal_address.parse()?;
 
         let identity_status = self.contract.check_identity(principal).await;
 
-        return identity_status;
+        return Ok(identity_status);
     }
 
-    async fn get_token_id(&self, principal_address: &str) -> Option<Token> {
-        let principal: Address = principal_address
-            .parse()
-            .expect("Invalid principal address");
+    async fn get_token_id(
+        &self,
+        principal_address: &str,
+    ) -> Result<Option<u64>, ZksyncClientError> {
+        let principal: Address = principal_address.parse()?;
         let condition = |event: Registration| -> Option<Token> {
             if event.principal == principal {
                 return Some(Token::Uint(event.token_id));
-            } else {
-                return None;
             }
+            return None
         };
 
-        let token_id = self.query::<Registration>(condition).await;
+        let response = if let Some(token) = self.query::<Registration>(condition).await? {
+            token.into_uint().map(|x| x.as_u64())
+        } else {
+            None
+        };
 
-        return token_id;
+        return Ok(response);
     }
 
-    async fn get_ipfs_addr(&self, principal_address: &str, token_id: u128) -> Option<Token> {
-        let principal: Address = principal_address
-            .parse()
-            .expect("Invalid principal address");
+    async fn get_ipfs_addr(
+        &self,
+        principal_address: &str,
+        token_id: u128,
+    ) -> Result<Option<String>, ZksyncClientError> {
+        let principal: Address = principal_address.parse()?;
         let token: U256 = U256::from(token_id);
 
         let condition = |event: IpfsDeletionRequest| -> Option<Token> {
             if event.principal == principal && event.token_id == token {
                 return Some(Token::String(event.ipfs_addr));
-            } else {
-                return None;
             }
+            return None
         };
 
-        let ipfs_addr = self.query::<IpfsDeletionRequest>(condition).await;
+        let response = if let Some(token) = self.query::<IpfsDeletionRequest>(condition).await? {
+            token.into_string()
+        } else {
+            None
+        };
 
-        return ipfs_addr;
+        return Ok(response);
+
     }
 
     async fn query<T>(
         &self,
         condition: impl Fn(T) -> Option<Token> + std::marker::Send,
-    ) -> Option<Token>
+    ) -> Result<Option<Token>, ZksyncClientError>
     where
         T: Detokenize + Event + 'static,
     {
@@ -160,18 +186,17 @@ impl<
             .from_block(0)
             .address(self.contract.get_address())
             .event(&T::get_signature());
-        let logs = self.http_provider.logs(&filter).await.unwrap();
+        let logs = self.http_provider.logs(&filter).await?;
 
         for log in logs {
             let event = self
                 .contract
-                .decode::<T>(&T::get_name(), log.topics, log.data)
-                .unwrap();
+                .decode::<T>(&T::get_name(), log.topics, log.data)?;
             if let Some(token) = condition(event) {
-                return Some(token);
+                return Ok(Some(token));
             }
         }
-        return None;
+        return Ok(None);
     }
 }
 
@@ -184,33 +209,60 @@ pub struct MockZksyncClient {
 }
 
 #[cfg(test)]
-pub struct Expectation {
-    pub func: Option<Box<dyn Fn() -> H256 + std::marker::Sync + std::marker::Send>>,
-    pub token: Option<Box<dyn Fn() -> Option<Token> + std::marker::Sync + std::marker::Send>>,
-    pub val: bool,
+pub struct SendExpectation {
+    pub func_string: Option<Box<dyn Fn() -> String + std::marker::Sync + std::marker::Send>>,
+    pub func_bool: Option<Box<dyn Fn() -> bool + std::marker::Sync + std::marker::Send>>,
 }
 
 #[cfg(test)]
-impl Expectation {
-    fn new() -> Expectation {
+pub struct QueryExpectation {
+    pub func_string: Option<Box<dyn Fn() -> Option<String> + std::marker::Sync + std::marker::Send>>,
+    pub func_uint: Option<Box<dyn Fn() -> Option<u64> + std::marker::Sync + std::marker::Send>>,
+}
+
+#[cfg(test)]
+impl SendExpectation {
+    fn new() -> SendExpectation {
         return Self {
-            func: None,
-            val: false,
-            token: None,
+            func_string: None,
+            func_bool: None
         };
     }
-    pub fn returns(
+    pub fn returns_string(
         &mut self,
-        func: impl Fn() -> H256 + 'static + std::marker::Sync + std::marker::Send,
+        func: impl Fn() -> String + 'static + std::marker::Sync + std::marker::Send,
     ) {
-        self.func = Some(Box::new(func));
+        self.func_string = Some(Box::new(func));
     }
 
-    pub fn returns_token(
+    pub fn _returns_bool(
         &mut self,
-        func: impl Fn() -> Option<Token> + 'static + std::marker::Sync + std::marker::Send,
+        func: impl Fn() -> bool + 'static + std::marker::Sync + std::marker::Send,
     ) {
-        self.token = Some(Box::new(func));
+        self.func_bool = Some(Box::new(func));
+    }
+}
+
+#[cfg(test)]
+impl QueryExpectation {
+    fn new() -> QueryExpectation {
+        return Self {
+            func_string: None,
+            func_uint: None
+        };
+    }
+    pub fn returns_string(
+        &mut self,
+        func: impl Fn() -> Option<String> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func_string = Some(Box::new(func));
+    }
+
+    pub fn returns_u64(
+        &mut self,
+        func: impl Fn() -> Option<u64> + 'static + std::marker::Sync + std::marker::Send,
+    ) {
+        self.func_uint = Some(Box::new(func));
     }
 }
 
@@ -222,43 +274,43 @@ impl MockZksyncClient {
         };
     }
 
-    pub fn expect_register_identity(&mut self) -> &mut Expectation {
+    pub fn expect_register_identity(&mut self) -> &mut SendExpectation {
         self.expectations
             .entry("register_identity".to_string())
-            .or_insert_with(|| Box::new(Expectation::new()))
-            .downcast_mut::<Expectation>()
+            .or_insert_with(|| Box::new(SendExpectation::new()))
+            .downcast_mut::<SendExpectation>()
             .unwrap()
     }
 
-    pub fn expect_remove_identity(&mut self) -> &mut Expectation {
+    pub fn expect_remove_identity(&mut self) -> &mut SendExpectation {
         self.expectations
             .entry("remove_identity".to_string())
-            .or_insert_with(|| Box::new(Expectation::new()))
-            .downcast_mut::<Expectation>()
+            .or_insert_with(|| Box::new(SendExpectation::new()))
+            .downcast_mut::<SendExpectation>()
             .unwrap()
     }
 
-    pub fn expect_check_identity(&mut self) -> &mut Expectation {
+    pub fn _expect_check_identity(&mut self) -> &mut SendExpectation {
         self.expectations
             .entry("check_identity".to_string())
-            .or_insert_with(|| Box::new(Expectation::new()))
-            .downcast_mut::<Expectation>()
+            .or_insert_with(|| Box::new(SendExpectation::new()))
+            .downcast_mut::<SendExpectation>()
             .unwrap()
     }
 
-    pub fn expect_get_token_id(&mut self) -> &mut Expectation {
+    pub fn expect_get_token_id(&mut self) -> &mut QueryExpectation {
         self.expectations
             .entry("get_token_id".to_string())
-            .or_insert_with(|| Box::new(Expectation::new()))
-            .downcast_mut::<Expectation>()
+            .or_insert_with(|| Box::new(QueryExpectation::new()))
+            .downcast_mut::<QueryExpectation>()
             .unwrap()
     }
 
-    pub fn expect_get_ipfs_addr(&mut self) -> &mut Expectation {
+    pub fn expect_get_ipfs_addr(&mut self) -> &mut QueryExpectation {
         self.expectations
             .entry("get_ipfs_addr".to_string())
-            .or_insert_with(|| Box::new(Expectation::new()))
-            .downcast_mut::<Expectation>()
+            .or_insert_with(|| Box::new(QueryExpectation::new()))
+            .downcast_mut::<QueryExpectation>()
             .unwrap()
     }
 }
@@ -271,72 +323,83 @@ impl ZClient for MockZksyncClient {
         _principal_address: &str,
         _ipfs_address: &str,
         _data_hash: &str,
-    ) -> H256 {
+    ) -> Result<String, ZksyncClientError> {
         let expectation = self
             .expectations
             .get("register_identity")
             .unwrap()
-            .downcast_ref::<Expectation>()
+            .downcast_ref::<SendExpectation>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func_string.as_ref().unwrap())();
 
-        return result;
+        return Ok(result);
     }
 
-    async fn remove_identity(&self, _principal_address: &str, _token_id: u128) -> H256 {
+    async fn remove_identity(
+        &self,
+        _principal_address: &str,
+        _token_id: u128,
+    ) -> Result<String, ZksyncClientError> {
         let expectation = self
             .expectations
             .get("remove_identity")
             .unwrap()
-            .downcast_ref::<Expectation>()
+            .downcast_ref::<SendExpectation>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func_string.as_ref().unwrap())();
 
-        return result;
+        return Ok(result);
     }
 
-    async fn check_identity(&self, _principal_address: &str) -> bool {
+    async fn check_identity(&self, _principal_address: &str) -> Result<bool, ZksyncClientError> {
         let expectation = self
             .expectations
             .get("check_identity")
             .unwrap()
-            .downcast_ref::<Expectation>()
+            .downcast_ref::<SendExpectation>()
             .unwrap();
-        let result = expectation.val;
+        let result = (expectation.func_bool.as_ref().unwrap())();
 
-        return result;
+        return Ok(result);
     }
 
-    async fn get_token_id(&self, _principal_address: &str) -> Option<Token> {
+    async fn get_token_id(
+        &self,
+        _principal_address: &str,
+    ) -> Result<Option<u64>, ZksyncClientError> {
         let expectation = self
             .expectations
             .get("get_token_id")
             .unwrap()
-            .downcast_ref::<Expectation>()
+            .downcast_ref::<QueryExpectation>()
             .unwrap();
-        let result = (expectation.token.as_ref().unwrap())();
+        let result = (expectation.func_uint.as_ref().unwrap())();
 
-        return result;
+        return Ok(result);
     }
 
-    async fn get_ipfs_addr(&self, _principal_address: &str, _token_id: u128) -> Option<Token> {
+    async fn get_ipfs_addr(
+        &self,
+        _principal_address: &str,
+        _token_id: u128,
+    ) -> Result<Option<String>, ZksyncClientError> {
         let expectation = self
             .expectations
             .get("get_ipfs_addr")
             .unwrap()
-            .downcast_ref::<Expectation>()
+            .downcast_ref::<QueryExpectation>()
             .unwrap();
-        let result = (expectation.token.as_ref().unwrap())();
+        let result = (expectation.func_string.as_ref().unwrap())();
 
-        return result;
+        return Ok(result);
     }
     async fn query<T>(
         &self,
         _condition: impl Fn(T) -> Option<Token> + std::marker::Send,
-    ) -> Option<Token>
+    ) -> Result<Option<Token>, ZksyncClientError>
     where
         T: Detokenize + Event + 'static,
     {
-        return None;
+        return Ok(None);
     }
 }

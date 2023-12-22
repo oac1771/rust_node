@@ -1,22 +1,78 @@
 use serde::Serialize;
 
+use crate::clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError};
+use crate::services::models::IdentityServiceError;
 
 #[derive(Serialize)]
 pub struct RegisterResponse {
-    pub body: Option<serde_json::Value>,
-    pub error: Option<String>
+    pub tx_hash: String,
+    pub token_id: u64,
+    pub ipfs_address: String,
+    pub encryption_key: String,
+}
+
+#[derive(Serialize)]
+pub struct RemoveResponse {
+    pub tx_hash: String,
+    pub removed_pins: Vec<String>,
 }
 
 impl RegisterResponse {
-    pub fn new() -> RegisterResponse {
-        return RegisterResponse { body: None, error: None }
+    pub fn new(
+        tx_hash: String,
+        token_id: Option<u64>,
+        ipfs_address: String,
+        encryption_key: String,
+    ) -> Result<Self, RegisterError> {
+        if let Some(token) = token_id {
+            return Ok(Self {
+                tx_hash: tx_hash,
+                token_id: token,
+                ipfs_address,
+                encryption_key,
+            });
+        } else {
+            return Err(RegisterError {
+                err: "Unable to read TokenID".to_string(),
+            });
+        }
     }
-    
-    pub fn set_error(&mut self, err: String) {
-        self.error = Some(err);
-    }
+}
 
-    pub fn set_body(&mut self, body: serde_json::Value) {
-        self.body = Some(body);
+impl RemoveResponse {
+    pub fn new(tx_hash: String, removed_pins: Vec<String>) -> Self {
+        return Self {
+            tx_hash,
+            removed_pins,
+        };
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct RegisterError {
+    pub err: String,
+}
+
+impl From<ZksyncClientError> for RegisterError {
+    fn from(error: ZksyncClientError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<IdentityServiceError> for RegisterError {
+    fn from(error: IdentityServiceError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<IpfsClientError> for RegisterError {
+    fn from(error: IpfsClientError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
     }
 }

@@ -15,10 +15,6 @@ mod tests {
 
     use crate::controllers::register::RegisterController;
 
-    use ethers::{
-        abi::Token,
-        types::{H256, U256},
-    };
     use tempfile::NamedTempFile;
 
     #[tokio::test]
@@ -29,7 +25,8 @@ mod tests {
         let mut mock_identity_service = MockIdentityService::new();
 
         let principal_address = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049";
-        let tx_hash = H256::zero();
+        let tx_hash = "0x00000";
+        let token_id = 0;
         let ipfs_address = "ipfs_address";
         let encryption_key = "encryption_key";
 
@@ -57,12 +54,12 @@ mod tests {
 
         mock_zksync_client
             .expect_register_identity()
-            .returns(move || {
-                return tx_hash;
+            .returns_string(move || {
+                return tx_hash.to_string();
             });
         mock_zksync_client
             .expect_get_token_id()
-            .returns_token(|| return Some(Token::Uint(U256::zero())));
+            .returns_u64(move || return Some(token_id));
 
         let register_controller = RegisterController {
             ipfs_client: mock_ipfs_client,
@@ -72,17 +69,15 @@ mod tests {
             check_identity: false,
         };
 
-        let response = register_controller.register(data, principal_address).await;
+        let response = register_controller
+            .register(data, principal_address)
+            .await
+            .unwrap();
 
-        let expected_response = serde_json::json!({
-            "tx_hash": tx_hash,
-            "token_id": Token::Uint(U256::zero()).to_string(),
-            "ipfs_address": ipfs_address,
-            "encryption_key": encryption_key
-        });
-
-        assert_eq!(response.error, None);
-        assert_eq!(response.body, Some(expected_response));
+        assert_eq!(response.encryption_key, encryption_key);
+        assert_eq!(response.ipfs_address, ipfs_address);
+        assert_eq!(response.token_id, token_id);
+        assert_eq!(response.tx_hash, tx_hash.clone());
     }
 
     #[tokio::test]
@@ -94,16 +89,16 @@ mod tests {
 
         let principal_address = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049";
         let token_id = 0;
-        let tx_hash = H256::zero();
+        let tx_hash = "0x00000";
 
         mock_zksync_client
             .expect_remove_identity()
-            .returns(move || {
-                return tx_hash;
+            .returns_string(move || {
+                return tx_hash.to_string();
             });
         mock_zksync_client
             .expect_get_ipfs_addr()
-            .returns_token(|| return Some(Token::String(String::new())));
+            .returns_string(|| return Some(String::new()));
 
         mock_ipfs_client.expect_rm_pin().returns(|| {
             let pins = vec![];
@@ -121,14 +116,10 @@ mod tests {
 
         let response = register_controller
             .remove(principal_address, token_id)
-            .await;
+            .await
+            .unwrap();
 
-        let expected_response = serde_json::json!({
-            "tx_hash": tx_hash,
-            "removed_pins": Vec::<String>::new()
-        });
-
-        assert_eq!(response.error, None);
-        assert_eq!(response.body, Some(expected_response));
+        assert_eq!(response.tx_hash, tx_hash);
+        assert_eq!(response.removed_pins, Vec::<String>::new());
     }
 }

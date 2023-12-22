@@ -1,7 +1,13 @@
 use ethers::{
     types::{U256, Address, H160}, 
-    abi::{Detokenize, Token, InvalidOutputType}
+    abi::{Detokenize, Token, InvalidOutputType, AbiError},
+    providers::ProviderError,
+    signers::WalletError,
 };
+
+use serde::Deserialize;
+use url::ParseError;
+use rustc_hex::FromHexError;
 
 pub trait Event {
     fn get_name() -> String;
@@ -121,5 +127,55 @@ impl Event for IpfsDeletionRequest {
 
     fn get_signature() -> String {
         return "IpfsDeletionRequest(address,uint256,string)".to_string()
+    }
+}
+#[derive(Deserialize, Debug)]
+pub struct ZksyncClientError {
+    pub err: String,
+}
+
+impl From<ParseError> for ZksyncClientError {
+    fn from(error: url::ParseError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<ProviderError> for ZksyncClientError {
+    fn from(error: ProviderError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<WalletError> for ZksyncClientError {
+    fn from(error: WalletError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<FromHexError> for ZksyncClientError {
+    fn from(error: FromHexError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<AbiError> for ZksyncClientError {
+    fn from(error: AbiError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for ZksyncClientError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.err)
     }
 }

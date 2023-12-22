@@ -37,7 +37,7 @@ mod tests {
                 &"data_hash".to_string(),
             )
             .await;
-        assert_eq!(hash, H256::zero())
+        assert_eq!(hash.unwrap(), H256::zero().to_string())
     }
 
     #[tokio::test]
@@ -59,7 +59,7 @@ mod tests {
         let hash = client
             .remove_identity(&"0x36615Cf349d7F6344891B1e7CA7C72883F5dc049", 0)
             .await;
-        assert_eq!(hash, H256::zero())
+        assert_eq!(hash.unwrap(), H256::zero().to_string())
     }
 
     #[tokio::test]
@@ -106,9 +106,9 @@ mod tests {
             http_provider: mock_http_provider,
         };
 
-        let id = client.get_token_id(principal).await.unwrap().into_uint();
+        let id = client.get_token_id(principal).await.unwrap().unwrap();
 
-        assert_eq!(id, Some(U256::zero()));
+        assert_eq!(id, 0);
     }
 
     #[tokio::test]
@@ -159,9 +159,9 @@ mod tests {
             http_provider: mock_http_provider,
         };
 
-        let returned_ipfs_addr = client.get_ipfs_addr(principal, 0).await.unwrap().into_string();
+        let returned_ipfs_addr = client.get_ipfs_addr(principal, 0).await.unwrap().unwrap();
 
-        assert_eq!(returned_ipfs_addr, Some(ipfs_addr.to_string()));
+        assert_eq!(returned_ipfs_addr, ipfs_addr.to_string());
     }
 
     #[tokio::test]
@@ -180,6 +180,6 @@ mod tests {
         let result = client
             .check_identity(&"0x36615Cf349d7F6344891B1e7CA7C72883F5dc049")
             .await;
-        assert_eq!(result, true)
+        assert_eq!(result.unwrap(), true)
     }
 }

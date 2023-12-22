@@ -104,7 +104,7 @@ impl MockIpfsClient {
         };
     }
 
-    pub fn expect_get_id(&mut self) -> &mut Expectation<IpfsIdResponse> {
+    pub fn _expect_get_id(&mut self) -> &mut Expectation<IpfsIdResponse> {
         self.expectations
             .entry("get_id".to_string())
             .or_insert_with(|| Box::new(Expectation::<IpfsIdResponse> { func: None }))

@@ -15,7 +15,8 @@ use ethers::providers::{Provider, Ws};
 
 use clients::zksync::contracts::identifier::Identifier;
 use controllers::{
-    authentication::AuthenticationController, models::RegisterResponse,
+    authentication::AuthenticationController,
+    models::{RegisterError, RegisterResponse, RemoveResponse},
     register::RegisterController,
 };
 
@@ -54,27 +55,35 @@ async fn bootstrap(contract_address: &str) {
 async fn register(
     data: Json<services::models::Data>,
     principal_address: &str,
-) -> Json<RegisterResponse> {
+) -> Result<Json<RegisterResponse>, Json<RegisterError>> {
     let config = services::config::read_config().await;
 
-    let register_controller = RegisterController::new(&config).await;
-    let response = register_controller
-        .register(data.into_inner(), principal_address)
-        .await;
+    match RegisterController::new(&config).await {
+        Ok(controller) => {
+            let response = controller
+                .register(data.into_inner(), principal_address)
+                .await?;
 
-    return Json(response);
+            return Ok(Json(response));
+        }
+        Err(err) => return Err(Json(err)),
+    }
 }
 
 #[delete("/remove/<principal_address>/<token_id>")]
-async fn remove(principal_address: &str, token_id: u128) -> Json<RegisterResponse> {
+async fn remove(principal_address: &str, token_id: u128) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
     let config = services::config::read_config().await;
 
-    let register_controller = RegisterController::new(&config).await;
-    let response = register_controller
-        .remove(principal_address, token_id)
-        .await;
+    match RegisterController::new(&config).await {
+        Ok(controller) => {
+            let response = controller
+                .remove(principal_address, token_id)
+                .await?;
 
-    return Json(response);
+            return Ok(Json(response));
+        }
+        Err(err) => return Err(Json(err)),
+    }
 }
 
 #[post("/ipfs_id")]
@@ -92,5 +101,5 @@ async fn rocket() -> _ {
     services::config::create_config().await;
     services::state::StateService {}.create_state().await;
 
-    rocket::build().mount("/", routes![health, ipfs_id, bootstrap, remove, register])
+    rocket::build().mount("/", routes![health, ipfs_id, bootstrap, register, remove])
 }

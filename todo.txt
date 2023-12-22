@@ -1,10 +1,9 @@
 Rough plan: 
 
-re-investigate if you can have controllers have fields that implement traits to make mocking easier
 refactor controllers and add tests
     - get rid of unwraps in:
-        - register controllers
         - identifier traits
+        - zksync client
     - authentication listen function should take event stream and not contract obj
 files that are a mess:
     config.rs

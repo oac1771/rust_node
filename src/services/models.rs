@@ -46,3 +46,9 @@ impl From<std::io::Error> for IdentityServiceError {
         }
     }
 }
+
+impl std::fmt::Display for IdentityServiceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.err)
+    }
+}
