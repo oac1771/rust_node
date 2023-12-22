@@ -1,6 +1,6 @@
 use ethers::{
     abi::{AbiError, Detokenize},
-    contract::FunctionCall,
+    contract::{ContractError, FunctionCall},
     middleware::SignerMiddleware,
     providers::{Http, Middleware, Provider, ProviderError},
     signers::LocalWallet,
@@ -10,6 +10,26 @@ use std::sync::Arc;
 
 use super::identifier::Identifier;
 
+pub struct IdentifierError {
+    pub err: String,
+}
+
+impl From<ProviderError> for IdentifierError {
+    fn from(error: ProviderError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<ContractError<SignerMiddleware<Provider<Http>, LocalWallet>>> for IdentifierError {
+    fn from(error: ContractError<SignerMiddleware<Provider<Http>, LocalWallet>>) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
 #[async_trait]
 pub trait Iden {
     async fn register_identity(
@@ -17,13 +37,17 @@ pub trait Iden {
         principal_address: Address,
         ipfs_addaress: String,
         data_hash: String,
-    ) -> H256;
+    ) -> Result<H256, IdentifierError>;
 
-    async fn remove_identity(&self, principal_address: Address, token_id: U256) -> H256;
+    async fn remove_identity(
+        &self,
+        principal_address: Address,
+        token_id: U256,
+    ) -> Result<H256, IdentifierError>;
 
     fn get_address(&self) -> Address;
 
-    async fn check_identity(&self, principal_address: Address) -> bool;
+    async fn check_identity(&self, principal_address: Address) -> Result<bool, IdentifierError>;
 
     fn decode<D>(&self, name: &str, topics: Vec<H256>, data: Bytes) -> Result<D, AbiError>
     where
@@ -37,13 +61,17 @@ impl Iden for Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
         principal_address: Address,
         ipfs_addaress: String,
         data_hash: String,
-    ) -> H256 {
+    ) -> Result<H256, IdentifierError> {
         let call = self.register_identity(principal_address, ipfs_addaress, data_hash);
         let tx_hash = self.send(call).await;
         return tx_hash;
     }
 
-    async fn remove_identity(&self, principal_address: Address, token_id: U256) -> H256 {
+    async fn remove_identity(
+        &self,
+        principal_address: Address,
+        token_id: U256,
+    ) -> Result<H256, IdentifierError> {
         let call = self.remove_identity(token_id, principal_address);
         let tx_hash = self.send(call).await;
         return tx_hash;
@@ -53,9 +81,10 @@ impl Iden for Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
         return self.address();
     }
 
-    async fn check_identity(&self, principal_address: Address) -> bool {
+    async fn check_identity(&self, principal_address: Address) -> Result<bool, IdentifierError> {
         let call = self.check_identity(principal_address);
-        return self.call::<bool>(call).await;
+        let response = self.call::<bool>(call).await?;
+        return Ok(response);
     }
 
     fn decode<D>(&self, name: &str, topics: Vec<H256>, data: Bytes) -> Result<D, AbiError>
@@ -74,10 +103,15 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
             SignerMiddleware<Provider<Http>, LocalWallet>,
             (),
         >,
-    ) -> H256 {
-        let tx = call.send().await.unwrap().await.unwrap();
-        let tx_hash = tx.unwrap().transaction_hash;
-
+    ) -> Result<H256, IdentifierError> {
+        let tx = call.send().await?.await?;
+        let tx_hash = if let Some(receipt) = tx {
+            Ok(receipt.transaction_hash)
+        } else {
+            Err(IdentifierError {
+                err: "Transaction Hash is None".to_string(),
+            })
+        };
         return tx_hash;
     }
     async fn call<T>(
@@ -87,12 +121,12 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
             SignerMiddleware<Provider<Http>, LocalWallet>,
             T,
         >,
-    ) -> T
+    ) -> Result<T, IdentifierError>
     where
         T: Detokenize,
     {
-        let result: T = call.call().await.unwrap();
-        return result;
+        let result = call.call().await?;
+        return Ok(result);
     }
 }
 
@@ -118,9 +152,13 @@ pub struct MockIdentifier {
 
 #[cfg(test)]
 pub struct Expectation {
-    pub func: Option<Box<dyn Fn() -> H256 + std::marker::Sync + std::marker::Send>>,
+    pub func: Option<
+        Box<dyn Fn() -> Result<H256, IdentifierError> + std::marker::Sync + std::marker::Send>,
+    >,
     pub address: Option<Address>,
-    pub val: bool,
+    pub val: Option<
+        Box<dyn Fn() -> Result<bool, IdentifierError> + std::marker::Sync + std::marker::Send>,
+    >,
 }
 
 #[cfg(test)]
@@ -129,12 +167,15 @@ impl Expectation {
         return Expectation {
             func: None,
             address: None,
-            val: true,
+            val: None,
         };
     }
     pub fn returns(
         &mut self,
-        func: impl Fn() -> H256 + 'static + std::marker::Sync + std::marker::Send,
+        func: impl Fn() -> Result<H256, IdentifierError>
+            + 'static
+            + std::marker::Sync
+            + std::marker::Send,
     ) {
         self.func = Some(Box::new(func));
     }
@@ -143,8 +184,14 @@ impl Expectation {
         self.address = Some(address)
     }
 
-    pub fn returns_bool(&mut self, val: bool) {
-        self.val = val
+    pub fn returns_bool(
+        &mut self,
+        val: impl Fn() -> Result<bool, IdentifierError>
+            + 'static
+            + std::marker::Sync
+            + std::marker::Send,
+    ) {
+        self.val = Some(Box::new(val));
     }
 }
 
@@ -227,7 +274,7 @@ impl Iden for MockIdentifier {
         _principal_address: Address,
         _ipfs_addaress: String,
         _data_hash: String,
-    ) -> H256 {
+    ) -> Result<H256, IdentifierError> {
         let expectation = self
             .expectations
             .get("register_identity")
@@ -239,7 +286,11 @@ impl Iden for MockIdentifier {
         return result;
     }
 
-    async fn remove_identity(&self, _principal_address: Address, _token_id: U256) -> H256 {
+    async fn remove_identity(
+        &self,
+        _principal_address: Address,
+        _token_id: U256,
+    ) -> Result<H256, IdentifierError> {
         let expectation = self
             .expectations
             .get("remove_identity")
@@ -263,15 +314,15 @@ impl Iden for MockIdentifier {
         return result;
     }
 
-    async fn check_identity(&self, _principal_address: Address) -> bool {
+    async fn check_identity(&self, _principal_address: Address) -> Result<bool, IdentifierError> {
         let expectation = self
             .expectations
             .get("check_identity")
             .unwrap()
             .downcast_ref::<Expectation>()
             .unwrap();
-        let result = expectation.val;
-        return result
+        let result = (expectation.val.as_ref().unwrap())();
+        return result;
     }
 
     fn decode<D>(&self, _name: &str, _topics: Vec<H256>, _data: Bytes) -> Result<D, AbiError>

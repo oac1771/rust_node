@@ -21,7 +21,7 @@ mod tests {
 
         mock_contract.expect_register_identity().returns(|| {
             let tx_hash = H256::zero();
-            return tx_hash;
+            return Ok(tx_hash);
         });
 
         let client = ZksyncClient {
@@ -47,7 +47,7 @@ mod tests {
 
         mock_contract.expect_remove_identity().returns(|| {
             let tx_hash = H256::zero();
-            return tx_hash;
+            return Ok(tx_hash);
         });
 
         let client = ZksyncClient {
@@ -169,7 +169,7 @@ mod tests {
         let mut mock_contract = MockIdentifier::new();
         let mock_http_proiver = MockHttpProvider::new();
 
-        mock_contract.expect_check_identity().returns_bool(true);
+        mock_contract.expect_check_identity().returns_bool(|| Ok(true));
 
         let client = ZksyncClient {
             api_url: "".to_string(),

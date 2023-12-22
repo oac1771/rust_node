@@ -1,9 +1,6 @@
 Rough plan: 
 
 refactor controllers and add tests
-    - get rid of unwraps in:
-        - identifier traits
-        - zksync client
     - authentication listen function should take event stream and not contract obj
 files that are a mess:
     config.rs

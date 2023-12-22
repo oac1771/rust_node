@@ -3,7 +3,6 @@ mod controllers;
 mod services;
 mod utils;
 
-use clients::ipfs::client::IClient;
 use rocket::serde::Serialize;
 use std::sync::Arc;
 
@@ -13,7 +12,10 @@ use rocket::serde::json::Json;
 
 use ethers::providers::{Provider, Ws};
 
-use clients::zksync::contracts::identifier::Identifier;
+use clients::{
+    ipfs::{client::IClient, models::{IpfsIdResponse, IpfsClientError}},
+    zksync::contracts::identifier::Identifier,
+};
 use controllers::{
     authentication::AuthenticationController,
     models::{RegisterError, RegisterResponse, RemoveResponse},
@@ -71,14 +73,15 @@ async fn register(
 }
 
 #[delete("/remove/<principal_address>/<token_id>")]
-async fn remove(principal_address: &str, token_id: u128) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
+async fn remove(
+    principal_address: &str,
+    token_id: u128,
+) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
     let config = services::config::read_config().await;
 
     match RegisterController::new(&config).await {
         Ok(controller) => {
-            let response = controller
-                .remove(principal_address, token_id)
-                .await?;
+            let response = controller.remove(principal_address, token_id).await?;
 
             return Ok(Json(response));
         }
@@ -87,13 +90,13 @@ async fn remove(principal_address: &str, token_id: u128) -> Result<Json<RemoveRe
 }
 
 #[post("/ipfs_id")]
-async fn ipfs_id() -> Json<crate::clients::ipfs::models::IpfsIdResponse> {
+async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
     let config = services::config::read_config().await;
 
     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-    let response = ipfs_client.get_id().await.unwrap();
+    let response = ipfs_client.get_id().await?;
 
-    return Json(response);
+    return Ok(Json(response));
 }
 
 #[launch]

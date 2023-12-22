@@ -80,7 +80,11 @@ impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<
         }
 
         let (identity_file, identity) = self.identity_service.create_identity(&data.to_string())?;
-        let identity_file_path = identity_file.path().to_str().unwrap().to_string();
+        let identity_file_path = if let Some(path) = identity_file.path().to_str() {
+            path.to_string()
+        } else {
+            return Err(RegisterError{err: "Unable to convert temp path to string".to_string()})
+        };
 
         let ipfs_response = self.ipfs_client.add_file(&identity_file_path).await?;
         let tx_hash = self

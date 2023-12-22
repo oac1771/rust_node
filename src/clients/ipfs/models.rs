@@ -34,7 +34,7 @@ impl<'de> Deserialize<'de> for IpfsGetResponse {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Serialize)]
 pub struct IpfsClientError {
     pub err: String,
 }

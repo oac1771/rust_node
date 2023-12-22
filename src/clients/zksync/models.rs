@@ -9,6 +9,8 @@ use serde::Deserialize;
 use url::ParseError;
 use rustc_hex::FromHexError;
 
+use super::contracts::ethers_traits::IdentifierError;
+
 pub trait Event {
     fn get_name() -> String;
     fn get_signature() -> String;
@@ -170,6 +172,14 @@ impl From<AbiError> for ZksyncClientError {
     fn from(error: AbiError) -> Self {
         Self {
             err: error.to_string(),
+        }
+    }
+}
+
+impl From<IdentifierError> for ZksyncClientError {
+    fn from(error: IdentifierError) -> Self {
+        Self {
+            err: error.err,
         }
     }
 }

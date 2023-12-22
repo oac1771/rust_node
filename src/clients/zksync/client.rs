@@ -98,7 +98,7 @@ impl<
         let tx_hash = self
             .contract
             .register_identity(principal, ipfs_address.to_string(), data_hash.to_string())
-            .await
+            .await?
             .to_string();
 
         return Ok(tx_hash);
@@ -115,7 +115,7 @@ impl<
         let tx_hash = self
             .contract
             .remove_identity(principal, token)
-            .await
+            .await?
             .to_string();
 
         return Ok(tx_hash);
@@ -124,7 +124,7 @@ impl<
     async fn check_identity(&self, principal_address: &str) -> Result<bool, ZksyncClientError> {
         let principal: Address = principal_address.parse()?;
 
-        let identity_status = self.contract.check_identity(principal).await;
+        let identity_status = self.contract.check_identity(principal).await?;
 
         return Ok(identity_status);
     }
