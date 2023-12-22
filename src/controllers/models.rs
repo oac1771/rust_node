@@ -1,4 +1,5 @@
 use serde::Serialize;
+use serde_json::Error;
 
 use crate::clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError};
 use crate::services::models::IdentityServiceError;
@@ -71,6 +72,14 @@ impl From<IdentityServiceError> for RegisterError {
 
 impl From<IpfsClientError> for RegisterError {
     fn from(error: IpfsClientError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<Error> for RegisterError {
+    fn from(error: Error) -> Self {
         Self {
             err: error.to_string(),
         }

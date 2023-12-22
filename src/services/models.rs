@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Error;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Data {
@@ -7,8 +8,9 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn to_string(&self) -> String {
-        return serde_json::to_string(self).unwrap();
+    pub fn to_string(&self) -> Result<String, Error> {
+        let string = serde_json::to_string(self);
+        return string;
     }
 }
 

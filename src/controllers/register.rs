@@ -79,7 +79,7 @@ impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<
             }
         }
 
-        let (identity_file, identity) = self.identity_service.create_identity(&data.to_string())?;
+        let (identity_file, identity) = self.identity_service.create_identity(&data.to_string()?)?;
         let identity_file_path = if let Some(path) = identity_file.path().to_str() {
             path.to_string()
         } else {
