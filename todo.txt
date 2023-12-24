@@ -2,15 +2,16 @@ Rough plan:
 
 refactor controllers and add tests
     - authentication listen function should take event stream and not contract obj
-files that are a mess:
-    config.rs
-    state.rs
-    data in models.rs (has unwrap)
 
 create integration test
     - deploy contract
     - register
     - authenticate
+
+files that are a mess:
+    config.rs
+    state.rs
+    data in models.rs (has unwrap)
 
 mint session token NFT on authentication
 

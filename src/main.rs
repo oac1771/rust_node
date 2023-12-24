@@ -4,21 +4,18 @@ mod services;
 mod utils;
 
 use rocket::serde::Serialize;
-use std::sync::Arc;
 
 #[macro_use]
 extern crate rocket;
 use rocket::serde::json::Json;
 
-use ethers::providers::{Provider, Ws};
-
-use clients::{
-    ipfs::{client::IClient, models::{IpfsIdResponse, IpfsClientError}},
-    zksync::contracts::identifier::Identifier,
+use clients::ipfs::{
+    client::IClient,
+    models::{IpfsClientError, IpfsIdResponse},
 };
 use controllers::{
     authentication::AuthenticationController,
-    models::{RegisterError, RegisterResponse, RemoveResponse},
+    models::{AuthenticationError, RegisterError, RegisterResponse, RemoveResponse},
     register::RegisterController,
 };
 
@@ -35,22 +32,13 @@ fn health() -> Json<Health> {
 }
 
 #[post("/bootstrap/<contract_address>")]
-async fn bootstrap(contract_address: &str) {
+async fn bootstrap(contract_address: &str) -> Result<(), Json<AuthenticationError>> {
     services::config::set_contract_address(contract_address).await;
+    let config = services::config::read_config().await;
 
-    tokio::spawn(async move {
-        let config = services::config::read_config().await;
-        let ws_provider = Provider::<Ws>::connect(config.zksync_config.zksync_ws_url.to_owned())
-            .await
-            .unwrap();
-        let contract = Identifier::new(
-            config.zksync_config.contract_address.to_owned(),
-            Arc::new(ws_provider),
-        );
-        let authentication_controller = AuthenticationController::new(&config).await;
+    let events = AuthenticationController::listen(config).await?;
 
-        authentication_controller.listen(contract).await
-    });
+    return Ok(());
 }
 
 #[post("/register/<principal_address>", data = "<data>")]

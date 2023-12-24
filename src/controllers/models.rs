@@ -1,6 +1,13 @@
 use serde::Serialize;
 use serde_json::Error;
 
+use ethers::{
+    contract::ContractError,
+    providers::{Provider, ProviderError, Ws},
+};
+
+use rustc_hex::FromHexError;
+
 use crate::clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError};
 use crate::services::models::IdentityServiceError;
 
@@ -80,6 +87,54 @@ impl From<IpfsClientError> for RegisterError {
 
 impl From<Error> for RegisterError {
     fn from(error: Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum AuthenticationResponse {
+    DecryptionError(String),
+    IpfsGetError(String),
+    HashMismatch(String),
+}
+
+impl From<IpfsClientError> for AuthenticationResponse {
+    fn from(err: IpfsClientError) -> AuthenticationResponse {
+        return AuthenticationResponse::IpfsGetError(err.err);
+    }
+}
+
+impl From<IdentityServiceError> for AuthenticationResponse {
+    fn from(err: IdentityServiceError) -> AuthenticationResponse {
+        return AuthenticationResponse::DecryptionError(err.err);
+    }
+}
+
+#[derive(Serialize, Debug)]
+pub struct AuthenticationError {
+    pub err: String,
+}
+
+impl From<ProviderError> for AuthenticationError {
+    fn from(error: ProviderError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<FromHexError> for AuthenticationError {
+    fn from(error: FromHexError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<ContractError<Provider<Ws>>> for AuthenticationError {
+    fn from(error: ContractError<Provider<Ws>>) -> Self {
         Self {
             err: error.to_string(),
         }

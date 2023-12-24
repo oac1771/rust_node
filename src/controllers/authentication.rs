@@ -1,17 +1,25 @@
+use std::sync::Arc;
+
 use ethers::{
-    providers::{Provider, StreamExt, Ws},
+    contract::{stream::EventStream, ContractError, Event},
+    providers::{Provider, StreamExt, SubscriptionStream, Ws},
+    types::Log,
     utils::hex::encode,
 };
 
 use crate::clients::{
-    ipfs::{client::{IpfsClient, IClient}, models::IpfsClientError},
+    ipfs::client::{IClient, IpfsClient},
     reqwest::client::ReqwestClient,
-    zksync::contracts::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvents}
+    zksync::contracts::identifier::{AuthenticationRequestFilter, Identifier, IdentifierEvents},
 };
 
 use crate::services::{
-    config::Config, identity::{IdentityService, IdService}, models::IdentityServiceError, state::{StateService, StService},
+    config::Config,
+    identity::{IdService, IdentityService},
+    state::{StService, StateService},
 };
+
+use super::models::{AuthenticationError, AuthenticationResponse};
 
 pub struct AuthenticationController<IC, S, I> {
     pub ipfs_client: IC,
@@ -21,9 +29,8 @@ pub struct AuthenticationController<IC, S, I> {
 
 impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
     pub async fn new(
-        config: &Config,
+        config: Config,
     ) -> AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
-
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
         let state_service = StateService::new();
         let identity_service = IdentityService::new();
@@ -36,38 +43,65 @@ impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityS
 
         return authentication_controller;
     }
+
+    pub async fn listen(config: Config) -> Result<(), AuthenticationError> {
+        let ws_provider = Provider::<Ws>::connect(&config.zksync_config.zksync_ws_url).await?;
+
+        let contract =
+            Identifier::new(config.zksync_config.contract_address, Arc::new(ws_provider));
+
+        let events = contract.events();
+
+        // assign this to value and bubble up error if err enum is thrown
+        tokio::spawn(AuthenticationController::listen_for_events(events, config));
+
+        return Ok(());
+    }
+
+    pub async fn listen_for_events(
+        events: Event<Arc<Provider<Ws>>, Provider<Ws>, IdentifierEvents>, config: Config
+    ) -> Result<(), AuthenticationError> {
+        match events.subscribe().await {
+            Ok(mut stream) => {
+                let authentication_controller = AuthenticationController::new(config).await;
+                authentication_controller.start(&mut stream).await
+            }
+            Err(_) => {
+                return Err(AuthenticationError {
+                    err: "Unable to initiate event stream".to_string(),
+                });
+            }
+        };
+
+        return Ok(());
+    }
 }
 
 impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I> {
-
-    pub async fn listen(&self, contract: Identifier<Provider<Ws>>) {
-        let events = contract.events();
-        let event_stream = events.subscribe().await;
-
-        match event_stream {
-            Ok(mut stream) => {
-                println!("Starting EventStrem...");
-
-                while let Some(Ok(event)) = stream.next().await {
-                    println!("Event: {:?}", event);
-                    match event {
-                        IdentifierEvents::AuthenticationRequestFilter(request) => {
-                            let authentication = self.authenticate(request).await;
-                            match authentication {
-                                Ok(()) => {
-                                    println!("Authentication Successful!")
-                                }
-                                Err(err) => {
-                                    println!("Authentication Unsuccessful: {:?}", err)
-                                }
-                            }
+    pub async fn start(
+        &self,
+        event_stream: &mut EventStream<
+            '_,
+            SubscriptionStream<'_, Ws, Log>,
+            IdentifierEvents,
+            ContractError<Provider<Ws>>,
+        >,
+    ) {
+        while let Some(Ok(event)) = event_stream.next().await {
+            println!("Event: {:?}", event);
+            match event {
+                IdentifierEvents::AuthenticationRequestFilter(request) => {
+                    let authentication = self.authenticate(request).await;
+                    match authentication {
+                        Ok(()) => {
+                            println!("Authentication Successful!")
                         }
-                        _ => {}
+                        Err(err) => {
+                            println!("Authentication Unsuccessful: {:?}", err)
+                        }
                     }
                 }
-            }
-            Err(err) => {
-                println!("Unable to start Event stream: {:?}", err);
+                _ => {}
             }
         }
     }
@@ -99,24 +133,5 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
                 "Hashes do not match".to_string(),
             ));
         }
-    }
-}
-
-#[derive(Debug)]
-pub enum AuthenticationResponse {
-    DecryptionError(String),
-    IpfsGetError(String),
-    HashMismatch(String),
-}
-
-impl From<IpfsClientError> for AuthenticationResponse {
-    fn from(err: IpfsClientError) -> AuthenticationResponse {
-        return AuthenticationResponse::IpfsGetError(err.err);
-    }
-}
-
-impl From<IdentityServiceError> for AuthenticationResponse {
-    fn from(err: IdentityServiceError) -> AuthenticationResponse {
-        return AuthenticationResponse::DecryptionError(err.err);
     }
 }
