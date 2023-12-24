@@ -1,8 +1,5 @@
 Rough plan: 
 
-refactor controllers and add tests
-    - authentication listen function should take event stream and not contract obj
-
 create integration test
     - deploy contract
     - register

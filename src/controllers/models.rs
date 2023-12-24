@@ -7,6 +7,7 @@ use ethers::{
 };
 
 use rustc_hex::FromHexError;
+use tokio::task::JoinError;
 
 use crate::clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError};
 use crate::services::models::IdentityServiceError;
@@ -135,6 +136,14 @@ impl From<FromHexError> for AuthenticationError {
 
 impl From<ContractError<Provider<Ws>>> for AuthenticationError {
     fn from(error: ContractError<Provider<Ws>>) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<JoinError> for AuthenticationError {
+    fn from(error: JoinError) -> Self {
         Self {
             err: error.to_string(),
         }

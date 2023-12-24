@@ -52,10 +52,9 @@ impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityS
 
         let events = contract.events();
 
-        // assign this to value and bubble up error if err enum is thrown
-        tokio::spawn(AuthenticationController::listen_for_events(events, config));
+        let result = tokio::spawn(AuthenticationController::listen_for_events(events, config)).await?;
 
-        return Ok(());
+        return result;
     }
 
     pub async fn listen_for_events(
