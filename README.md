@@ -80,7 +80,7 @@ cd contract
 yarn deploy
 ```
 
-Save the contract address, you will need it later to bootstrap the api.
+Save the contract address as an env var: `CONTRACT_ADDRESS`
 
 You now have to port-forward to the node instance in a seperate terminal session in order to interact with the api locally:
 
@@ -91,7 +91,7 @@ kubectl port-forward svc/node 8000:8000
 Now bootstrap the api by providing the contract address:
 
 ```shell
-curl -X POST localhost:8000/bootstrap/<your contract address>
+curl -X POST localhost:8000/bootstrap/$CONTRACT_ADDRESS
 ```
 
 Register Identity to smart contract:
@@ -100,7 +100,7 @@ Register Identity to smart contract:
 curl -X POST -d '{"meta_data": "info", "data": {"foo": "hi"}}' http://localhost:8000/register/<your wallet address>
 ```
 
-Now send authentication request to smart contract which will emit an event that our node is listening for. You need to update the `CONTRACT_ADDRESS` variable to be the value of the address that was returned from `yarn deploy`. Additionally, you must update the `PRINCIPAL_CREDS` variable and provide the address and private key of the wallet that you registered earlier. 
+Now send authentication request to smart contract which will emit an event that our node is listening for. You must update the `PRINCIPAL_CREDS` variable and provide the address and private key of the wallet that you registered earlier. 
 
 ```shell
 cd contract
@@ -113,6 +113,23 @@ You should see `Authentication Successful!` in the logs of the node pod if all w
 
 ```shell
 kubectl logs -l app=node
+```
+
+## Integration Test
+Alternatively you can run an integration test that will do all of the steps above. You must have a port-forward open for ipfs, zksync http port and zksync ws port:
+
+```shell
+kubectl port-forward svc/zksync 3050:3050
+```
+```shell
+kubectl port-forward svc/zksync 3051:3051
+```
+```shell
+kubectl port-forward svc/ipfs 5001:5001
+```
+
+```
+task integration-test
 ```
 
 ## Clean up
