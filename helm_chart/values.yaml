@@ -11,7 +11,7 @@ ipfs:
   namespace: default
 
 node:
-  repository: rust_node
+  repository: node
   tag: latest
   pullPolicy: Never
 

@@ -35,6 +35,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   // Show the contract info.
   const contractAddress = identifierContract.address;
-  console.log(`${artifact.contractName} was deployed to ${contractAddress}`);
+  console.log(`>>> Contract Address: ${contractAddress}`);
 
 }

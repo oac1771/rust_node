@@ -35,7 +35,6 @@ fn health() -> Json<Health> {
 async fn bootstrap(contract_address: &str) -> Result<(), Json<AuthenticationError>> {
     services::config::set_contract_address(contract_address).await;
     let config = services::config::read_config().await;
-
     AuthenticationController::listen(config).await?;
 
     return Ok(());

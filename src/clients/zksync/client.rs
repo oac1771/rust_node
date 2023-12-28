@@ -6,7 +6,7 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer},
-    types::{Address, Filter, U256},
+    types::{Address, Filter, U256, H160},
 };
 
 use super::contracts::ethers_traits::HttpProvider;
@@ -70,6 +70,10 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
             .parse::<LocalWallet>()?
             .with_chain_id(chain_id);
         let client = SignerMiddleware::new(http_provider, wallet);
+
+        if config.contract_address == H160::zero() {
+            return Err(ZksyncClientError{err: "Contract Address not set".to_string()})
+        }
 
         let contract = Identifier::new(config.contract_address, Arc::new(client));
 

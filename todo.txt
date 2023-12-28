@@ -1,7 +1,6 @@
 Rough plan: 
 
 create integration test
-    - deploy contract
     - register
     - authenticate
 

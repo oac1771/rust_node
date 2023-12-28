@@ -52,16 +52,18 @@ impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityS
 
         let events = contract.events();
 
-        let result = tokio::spawn(AuthenticationController::listen_for_events(events, config)).await?;
+        tokio::spawn(AuthenticationController::listen_for_events(events, config));
 
-        return result;
+        return Ok(());
     }
 
     pub async fn listen_for_events(
-        events: Event<Arc<Provider<Ws>>, Provider<Ws>, IdentifierEvents>, config: Config
+        events: Event<Arc<Provider<Ws>>, Provider<Ws>, IdentifierEvents>,
+        config: Config,
     ) -> Result<(), AuthenticationError> {
         match events.subscribe().await {
             Ok(mut stream) => {
+                println!("Starting Event Stream");
                 let authentication_controller = AuthenticationController::new(config).await;
                 authentication_controller.start(&mut stream).await
             }
@@ -123,7 +125,7 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
 
         let identity = self
             .identity_service
-            .regenerate_identity(&encryption_key, &ipfs_data.data)?;
+            .regenerate_identity(&encryption_key, ipfs_data.data)?;
 
         if identity.hash == request.data_hash {
             return Ok(());

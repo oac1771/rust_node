@@ -5,7 +5,7 @@ use super::encryption::EncryptionService;
 use super::hash::HashService;
 use super::models::{Identity, IdentityServiceError};
 
-use crate::utils::{bytes_to_string_literal, string_literal_to_bytes};
+use crate::utils::bytes_to_string_literal;
 
 pub trait IdService {
     fn create_identity(
@@ -15,7 +15,7 @@ pub trait IdService {
     fn regenerate_identity(
         &self,
         encryption_key: &str,
-        encrypted_data: &str,
+        encrypted_data: Vec<u8>,
     ) -> Result<Identity, IdentityServiceError>;
 }
 pub struct IdentityService {
@@ -24,8 +24,8 @@ pub struct IdentityService {
 }
 
 impl IdentityService {
-    pub fn new() -> IdentityService {
-        return IdentityService {
+    pub fn new() -> Self {
+        return Self {
             encryption_service: EncryptionService::new(),
             hash_service: HashService::new(),
         };
@@ -58,27 +58,22 @@ impl IdService for IdentityService {
     fn regenerate_identity(
         &self,
         encryption_key: &str,
-        encrypted_data: &str,
+        encrypted_data: Vec<u8>,
     ) -> Result<Identity, IdentityServiceError> {
-        if let Some(encrtyped_bytes) = string_literal_to_bytes(&encrypted_data) {
-            let decrypted_data = self
-                .encryption_service
-                .decrypt(encrtyped_bytes, encryption_key)?;
+        let decrypted_data = self
+            .encryption_service
+            .decrypt(encrypted_data, encryption_key)?;
 
-            let data = String::from_utf8(decrypted_data)?;
-            let hash = self.hash_service.hash(&data);
+        let data = String::from_utf8(decrypted_data)?;
+        let hash = self.hash_service.hash(&data);
 
-            let identity = Identity {
-                hash,
-                encryption_key: encryption_key.to_string(),
-                data,
-            };
+        let identity = Identity {
+            hash,
+            encryption_key: encryption_key.to_string(),
+            data,
+        };
 
-            return Ok(identity);
-        }
-        return Err(IdentityServiceError {
-            err: "Unable to transform string literal to bytes".to_string(),
-        });
+        return Ok(identity);
     }
 }
 
@@ -165,7 +160,10 @@ impl MockIdentityService {
 
 #[cfg(test)]
 impl IdService for MockIdentityService {
-    fn create_identity(&self, _data: &str) -> Result<(NamedTempFile, Identity), IdentityServiceError> {
+    fn create_identity(
+        &self,
+        _data: &str,
+    ) -> Result<(NamedTempFile, Identity), IdentityServiceError> {
         let expectation = self
             .expectations
             .get("create_id")
@@ -178,10 +176,10 @@ impl IdService for MockIdentityService {
     }
 
     fn regenerate_identity(
-            &self,
-            _encryption_key: &str,
-            _encrypted_data: &str,
-        ) -> Result<Identity, IdentityServiceError> {
+        &self,
+        _encryption_key: &str,
+        _encrypted_data: Vec<u8>,
+    ) -> Result<Identity, IdentityServiceError> {
         let expectation = self
             .expectations
             .get("regenerate_id")

@@ -20,7 +20,9 @@ mod tests {
         let mut mock_state_service = MockStateService::new();
         let mut mock_identity_service = MockIdentityService::new();
 
-        let principal: Address = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049".parse().unwrap();
+        let principal: Address = "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049"
+            .parse()
+            .unwrap();
 
         let request = AuthenticationRequestFilter {
             principal,
@@ -30,7 +32,7 @@ mod tests {
 
         mock_ipfs_client.expect_get().returns(|| {
             let ipfs_response = IpfsGetResponse {
-                data: "ipfs_data".to_string(),
+                data: vec![1, 2, 3],
             };
             return Ok(ipfs_response);
         });
@@ -56,7 +58,10 @@ mod tests {
             identity_service: mock_identity_service,
         };
 
-        let response = authentication_controller.authenticate(request).await.unwrap();
+        let response = authentication_controller
+            .authenticate(request)
+            .await
+            .unwrap();
 
         assert_eq!(response, ())
     }

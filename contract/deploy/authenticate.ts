@@ -19,12 +19,13 @@ if (!PRIVATE_KEY)
   throw "⛔️ Private key not detected! Add it to the .env file!";
 
 // Address of the contract on zksync testnet
-const CONTRACT_ADDRESS = "0x8b6E8186dE74fe0128C0a6a3B2733c1365f4c9e2";
 
-if (!CONTRACT_ADDRESS) throw "⛔️ Contract address not provided";
+// if (!CONTRACT_ADDRESS) throw "⛔️ Contract address not provided";
 
 // An example of a deploy script that will deploy and call a simple contract.
 export default async function (hre: HardhatRuntimeEnvironment) {
+  const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
+
   console.log(`Running script to interact with contract ${CONTRACT_ADDRESS}`);
 
   // Initialize the provider.
@@ -42,8 +43,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   );
 
   // await contract.estimateGas.authenticate;
-
   const token_id = await contract.getCurrentTokenID();
+
   console.log(`The current tokenID is ${token_id}`);
 
 

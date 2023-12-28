@@ -48,11 +48,7 @@ tasks:
       - colima start --arch x86_64 --cpu 4 --memory 10 --runtime containerd
       - task compile-contract
       - nerdctl build -f images/toolbox.Dockerfile . -t toolbox:latest --namespace k8s.io
-      - nerdctl build -f images/rust_node_builder.Dockerfile . -t rust_node_builder:latest --namespace k8s.io
-      - |
-        nerdctl run --namespace k8s.io --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
-          /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'
-      - nerdctl build -f images/rust_node.Dockerfile . -t rust_node:latest --namespace k8s.io
+      - nerdctl build -f images/node.Dockerfile . -t node:latest --namespace k8s.io
       - colima stop
     env:
       BUILD: true
@@ -72,3 +68,7 @@ tasks:
     cmds:
       - yarn install
       - yarn hardhat compile
+  
+  integration-test:
+    cmds:
+      - ./integration_test.sh

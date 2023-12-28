@@ -7,7 +7,7 @@ mod tests {
 
     use crate::clients::reqwest::client::ReqwestClient;
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Debug)]
     pub struct TestResponse {
         pub body: String,
     }
