@@ -1,9 +1,5 @@
 Rough plan: 
 
-create integration test
-    - register
-    - authenticate
-
 files that are a mess:
     config.rs
     state.rs

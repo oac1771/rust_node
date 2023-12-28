@@ -71,4 +71,4 @@ tasks:
   
   integration-test:
     cmds:
-      - ./integration_test.sh
+      - ./scripts/integration_test.sh
