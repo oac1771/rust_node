@@ -19,7 +19,7 @@ use crate::services::{
     state::{StService, StateService},
 };
 
-use super::models::{AuthenticationError, AuthenticationResponse};
+use super::models::AuthenticationError;
 
 pub struct AuthenticationController<IC, S, I> {
     pub ipfs_client: IC,
@@ -110,7 +110,7 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
     pub async fn authenticate(
         &self,
         request: AuthenticationRequestFilter,
-    ) -> Result<(), AuthenticationResponse> {
+    ) -> Result<(), AuthenticationError> {
         let ipfs_data = self.ipfs_client.get(&request.ipfs_address).await?;
 
         let principal_address = format!("0x{}", encode(request.principal));
@@ -119,9 +119,9 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
             .state_service
             .get_encryption_key(&principal_address)
             .await
-            .ok_or(AuthenticationResponse::DecryptionError(
-                "Encryption Key is not in Saved State".to_string(),
-            ))?;
+            .ok_or(AuthenticationError {
+                err: "Encryption Key is not in Saved State".to_string(),
+            })?;
 
         let identity = self
             .identity_service
@@ -130,9 +130,9 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
         if identity.hash == request.data_hash {
             return Ok(());
         } else {
-            return Err(AuthenticationResponse::HashMismatch(
-                "Hashes do not match".to_string(),
-            ));
+            return Err(AuthenticationError {
+                err: "Hashes do not match".to_string(),
+            });
         }
     }
 }

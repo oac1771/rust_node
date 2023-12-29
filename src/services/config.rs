@@ -1,9 +1,11 @@
 use std::str;
 
-use serde_json::json;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 
 use ethers::types::{Address, H160};
+
+use super::models::ConfigServiceError;
 
 pub const CONFIG_PATH: &str = "./var/config.json";
 
@@ -11,12 +13,12 @@ pub const CONFIG_PATH: &str = "./var/config.json";
 pub struct Config {
     pub ipfs_config: IpfsConfig,
     pub zksync_config: ZksyncConfig,
-    pub check_identity: bool
+    pub check_identity: bool,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct IpfsConfig {
-    pub ipfs_base_url: String
+    pub ipfs_base_url: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -27,15 +29,14 @@ pub struct ZksyncConfig {
     pub zksync_ws_url: String,
 }
 
-pub async fn create_config() {
+pub async fn create_config() -> Result<(), ConfigServiceError> {
+    let check_identity = std::env::var("CHECK_ID")?.parse::<bool>()?;
 
-    let check_identity = std::env::var("CHECK_ID").expect("CHECK_ID not set").parse::<bool>().unwrap();
+    let ipfs_base_url = std::env::var("IPFS_BASE_URL")?;
 
-    let ipfs_base_url = std::env::var("IPFS_BASE_URL").expect("IPFS_BASE_URL not set");
-
-    let private_key = std::env::var("PRIVATE_KEY").expect("PRIVATE_KEY not set");
-    let zksync_api_url = std::env::var("ZKSYNC_API_URL").expect("ZKSYNC_API_URL not set");
-    let zksync_ws_url = std::env::var("ZKSYNC_WS_URL").expect("ZKSYNC_WS_URL not set");
+    let private_key = std::env::var("PRIVATE_KEY")?;
+    let zksync_api_url = std::env::var("ZKSYNC_API_URL")?;
+    let zksync_ws_url = std::env::var("ZKSYNC_WS_URL")?;
 
     let config = json!({
         "ipfs_config": {
@@ -51,33 +52,35 @@ pub async fn create_config() {
     });
 
     let parent_directories = CONFIG_PATH.split("config.json").collect::<Vec<&str>>();
-    tokio::fs::create_dir_all(parent_directories[0]).await.unwrap();
+    tokio::fs::create_dir_all(parent_directories[0]).await?;
 
-    write_config(config).await;
+    write_config(config).await?;
 
+    return Ok(());
 }
 
-pub async fn set_contract_address(address: &str) {
-    let contract_address: Address = address.parse().expect("Invalid contract address");
+pub async fn set_contract_address(address: &str) -> Result<(), ConfigServiceError> {
+    let contract_address: Address = address.parse()?;
 
-    let mut config = read_config().await;
+    let mut config = read_config().await?;
     config.zksync_config.contract_address = contract_address;
 
-    write_config(config).await;
-    
+    write_config(config).await?;
+    return Ok(());
 }
 
-pub async fn read_config() -> Config {
+pub async fn read_config() -> Result<Config, ConfigServiceError> {
+    let config_bytes = tokio::fs::read(CONFIG_PATH).await?;
+    let config_string = str::from_utf8(&config_bytes)?;
 
-    let config_bytes = tokio::fs::read(CONFIG_PATH).await.unwrap();
-    let config_string = str::from_utf8(&config_bytes).unwrap();
+    let config = serde_json::from_str::<Config>(config_string)?;
 
-    let config = serde_json::from_str::<Config>(config_string).unwrap();
-
-    return config
+    return Ok(config);
 }
 
-pub async fn write_config(config: impl Serialize) {
-    let config = serde_json::to_string(&config).unwrap();
-    tokio::fs::write(CONFIG_PATH, config).await.unwrap();
+pub async fn write_config(config: impl Serialize) -> Result<(), ConfigServiceError> {
+    let config = serde_json::to_string(&config)?;
+    tokio::fs::write(CONFIG_PATH, config).await?;
+
+    return Ok(());
 }

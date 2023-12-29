@@ -1,9 +1,7 @@
 Rough plan: 
 
 files that are a mess:
-    config.rs
     state.rs
-    data in models.rs (has unwrap)
 
 mint session token NFT on authentication
 

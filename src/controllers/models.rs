@@ -1,3 +1,4 @@
+use rocket::serde::json::Json;
 use serde::Serialize;
 use serde_json::Error;
 
@@ -9,7 +10,7 @@ use ethers::{
 use rustc_hex::FromHexError;
 use tokio::task::JoinError;
 
-use crate::clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError};
+use crate::{clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError}, services::models::ConfigServiceError};
 use crate::services::models::IdentityServiceError;
 
 #[derive(Serialize)]
@@ -94,25 +95,6 @@ impl From<Error> for RegisterError {
     }
 }
 
-#[derive(Debug)]
-pub enum AuthenticationResponse {
-    DecryptionError(String),
-    IpfsGetError(String),
-    HashMismatch(String),
-}
-
-impl From<IpfsClientError> for AuthenticationResponse {
-    fn from(err: IpfsClientError) -> AuthenticationResponse {
-        return AuthenticationResponse::IpfsGetError(err.err);
-    }
-}
-
-impl From<IdentityServiceError> for AuthenticationResponse {
-    fn from(err: IdentityServiceError) -> AuthenticationResponse {
-        return AuthenticationResponse::DecryptionError(err.err);
-    }
-}
-
 #[derive(Serialize, Debug)]
 pub struct AuthenticationError {
     pub err: String,
@@ -147,5 +129,37 @@ impl From<JoinError> for AuthenticationError {
         Self {
             err: error.to_string(),
         }
+    }
+}
+
+impl From<IdentityServiceError> for AuthenticationError {
+    fn from(err: IdentityServiceError) -> AuthenticationError {
+        return Self {
+            err: err.to_string()
+        };
+    }
+}
+
+impl From<IpfsClientError> for AuthenticationError {
+    fn from(err: IpfsClientError) -> AuthenticationError {
+        return Self {
+            err: err.to_string()
+        };
+    }
+}
+
+impl From<ConfigServiceError> for Json<RegisterError> {
+    fn from(value: ConfigServiceError) -> Self {
+        return Json(RegisterError{
+            err: value.to_string()
+        })
+    }
+}
+
+impl From<ConfigServiceError> for Json<AuthenticationError> {
+    fn from(value: ConfigServiceError) -> Self {
+        return Json(AuthenticationError{
+            err: value.to_string()
+        })
     }
 }

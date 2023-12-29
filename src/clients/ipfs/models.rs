@@ -1,7 +1,10 @@
+use rocket::serde::json::Json;
 use serde::{
     de::Visitor,
     {Deserialize, Deserializer, Serialize},
 };
+
+use crate::services::models::ConfigServiceError;
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
@@ -98,5 +101,13 @@ impl From<std::io::Error> for IpfsClientError {
 impl std::fmt::Display for IpfsClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.err)
+    }
+}
+
+impl From<ConfigServiceError> for Json<IpfsClientError> {
+    fn from(value: ConfigServiceError) -> Self {
+        return Json(IpfsClientError{
+            err: value.to_string()
+        })
     }
 }

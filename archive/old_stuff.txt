@@ -1,0 +1,241 @@
+use std::collections::HashMap;
+
+use rocket::serde::{Deserialize, json::Json, Serialize};
+use reqwest;
+use serde_json;
+
+mod client;
+
+#[derive(Deserialize, Serialize)]
+struct Task<'r> {
+    description: &'r str,
+    complete: &'r str
+}
+
+#[derive(Deserialize, Serialize)]
+struct Foo<'r> {
+    description: &'r str,
+    complete: &'r str
+}
+
+
+#[post("/forward", data = "<foo>")]
+async fn forward(foo: Json<Foo<'_>>) -> Json<client::request_client::Response> {
+    let url = "http://localhost:8001/receive";
+
+    let foo = foo.into_inner();
+    let bar = serde_json::to_string(&foo).unwrap();
+    let data: HashMap<&str, &str>  = serde_json::from_str(&bar).unwrap();
+
+    let client = client::request_client::RequestClient::new();
+    let response = client.post(data, url).await;
+    println!("{}", response.status_code);
+
+    Json(response)
+
+}
+
+#[post("/receive", data = "<task>")]
+fn receive(task: Json<Task<'_>>) -> Json<client::request_client::Response> {
+    println!("Description: {}, Complete: {}", task.description, task.complete);
+    
+    Json(client::request_client::Response{
+        status_code: reqwest::StatusCode::EXPECTATION_FAILED.to_string()
+    })
+}
+
+reqwest::Response.json::<serde_json::Value>().await.unwrap()
+
+
+pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>, headers: Option<HeaderMap>) -> Json<Response> {
+
+    let request =  || async move {self.client.post(url)
+        .headers(headers.unwrap())
+        .json(&data)
+        .send().await}.boxed();
+    let response = self.call(request).await.unwrap();
+
+    return response
+
+}
+
+---------- Create RSA key return string, recreate RSA object --------
+
+    use openssl::rsa::Rsa;
+    use openssl::pkey::PKey;
+
+    let rsa = Rsa::generate(2048).unwrap();
+    let public_key = rsa.public_key_to_pem().unwrap();
+    let private_key = rsa.private_key_to_pem().unwrap();
+
+    // println!("Private Key: {:?}", String::from_utf8_lossy(&private_key));
+    // println!("Pubblic Key: {:?}", String::from_utf8_lossy(&public_key));
+
+    let recreated_rsa = PKey::private_key_from_pem(&String::from_utf8_lossy(&private_key).as_bytes().to_vec()).unwrap().rsa().unwrap();
+
+    assert_eq!(recreated_rsa.private_key_to_pem().unwrap(), private_key);
+    assert_eq!(recreated_rsa.public_key_to_pem().unwrap(), public_key);
+ 
+--------- encrypt decrypt workflow -------------
+
+    use openssl::rsa::{Rsa, Padding};
+    use crate::services::models::FileContent;
+
+
+    let file_content = FileContent{
+        content: "content".to_string(),
+        hash: "hash".to_string()
+    };
+
+    let content = serde_json::to_string(&file_content).unwrap();
+    
+    let rsa = Rsa::generate(2048).unwrap();
+
+    let mut encrypted_content = vec![0; rsa.size() as usize];
+    let encrypted_len = rsa.public_encrypt(content.as_bytes(), &mut encrypted_content, Padding::PKCS1).unwrap();
+    encrypted_content.truncate(encrypted_len);
+
+    let mut decrypted_content = vec![0; rsa.size() as usize];
+    let decrypted_len = rsa.private_decrypt(&encrypted_content, &mut decrypted_content, Padding::PKCS1).unwrap();
+    decrypted_content.truncate(decrypted_len);
+
+
+    println!("{:?}", String::from_utf8_lossy(&encrypted_content));
+    println!("{:?}", String::from_utf8_lossy(&decrypted_content));
+    
+
+---------- Async implementation of reqwest ----------
+use std::collections::HashMap;
+use futures::{future::BoxFuture, FutureExt};
+
+use reqwest;
+
+use rocket::serde::Serialize;
+use rocket::serde::json::Json;
+
+pub struct RequestClient {
+    client: reqwest::Client
+
+}
+
+impl RequestClient {
+
+    pub fn new() -> RequestClient {
+        let client = reqwest::Client::new();
+        let request_client = RequestClient {
+            client
+        };
+
+        return request_client
+    }
+
+    pub async fn post(&self, url: &str, data: Option<HashMap<&str, &str>>) -> Json<Response> {
+        let request =  || async move {self.client.post(url).json(&data).send().await}.boxed();
+        let response = self.call(request).await;
+
+        return response
+
+    }
+
+    async fn call<'a>(&self, request: impl FnOnce() -> BoxFuture<'a, Result<reqwest::Response, reqwest::Error>>) -> Json<Response> {
+
+        let r = request().await.unwrap();
+        let response = Response::new(r).await;
+
+        return Json(response)
+    }
+    
+}
+
+
+#[derive(Serialize)]
+pub struct Response {
+    pub status_code: String,
+    pub body: String,
+}
+
+impl Response {
+    async fn new(r: reqwest::Response) -> Response{
+
+        let response = Response {
+            status_code: r.status().to_string(),
+            body: r.text().await.unwrap(),
+        };
+
+        return response
+    }
+}
+
+
+{"status_code":"200 OK","body":"{\"ID\":\"12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"PublicKey\":\"CAESIM/Oukd0WYozap7KMmfW1QV65PbvRq0aRhz+xdbKz47N\",\"Addresses\":[\"/ip4/127.0.0.1/tcp/4001/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip4/127.0.0.1/udp/4001/quic/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip4/192.168.86.51/tcp/4001/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip4/192.168.86.51/udp/4001/quic/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip4/98.34.24.207/tcp/32754/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip4/98.34.24.207/udp/32754/quic/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip6/::1/tcp/4001/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\",\"/ip6/::1/udp/4001/quic/p2p/12D3KooWPoZPm5khvdtczdCCJYdo3YfPSL43APWL1vQdzMZjM2wn\"],\"AgentVersion\":\"kubo/0.16.0/38117db6f\",\"ProtocolVersion\":\"ipfs/0.1.0\",\"Protocols\":[\"/ipfs/bitswap\",\"/ipfs/bitswap/1.0.0\",\"/ipfs/bitswap/1.1.0\",\"/ipfs/bitswap/1.2.0\",\"/ipfs/id/1.0.0\",\"/ipfs/id/push/1.0.0\",\"/ipfs/kad/1.0.0\",\"/ipfs/lan/kad/1.0.0\",\"/ipfs/ping/1.0.0\",\"/libp2p/autonat/1.0.0\",\"/libp2p/circuit/relay/0.1.0\",\"/libp2p/circuit/relay/0.2.0/hop\",\"/libp2p/circuit/relay/0.2.0/stop\",\"/p2p/id/delta/1.0.0\",\"/x/\"]}\n"}
+
+
+
+========= manually read from eth logs: ==========
+   let http_provider = Provider::<Http>::try_from(&config.zksync_config.zksync_api_url).unwrap();
+    let contract = zksync_client.contract;
+
+    #[derive(Clone, Debug)]
+    struct IpfsDeletionRequest {
+        principal: Address,
+        ipfs_addr: String
+    }
+
+    impl IpfsDeletionRequest {
+        const NAME_WITH_SIGNATURES: &'static str = "IpfsDeletionRequest(string,address)";
+        const NAME: &'static str = "IpfsDeletionRequest";
+
+        pub fn new() -> IpfsDeletionRequest {
+            return IpfsDeletionRequest { principal: H160::zero(), ipfs_addr: "".to_string() }
+        }
+
+        pub fn set_principal(&mut self, principal: Address) {
+            self.principal = principal;
+        }
+
+        pub fn set_ipfs_addr(&mut self, ipfs_addr: String) {
+            self.ipfs_addr = ipfs_addr;
+        }
+    }
+
+    impl Detokenize for IpfsDeletionRequest {
+
+        fn from_tokens(tokens: Vec<Token>) -> Result<Self, InvalidOutputType> 
+        {
+            let mut ipfs_deletion_request = IpfsDeletionRequest::new();
+
+            for token in tokens {
+                match token {
+                    Token::Address(address) => {
+                        let principal = address.clone();
+                        ipfs_deletion_request.set_principal(principal);
+                    },
+                    Token::String(ipfs_addr) => {
+                        ipfs_deletion_request.set_ipfs_addr(ipfs_addr);
+                    }
+                    _ => {return Err(InvalidOutputType("No matching Tokens found".to_string()))}
+                }
+            }
+
+            return Ok(ipfs_deletion_request);
+        }
+    }
+
+    let filter = Filter::new().from_block(0).address(config.zksync_config.contract_address).event(IpfsDeletionRequest::NAME_WITH_SIGNATURES);
+    let logs = http_provider.get_logs(&filter).await.unwrap();
+
+    println!("number of logs {}", logs.len());
+    for log in logs {
+        println!("log: {:?}", log);
+        let event = contract.decode_event::<IpfsDeletionRequest>(IpfsDeletionRequest::NAME, log.topics, log.data);
+        println!("event: {:?}", event);
+
+    }
+
+
+#####################
+using statically linked compiled progam:
+- nerdctl build -f images/rust_node_builder.Dockerfile . -t rust_node_builder:latest --namespace k8s.io
+- |
+nerdctl run --namespace k8s.io --rm -it -v "$(pwd)":/rust_node rust_node_builder:latest \
+    /bin/bash -c 'source "$HOME/.cargo/env" && cargo build --target x86_64-unknown-linux-musl --release'

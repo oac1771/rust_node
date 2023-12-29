@@ -33,8 +33,8 @@ fn health() -> Json<Health> {
 
 #[post("/bootstrap/<contract_address>")]
 async fn bootstrap(contract_address: &str) -> Result<(), Json<AuthenticationError>> {
-    services::config::set_contract_address(contract_address).await;
-    let config = services::config::read_config().await;
+    services::config::set_contract_address(contract_address).await?;
+    let config = services::config::read_config().await?;
     AuthenticationController::listen(config).await?;
 
     return Ok(());
@@ -45,18 +45,13 @@ async fn register(
     data: Json<services::models::Data>,
     principal_address: &str,
 ) -> Result<Json<RegisterResponse>, Json<RegisterError>> {
-    let config = services::config::read_config().await;
+    let config = services::config::read_config().await?;
+    let register_controller = RegisterController::new(&config).await?;
+    let response = register_controller
+        .register(data.into_inner(), principal_address)
+        .await?;
 
-    match RegisterController::new(&config).await {
-        Ok(controller) => {
-            let response = controller
-                .register(data.into_inner(), principal_address)
-                .await?;
-
-            return Ok(Json(response));
-        }
-        Err(err) => return Err(Json(err)),
-    }
+    return Ok(Json(response));
 }
 
 #[delete("/remove/<principal_address>/<token_id>")]
@@ -64,21 +59,19 @@ async fn remove(
     principal_address: &str,
     token_id: u128,
 ) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
-    let config = services::config::read_config().await;
+    let config = services::config::read_config().await?;
 
-    match RegisterController::new(&config).await {
-        Ok(controller) => {
-            let response = controller.remove(principal_address, token_id).await?;
+    let register_controller = RegisterController::new(&config).await?;
+    let response = register_controller
+        .remove(principal_address, token_id)
+        .await?;
 
-            return Ok(Json(response));
-        }
-        Err(err) => return Err(Json(err)),
-    }
+    return Ok(Json(response));
 }
 
 #[post("/ipfs_id")]
 async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
-    let config = services::config::read_config().await;
+    let config = services::config::read_config().await?;
 
     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
     let response = ipfs_client.get_id().await?;
@@ -88,7 +81,7 @@ async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
 
 #[launch]
 async fn rocket() -> _ {
-    services::config::create_config().await;
+    services::config::create_config().await.unwrap();
     services::state::StateService {}.create_state().await;
 
     rocket::build().mount("/", routes![health, ipfs_id, bootstrap, register, remove])
