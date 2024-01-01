@@ -128,6 +128,10 @@ kubectl port-forward svc/zksync 3051:3051
 kubectl port-forward svc/ipfs 5001:5001
 ```
 
+```shell
+task cargo-run
+```
+
 ```
 task integration-test
 ```
