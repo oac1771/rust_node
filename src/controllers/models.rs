@@ -106,6 +106,14 @@ impl From<Error> for RegisterError {
     }
 }
 
+impl From<ConfigServiceError> for Json<RegisterError> {
+    fn from(value: ConfigServiceError) -> Self {
+        return Json(RegisterError {
+            err: value.to_string(),
+        });
+    }
+}
+
 #[derive(Serialize, Debug)]
 pub struct AuthenticationError {
     pub err: String,
@@ -167,16 +175,16 @@ impl From<IpfsClientError> for AuthenticationError {
     }
 }
 
-impl From<ConfigServiceError> for Json<RegisterError> {
+impl From<ConfigServiceError> for Json<AuthenticationError> {
     fn from(value: ConfigServiceError) -> Self {
-        return Json(RegisterError {
+        return Json(AuthenticationError {
             err: value.to_string(),
         });
     }
 }
 
-impl From<ConfigServiceError> for Json<AuthenticationError> {
-    fn from(value: ConfigServiceError) -> Self {
+impl From<StateServiceError> for Json<AuthenticationError> {
+    fn from(value: StateServiceError) -> Self {
         return Json(AuthenticationError {
             err: value.to_string(),
         });

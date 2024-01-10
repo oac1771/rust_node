@@ -34,6 +34,8 @@ fn health() -> Json<Health> {
 #[post("/bootstrap/<contract_address>")]
 async fn bootstrap(contract_address: &str) -> Result<(), Json<AuthenticationError>> {
     services::config::set_contract_address(contract_address).await?;
+    services::state::create_state().await?;
+
     let config = services::config::read_config().await?;
     AuthenticationController::listen(config).await?;
 
@@ -82,7 +84,6 @@ async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
 #[launch]
 async fn rocket() -> _ {
     services::config::create_config().await.unwrap();
-    services::state::create_state().await.unwrap();
 
     rocket::build().mount("/", routes![health, ipfs_id, bootstrap, register, remove])
 }

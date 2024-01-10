@@ -37,6 +37,7 @@ impl StateService {
     }
 }
 
+// change this to create_or_update method to make /bootstrap itempotent
 pub async fn create_state() -> Result<(), StateServiceError> {
     let state = State::new();
 
