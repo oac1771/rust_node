@@ -118,10 +118,7 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
         let encryption_key = self
             .state_service
             .get_encryption_key(&principal_address)
-            .await
-            .ok_or(AuthenticationError {
-                err: "Encryption Key is not in Saved State".to_string(),
-            })?;
+            .await?;
 
         let identity = self
             .identity_service

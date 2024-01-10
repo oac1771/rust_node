@@ -94,7 +94,7 @@ impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<
         let token_id = self.zksync_client.get_token_id(principal_address).await?;
         self.state_service
             .save_encryption_key(principal_address, &identity.encryption_key)
-            .await;
+            .await?;
 
         let register_response = RegisterResponse::new(
             tx_hash,

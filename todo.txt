@@ -1,8 +1,5 @@
 Rough plan: 
 
-files that are a mess:
-    state.rs
-
 mint session token NFT on authentication
 
 track gascost in zksync client

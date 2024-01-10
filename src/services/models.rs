@@ -113,3 +113,30 @@ impl std::fmt::Display for ConfigServiceError {
         write!(f, "{}", self.err)
     }
 }
+
+#[derive(Debug)]
+pub struct StateServiceError {
+    pub err: String
+}
+
+impl From<std::io::Error> for StateServiceError {
+    fn from(error: std::io::Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<serde_json::Error> for StateServiceError {
+    fn from(error: serde_json::Error) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl std::fmt::Display for StateServiceError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.err)
+    }
+}

@@ -10,8 +10,11 @@ use ethers::{
 use rustc_hex::FromHexError;
 use tokio::task::JoinError;
 
-use crate::{clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError}, services::models::ConfigServiceError};
 use crate::services::models::IdentityServiceError;
+use crate::{
+    clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError},
+    services::models::{ConfigServiceError, StateServiceError},
+};
 
 #[derive(Serialize)]
 pub struct RegisterResponse {
@@ -65,6 +68,14 @@ pub struct RegisterError {
 
 impl From<ZksyncClientError> for RegisterError {
     fn from(error: ZksyncClientError) -> Self {
+        Self {
+            err: error.to_string(),
+        }
+    }
+}
+
+impl From<StateServiceError> for RegisterError {
+    fn from(error: StateServiceError) -> Self {
         Self {
             err: error.to_string(),
         }
@@ -135,7 +146,15 @@ impl From<JoinError> for AuthenticationError {
 impl From<IdentityServiceError> for AuthenticationError {
     fn from(err: IdentityServiceError) -> AuthenticationError {
         return Self {
-            err: err.to_string()
+            err: err.to_string(),
+        };
+    }
+}
+
+impl From<StateServiceError> for AuthenticationError {
+    fn from(err: StateServiceError) -> AuthenticationError {
+        return Self {
+            err: err.to_string(),
         };
     }
 }
@@ -143,23 +162,23 @@ impl From<IdentityServiceError> for AuthenticationError {
 impl From<IpfsClientError> for AuthenticationError {
     fn from(err: IpfsClientError) -> AuthenticationError {
         return Self {
-            err: err.to_string()
+            err: err.to_string(),
         };
     }
 }
 
 impl From<ConfigServiceError> for Json<RegisterError> {
     fn from(value: ConfigServiceError) -> Self {
-        return Json(RegisterError{
-            err: value.to_string()
-        })
+        return Json(RegisterError {
+            err: value.to_string(),
+        });
     }
 }
 
 impl From<ConfigServiceError> for Json<AuthenticationError> {
     fn from(value: ConfigServiceError) -> Self {
-        return Json(AuthenticationError{
-            err: value.to_string()
-        })
+        return Json(AuthenticationError {
+            err: value.to_string(),
+        });
     }
 }

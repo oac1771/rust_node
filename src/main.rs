@@ -82,7 +82,7 @@ async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
 #[launch]
 async fn rocket() -> _ {
     services::config::create_config().await.unwrap();
-    services::state::StateService {}.create_state().await;
+    services::state::create_state().await.unwrap();
 
     rocket::build().mount("/", routes![health, ipfs_id, bootstrap, register, remove])
 }
