@@ -1,3 +1,4 @@
+use axum::async_trait;
 use super::models::*;
 use crate::services::config::IpfsConfig;
 

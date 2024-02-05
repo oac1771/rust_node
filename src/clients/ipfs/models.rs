@@ -1,4 +1,3 @@
-use rocket::serde::json::Json;
 use serde::{
     de::Visitor,
     {Deserialize, Deserializer, Serialize},
@@ -104,10 +103,10 @@ impl std::fmt::Display for IpfsClientError {
     }
 }
 
-impl From<ConfigServiceError> for Json<IpfsClientError> {
-    fn from(value: ConfigServiceError) -> Self {
-        return Json(IpfsClientError{
-            err: value.to_string()
-        })
-    }
-}
+// impl From<ConfigServiceError> for Json<IpfsClientError> {
+//     fn from(value: ConfigServiceError) -> Self {
+//         return Json(IpfsClientError{
+//             err: value.to_string()
+//         })
+//     }
+// }

@@ -17,12 +17,12 @@ impl Data {
 pub struct Identity {
     pub hash: String,
     pub encryption_key: String,
-    pub data: String
+    pub data: String,
 }
 
 #[derive(Debug)]
 pub struct IdentityServiceError {
-    pub err: String
+    pub err: String,
 }
 
 impl From<openssl::error::ErrorStack> for IdentityServiceError {
@@ -57,13 +57,13 @@ impl std::fmt::Display for IdentityServiceError {
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct ConfigServiceError {
-    err: String
+    err: String,
 }
 
 impl From<std::str::ParseBoolError> for ConfigServiceError {
     fn from(err: std::str::ParseBoolError) -> Self {
         Self {
-            err: err.to_string()
+            err: err.to_string(),
         }
     }
 }
@@ -71,7 +71,7 @@ impl From<std::str::ParseBoolError> for ConfigServiceError {
 impl From<std::io::Error> for ConfigServiceError {
     fn from(value: std::io::Error) -> Self {
         Self {
-            err: value.to_string()
+            err: value.to_string(),
         }
     }
 }
@@ -87,7 +87,7 @@ impl From<rustc_hex::FromHexError> for ConfigServiceError {
 impl From<std::str::Utf8Error> for ConfigServiceError {
     fn from(err: std::str::Utf8Error) -> Self {
         Self {
-            err: err.to_string()
+            err: err.to_string(),
         }
     }
 }
@@ -116,7 +116,7 @@ impl std::fmt::Display for ConfigServiceError {
 
 #[derive(Debug)]
 pub struct StateServiceError {
-    pub err: String
+    pub err: String,
 }
 
 impl From<std::io::Error> for StateServiceError {

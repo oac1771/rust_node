@@ -1,3 +1,6 @@
+use axum::async_trait;
+use std::sync::Arc;
+
 use ethers::{
     abi::{AbiError, Detokenize},
     contract::{ContractError, FunctionCall},
@@ -6,7 +9,6 @@ use ethers::{
     signers::LocalWallet,
     types::{Address, Bytes, Filter, Log, H256, U256},
 };
-use std::sync::Arc;
 
 use super::identifier::Identifier;
 

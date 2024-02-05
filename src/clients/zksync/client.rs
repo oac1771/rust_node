@@ -1,5 +1,6 @@
 use std::str;
 use std::{convert::TryFrom, sync::Arc};
+use axum::async_trait;
 
 use ethers::{
     abi::{Detokenize, Token},
@@ -64,6 +65,7 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
     > {
         let http_provider = Provider::<Http>::try_from(&config.zksync_api_url)?;
         let chain_id = http_provider.get_chainid().await?.as_u64();
+        println!("foo");
 
         let wallet = config
             .private_key

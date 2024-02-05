@@ -1,4 +1,4 @@
-use async_trait::async_trait;
+use axum::async_trait;
 
 use futures::{future::BoxFuture, FutureExt};
 use serde::de::DeserializeOwned;

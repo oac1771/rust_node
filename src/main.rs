@@ -1,89 +1,95 @@
 mod clients;
 mod controllers;
+mod messages;
+mod payloads;
 mod services;
 mod utils;
 
-use rocket::serde::Serialize;
-
-#[macro_use]
-extern crate rocket;
-use rocket::serde::json::Json;
-
-use clients::ipfs::{
-    client::IClient,
-    models::{IpfsClientError, IpfsIdResponse},
+use axum::{
+    http::StatusCode,
+    routing::{get, post},
+    Json, Router,
 };
+// use axum_macros::debug_handler;
+
+// use clients::ipfs::{
+//     client::IClient,
+//     models::{IpfsClientError, IpfsIdResponse},
+// };
+
+#[allow(unused_imports)]
 use controllers::{
-    authentication::AuthenticationController,
-    models::{AuthenticationError, RegisterError, RegisterResponse, RemoveResponse},
+    models::{AuthenticationError, Health, RegisterError, RegisterResponse, RemoveResponse},
+    // authentication::AuthenticationController,
     register::RegisterController,
 };
 
-#[derive(Serialize)]
-pub struct Health {
-    pub status: String,
+use messages::{AppError, AppResponse};
+use payloads::Register;
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/health", get(health))
+        .route("/register", post(register));
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
-#[get("/health")]
-fn health() -> Json<Health> {
-    Json(Health {
-        status: "up".to_string(),
-    })
+async fn health() -> (StatusCode, Json<Health>) {
+    let response = Health {
+        status: "Up".to_string(),
+    };
+
+    return (StatusCode::OK, Json(response));
 }
 
-#[post("/bootstrap/<contract_address>")]
-async fn bootstrap(contract_address: &str) -> Result<(), Json<AuthenticationError>> {
-    services::config::set_contract_address(contract_address).await?;
-    services::state::create_state().await?;
-
-    let config = services::config::read_config().await?;
-    AuthenticationController::listen(config).await?;
-
-    return Ok(());
-}
-
-#[post("/register/<principal_address>", data = "<data>")]
+// #[debug_handler]
 async fn register(
-    data: Json<services::models::Data>,
-    principal_address: &str,
-) -> Result<Json<RegisterResponse>, Json<RegisterError>> {
-    let config = services::config::read_config().await?;
-    let register_controller = RegisterController::new(&config).await?;
-    let response = register_controller
-        .register(data.into_inner(), principal_address)
-        .await?;
-
-    return Ok(Json(response));
-}
-
-#[delete("/remove/<principal_address>/<token_id>")]
-async fn remove(
-    principal_address: &str,
-    token_id: u128,
-) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
+    Json(payload): Json<Register>,
+) -> Result<AppResponse<RegisterResponse>, AppError> {
     let config = services::config::read_config().await?;
 
     let register_controller = RegisterController::new(&config).await?;
+
     let response = register_controller
-        .remove(principal_address, token_id)
+        .register(payload.data, &payload.principal_address)
         .await?;
-
-    return Ok(Json(response));
+    return Ok(AppResponse(response));
 }
 
-#[post("/ipfs_id")]
-async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
-    let config = services::config::read_config().await?;
+// async fn bootstrap(Json(payload): Json<BootStrap>) -> Result<(), Json<AuthenticationError>> {
+//     services::config::set_contract_address(&payload.contract_address).await?;
+//     services::state::create_state().await?;
 
-    let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
-    let response = ipfs_client.get_id().await?;
+//     let config = services::config::read_config().await?;
+//     AuthenticationController::listen(config).await?;
 
-    return Ok(Json(response));
-}
+//     return Ok(());
+// }
 
-#[launch]
-async fn rocket() -> _ {
-    services::config::create_config().await.unwrap();
+// // #[delete("/remove/<principal_address>/<token_id>")]
+// async fn remove(
+//     principal_address: &str,
+//     token_id: u128,
+// ) -> Result<Json<RemoveResponse>, Json<RegisterError>> {
+//     let config = services::config::read_config().await?;
 
-    rocket::build().mount("/", routes![health, ipfs_id, bootstrap, register, remove])
-}
+//     let register_controller = RegisterController::new(&config).await?;
+//     let response = register_controller
+//         .remove(principal_address, token_id)
+//         .await?;
+
+//     return Ok(Json(response));
+// }
+
+// // #[post("/ipfs_id")]
+// async fn ipfs_id() -> Result<Json<IpfsIdResponse>, Json<IpfsClientError>> {
+//     let config = services::config::read_config().await?;
+
+//     let ipfs_client = clients::ipfs::client::IpfsClient::new(&config.ipfs_config);
+//     let response = ipfs_client.get_id().await?;
+
+//     return Ok(Json(response));
+// }

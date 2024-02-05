@@ -1,4 +1,3 @@
-use rocket::serde::json::Json;
 use serde::Serialize;
 use serde_json::Error;
 
@@ -13,8 +12,13 @@ use tokio::task::JoinError;
 use crate::services::models::IdentityServiceError;
 use crate::{
     clients::{ipfs::models::IpfsClientError, zksync::models::ZksyncClientError},
-    services::models::{ConfigServiceError, StateServiceError},
+    services::models::StateServiceError,
 };
+
+#[derive(Serialize)]
+pub struct Health {
+    pub status: String,
+}
 
 #[derive(Serialize)]
 pub struct RegisterResponse {
@@ -106,11 +110,9 @@ impl From<Error> for RegisterError {
     }
 }
 
-impl From<ConfigServiceError> for Json<RegisterError> {
-    fn from(value: ConfigServiceError) -> Self {
-        return Json(RegisterError {
-            err: value.to_string(),
-        });
+impl std::fmt::Display for RegisterError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.err)
     }
 }
 
@@ -172,21 +174,5 @@ impl From<IpfsClientError> for AuthenticationError {
         return Self {
             err: err.to_string(),
         };
-    }
-}
-
-impl From<ConfigServiceError> for Json<AuthenticationError> {
-    fn from(value: ConfigServiceError) -> Self {
-        return Json(AuthenticationError {
-            err: value.to_string(),
-        });
-    }
-}
-
-impl From<StateServiceError> for Json<AuthenticationError> {
-    fn from(value: StateServiceError) -> Self {
-        return Json(AuthenticationError {
-            err: value.to_string(),
-        });
     }
 }

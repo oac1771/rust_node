@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use axum::async_trait;
 
 use super::models::StateServiceError;
 

@@ -24,8 +24,6 @@ spec:
           - containerPort: {{ .Values.node.apiPort }}
             name: api
           env:
-          - name: ROCKET_ADDRESS
-            value: "0.0.0.0"
           - name: IPFS_BASE_URL
             value: http://{{ .Values.ipfs.containerName}}.{{ .Values.ipfs.namespace}}:{{ .Values.ipfs.apiPort }}
           - name: ZKSYNC_API_URL
