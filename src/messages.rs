@@ -1,5 +1,8 @@
-use crate::controllers::models::RegisterError;
-use crate::services::models::ConfigServiceError;
+use crate::services::models::{ConfigServiceError, StateServiceError};
+use crate::{
+    clients::ipfs::models::IpfsClientError,
+    controllers::models::{AuthenticationError, RegisterError},
+};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -11,6 +14,9 @@ pub struct AppResponse<T>(pub T);
 pub enum AppError {
     ConfigServiceError(String),
     RegisterError(String),
+    IpfsClientError(String),
+    AuthenticationError(String),
+    StateServiceError(String)
 }
 
 impl<T> IntoResponse for AppResponse<T>
@@ -26,7 +32,10 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let message = match self {
             Self::ConfigServiceError(err) => err,
-            Self::RegisterError(err) => err
+            Self::RegisterError(err) => err,
+            Self::IpfsClientError(err) => err,
+            Self::AuthenticationError(err) => err,
+            Self::StateServiceError(err) => err
         };
         return (StatusCode::INTERNAL_SERVER_ERROR, message).into_response();
     }
@@ -44,3 +53,20 @@ impl From<RegisterError> for AppError {
     }
 }
 
+impl From<IpfsClientError> for AppError {
+    fn from(error: IpfsClientError) -> Self {
+        Self::IpfsClientError(error.to_string())
+    }
+}
+
+impl From<AuthenticationError> for AppError {
+    fn from(error: AuthenticationError) -> Self {
+        Self::AuthenticationError(error.to_string())
+    }
+}
+
+impl From<StateServiceError> for AppError {
+    fn from(error: StateServiceError) -> Self {
+        Self::StateServiceError(error.to_string())
+    }
+}

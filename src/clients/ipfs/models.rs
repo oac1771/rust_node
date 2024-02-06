@@ -3,8 +3,6 @@ use serde::{
     {Deserialize, Deserializer, Serialize},
 };
 
-use crate::services::models::ConfigServiceError;
-
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
 pub struct IpfsIdResponse {
@@ -102,11 +100,3 @@ impl std::fmt::Display for IpfsClientError {
         write!(f, "{}", self.err)
     }
 }
-
-// impl From<ConfigServiceError> for Json<IpfsClientError> {
-//     fn from(value: ConfigServiceError) -> Self {
-//         return Json(IpfsClientError{
-//             err: value.to_string()
-//         })
-//     }
-// }

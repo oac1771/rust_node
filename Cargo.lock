@@ -2817,7 +2817,6 @@ name = "rust_node"
 version = "0.1.0"
 dependencies = [
  "axum",
- "axum-macros",
  "ethers",
  "ethers-contract-abigen",
  "futures",
