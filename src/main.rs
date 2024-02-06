@@ -29,6 +29,8 @@ use payloads::Register;
 
 #[tokio::main]
 async fn main() {
+    services::config::create_config().await.unwrap();
+
     let app = Router::new()
         .route("/health", get(health))
         .route("/register", post(register));

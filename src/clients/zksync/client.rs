@@ -1,13 +1,13 @@
+use axum::async_trait;
 use std::str;
 use std::{convert::TryFrom, sync::Arc};
-use axum::async_trait;
 
 use ethers::{
     abi::{Detokenize, Token},
     middleware::SignerMiddleware,
     providers::{Http, Middleware, Provider},
     signers::{LocalWallet, Signer},
-    types::{Address, Filter, U256, H160},
+    types::{Address, Filter, H160, U256},
 };
 
 use super::contracts::ethers_traits::HttpProvider;
@@ -33,10 +33,8 @@ pub trait ZClient {
         token_id: u128,
     ) -> Result<String, ZksyncClientError>;
     async fn check_identity(&self, principal_address: &str) -> Result<bool, ZksyncClientError>;
-    async fn get_token_id(
-        &self,
-        principal_address: &str,
-    ) -> Result<Option<u64>, ZksyncClientError>;
+    async fn get_token_id(&self, principal_address: &str)
+        -> Result<Option<u64>, ZksyncClientError>;
     async fn get_ipfs_addr(
         &self,
         principal_address: &str,
@@ -63,19 +61,18 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
         ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
         ZksyncClientError,
     > {
+        if config.contract_address == H160::zero() {
+            return Err(ZksyncClientError{err: "Contract Address not set".to_string()})
+        }
+        
         let http_provider = Provider::<Http>::try_from(&config.zksync_api_url)?;
         let chain_id = http_provider.get_chainid().await?.as_u64();
-        println!("foo");
 
         let wallet = config
             .private_key
             .parse::<LocalWallet>()?
             .with_chain_id(chain_id);
         let client = SignerMiddleware::new(http_provider, wallet);
-
-        if config.contract_address == H160::zero() {
-            return Err(ZksyncClientError{err: "Contract Address not set".to_string()})
-        }
 
         let contract = Identifier::new(config.contract_address, Arc::new(client));
 
@@ -144,7 +141,7 @@ impl<
             if event.principal == principal {
                 return Some(Token::Uint(event.token_id));
             }
-            return None
+            return None;
         };
 
         let response = if let Some(token) = self.query::<Registration>(condition).await? {
@@ -168,7 +165,7 @@ impl<
             if event.principal == principal && event.token_id == token {
                 return Some(Token::String(event.ipfs_addr));
             }
-            return None
+            return None;
         };
 
         let response = if let Some(token) = self.query::<IpfsDeletionRequest>(condition).await? {
@@ -178,7 +175,6 @@ impl<
         };
 
         return Ok(response);
-
     }
 
     async fn query<T>(
@@ -222,7 +218,8 @@ pub struct SendExpectation {
 
 #[cfg(test)]
 pub struct QueryExpectation {
-    pub func_string: Option<Box<dyn Fn() -> Option<String> + std::marker::Sync + std::marker::Send>>,
+    pub func_string:
+        Option<Box<dyn Fn() -> Option<String> + std::marker::Sync + std::marker::Send>>,
     pub func_uint: Option<Box<dyn Fn() -> Option<u64> + std::marker::Sync + std::marker::Send>>,
 }
 
@@ -231,7 +228,7 @@ impl SendExpectation {
     fn new() -> SendExpectation {
         return Self {
             func_string: None,
-            func_bool: None
+            func_bool: None,
         };
     }
     pub fn returns_string(
@@ -254,7 +251,7 @@ impl QueryExpectation {
     fn new() -> QueryExpectation {
         return Self {
             func_string: None,
-            func_uint: None
+            func_uint: None,
         };
     }
     pub fn returns_string(

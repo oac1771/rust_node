@@ -1,7 +1,7 @@
 Rough plan: 
 
-think about using anyhow context for better error messages?
 move over to axum
+think about using anyhow context for better error messages?
 start looking into p2p for state management
 
 mint session token NFT on authentication
