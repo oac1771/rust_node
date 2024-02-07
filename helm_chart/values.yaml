@@ -19,7 +19,7 @@ node:
   initContainerTag: latest
 
   containerName: node
-  apiPort: 8000
+  apiPort: 3000
 
   namespace: default
 

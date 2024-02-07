@@ -37,15 +37,19 @@ tasks:
   start-k8s:
     cmds:
       - cp colima.yaml ~/.colima/_templates/colima.yaml
-      - colima start --cpu 2 --memory 3 --runtime containerd --kubernetes
+      # set explicit --disk for storage (is 60g rn try 30g)
+      - colima start --cpu 3 --memory 5 --runtime containerd --kubernetes
+      # run check to see if cluster is up instead of sleeping for 5 seconds
       - sleep 5 
     status:
       - colima status
 
   build-images:
     cmds:
+  # do start stop stuff controled by env var so you dont always have to do  it  
       - colima stop || true
-      - colima start --arch x86_64 --cpu 4 --memory 10 --runtime containerd
+      - colima start --arch x86_64 --cpu 4 --memory 10 --disk 30 --runtime containerd
+      
       - task compile-contract
       - nerdctl build -f images/toolbox.Dockerfile . -t toolbox:latest --namespace k8s.io
       - nerdctl build -f images/node.Dockerfile . -t node:latest --namespace k8s.io

@@ -9,6 +9,7 @@ use axum::{
     http::StatusCode,
     routing::{delete, get, post},
     Json, Router,
+    extract::Path
 };
 // use axum_macros::debug_handler;
 // #[debug_handler]
@@ -22,7 +23,7 @@ use controllers::{
 };
 
 use messages::{AppError, AppResponse};
-use payloads::{Register, Remove, BootStrap};
+use payloads::{Register, Remove};
 
 #[tokio::main]
 async fn main() {
@@ -31,7 +32,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health))
         .route("/remove", delete(remove))
-        .route("/bootstrap", post(bootstrap))
+        .route("/bootstrap/:contract_address", post(bootstrap))
         .route("/register", post(register))
         .route("/ipfs_id", post(ipfs_id));
 
@@ -60,8 +61,8 @@ async fn register(
     return Ok(AppResponse(response));
 }
 
-async fn bootstrap(Json(payload): Json<BootStrap>) -> Result<(), AppError>  {
-    services::config::set_contract_address(&payload.contract_address).await?;
+async fn bootstrap(Path(contract_address): Path<String>) -> Result<(), AppError>  {
+    services::config::set_contract_address(&contract_address).await?;
     services::state::create_state().await?;
 
     let config = services::config::read_config().await?;
