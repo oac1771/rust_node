@@ -11,8 +11,6 @@ use axum::{
     Json, Router,
     extract::Path
 };
-// use axum_macros::debug_handler;
-// #[debug_handler]
 
 use clients::ipfs::{client::IClient, models::IpfsIdResponse};
 
@@ -31,10 +29,10 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health))
+        .route("/ipfs_id", get(ipfs_id))
         .route("/remove", delete(remove))
         .route("/bootstrap/:contract_address", post(bootstrap))
-        .route("/register", post(register))
-        .route("/ipfs_id", post(ipfs_id));
+        .route("/register", post(register));     
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();

@@ -1,8 +1,6 @@
 Rough plan: 
 
-update readme and scripts to use new axum 
-    - test in local k8s cluster
-think about using anyhow context for better error messages?
+look into using Box<dyn Trait> refactor instead of full generics
 add tracing for logs
     
 start looking into p2p for state management

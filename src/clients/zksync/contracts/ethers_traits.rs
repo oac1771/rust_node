@@ -1,5 +1,6 @@
 use axum::async_trait;
 use std::sync::Arc;
+use thiserror::Error;
 
 use ethers::{
     abi::{AbiError, Detokenize},
@@ -12,24 +13,16 @@ use ethers::{
 
 use super::identifier::Identifier;
 
-pub struct IdentifierError {
-    pub err: String,
-}
+#[derive(Error, Debug)]
+pub enum IdentifierError {
+    #[error(transparent)]
+    ContractError(#[from] ContractError<SignerMiddleware<Provider<Http>, LocalWallet>>),
 
-impl From<ProviderError> for IdentifierError {
-    fn from(error: ProviderError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    ProviderError(#[from] ProviderError),
 
-impl From<ContractError<SignerMiddleware<Provider<Http>, LocalWallet>>> for IdentifierError {
-    fn from(error: ContractError<SignerMiddleware<Provider<Http>, LocalWallet>>) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
+    #[error("`{0}`")]
+    TransactionError(String),
 }
 
 #[async_trait]
@@ -110,11 +103,11 @@ impl Identifier<SignerMiddleware<Provider<Http>, LocalWallet>> {
         let tx_hash = if let Some(receipt) = tx {
             Ok(receipt.transaction_hash)
         } else {
-            Err(IdentifierError {
-                err: "Transaction Hash is None".to_string(),
-            })
-        };
-        return tx_hash;
+            Err(IdentifierError::TransactionError(
+                "Transaction failed, no tx receipt returned".to_string(),
+            ))
+        }?;
+        return Ok(tx_hash);
     }
     async fn call<T>(
         &self,

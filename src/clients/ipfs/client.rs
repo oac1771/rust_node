@@ -36,9 +36,9 @@ impl IpfsClient<ReqwestClient> {
 impl<R: Req + std::marker::Sync + std::marker::Send> IClient for IpfsClient<R> {
     async fn get_id(&self) -> Result<IpfsIdResponse, IpfsClientError> {
         let url = format!("{}{}", self.ipfs_base_url, "/api/v0/id");
-        let response = self.req.post::<IpfsIdResponse, IpfsClientError>(&url).await;
+        let response = self.req.post::<IpfsIdResponse, IpfsClientError>(&url).await?;
 
-        return response;
+        return Ok(response);
     }
 
     async fn add_file(&self, file_path: &str) -> Result<IpfsAddFileResponse, IpfsClientError> {
@@ -46,9 +46,9 @@ impl<R: Req + std::marker::Sync + std::marker::Send> IClient for IpfsClient<R> {
         let response = self
             .req
             .post_multipart::<IpfsAddFileResponse, IpfsClientError>(&url, file_path)
-            .await;
+            .await?;
 
-        return response;
+        return Ok(response);
     }
 
     async fn rm_pin(&self, hash: &str) -> Result<IpfsRemovePinResponse, IpfsClientError> {
@@ -56,9 +56,9 @@ impl<R: Req + std::marker::Sync + std::marker::Send> IClient for IpfsClient<R> {
         let response = self
             .req
             .post::<IpfsRemovePinResponse, IpfsClientError>(&url)
-            .await;
+            .await?;
 
-        return response;
+        return Ok(response);
     }
 
     async fn get(&self, hash: &str) -> Result<IpfsGetResponse, IpfsClientError> {
@@ -66,9 +66,9 @@ impl<R: Req + std::marker::Sync + std::marker::Send> IClient for IpfsClient<R> {
         let response = self
             .req
             .post::<IpfsGetResponse, IpfsClientError>(&url)
-            .await;
+            .await?;
 
-        return response;
+        return Ok(response);
     }
 }
 
@@ -151,9 +151,9 @@ impl IClient for MockIpfsClient {
             .unwrap()
             .downcast_ref::<Expectation<IpfsIdResponse>>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func.as_ref().unwrap())()?;
 
-        return result;
+        return Ok(result);
     }
 
     async fn add_file(&self, _file_path: &str) -> Result<IpfsAddFileResponse, IpfsClientError> {
@@ -163,9 +163,9 @@ impl IClient for MockIpfsClient {
             .unwrap()
             .downcast_ref::<Expectation<IpfsAddFileResponse>>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func.as_ref().unwrap())()?;
 
-        return result;
+        return Ok(result);
     }
     async fn rm_pin(&self, _hash: &str) -> Result<IpfsRemovePinResponse, IpfsClientError> {
         let expectation = self
@@ -174,9 +174,9 @@ impl IClient for MockIpfsClient {
             .unwrap()
             .downcast_ref::<Expectation<IpfsRemovePinResponse>>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func.as_ref().unwrap())()?;
 
-        return result;
+        return Ok(result);
     }
 
     async fn get(&self, _hash: &str) -> Result<IpfsGetResponse, IpfsClientError> {
@@ -186,8 +186,8 @@ impl IClient for MockIpfsClient {
             .unwrap()
             .downcast_ref::<Expectation<IpfsGetResponse>>()
             .unwrap();
-        let result = (expectation.func.as_ref().unwrap())();
+        let result = (expectation.func.as_ref().unwrap())()?;
 
-        return result;
+        return Ok(result);
     }
 }

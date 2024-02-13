@@ -1,6 +1,6 @@
+use axum::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use axum::async_trait;
 
 use super::models::StateServiceError;
 
@@ -20,14 +20,14 @@ pub struct StateService {}
 #[derive(Deserialize, Serialize)]
 pub struct State {
     encryption_keys: HashMap<String, String>,
-    neighbors: HashMap<String, String>
+    neighbors: HashMap<String, String>,
 }
 
 impl State {
     pub fn new() -> State {
         return State {
             encryption_keys: HashMap::new(),
-            neighbors: HashMap::new()
+            neighbors: HashMap::new(),
         };
     }
 }
@@ -75,13 +75,13 @@ impl StService for StateService {
         let state = read_state().await?;
 
         if let Some(key) = state.encryption_keys.get(principal_address) {
-            return Ok(key.to_string())
+            return Ok(key.to_string());
         } else {
-            return Err(StateServiceError {
-                err: format!("Encryption key for {} not found", principal_address),
-            });
+            return Err(StateServiceError::EncryptionKeyNotFound(format!(
+                "Encryption key for {} not found",
+                principal_address
+            )));
         };
-
     }
 
     async fn save_encryption_key(

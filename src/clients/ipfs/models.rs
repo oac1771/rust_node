@@ -2,6 +2,7 @@ use serde::{
     de::Visitor,
     {Deserialize, Deserializer, Serialize},
 };
+use thiserror::Error;
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize)]
@@ -29,9 +30,7 @@ pub struct IpfsGetResponse {
 
 impl IpfsGetResponse {
     fn new() -> Self {
-        return Self {
-            data: Vec::new()
-        }
+        return Self { data: Vec::new() };
     }
 }
 
@@ -66,37 +65,14 @@ impl<'de> Deserialize<'de> for IpfsGetResponse {
     }
 }
 
-#[derive(Deserialize, Debug, Serialize)]
-pub struct IpfsClientError {
-    pub err: String,
-}
+#[derive(Error, Debug)]
+pub enum IpfsClientError {
+    #[error(transparent)]
+    RequestError(#[from] reqwest::Error),
 
-impl From<reqwest::Error> for IpfsClientError {
-    fn from(error: reqwest::Error) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error("Error deserializing http response")]
+    SerdeDeserializeError(#[from] serde_json::Error),
 
-impl From<serde_json::Error> for IpfsClientError {
-    fn from(error: serde_json::Error) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl From<std::io::Error> for IpfsClientError {
-    fn from(error: std::io::Error) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl std::fmt::Display for IpfsClientError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.err)
-    }
+    #[error("Error when reading file")]
+    FileReadingError(#[from] std::io::Error),
 }

@@ -1,13 +1,9 @@
 use serde::Serialize;
-use serde_json::Error;
 
 use ethers::{
     contract::ContractError,
     providers::{Provider, ProviderError, Ws},
 };
-
-use rustc_hex::FromHexError;
-use tokio::task::JoinError;
 
 use crate::services::models::IdentityServiceError;
 use crate::{
@@ -37,21 +33,15 @@ pub struct RemoveResponse {
 impl RegisterResponse {
     pub fn new(
         tx_hash: String,
-        token_id: Option<u64>,
+        token_id: u64,
         ipfs_address: String,
         encryption_key: String,
-    ) -> Result<Self, RegisterError> {
-        if let Some(token) = token_id {
-            return Ok(Self {
-                tx_hash: tx_hash,
-                token_id: token,
-                ipfs_address,
-                encryption_key,
-            });
-        } else {
-            return Err(RegisterError {
-                err: "Unable to read TokenID".to_string(),
-            });
+    ) -> Self {
+        Self {
+            tx_hash: tx_hash,
+            token_id: token_id,
+            ipfs_address,
+            encryption_key,
         }
     }
 }
@@ -65,120 +55,56 @@ impl RemoveResponse {
     }
 }
 
-#[derive(Serialize, Debug)]
-pub struct RegisterError {
-    pub err: String,
+#[derive(thiserror::Error, Debug)]
+pub enum RegisterError {
+    #[error(transparent)]
+    ZksyncClientError(#[from] ZksyncClientError),
+
+    #[error(transparent)]
+    StateServiceError(#[from] StateServiceError),
+
+    #[error(transparent)]
+    IdentityServiceError(#[from] IdentityServiceError),
+
+    #[error(transparent)]
+    IpfsClientError(#[from] IpfsClientError),
+
+    #[error(transparent)]
+    SerdeSerializeError(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    ProviderError(#[from] ProviderError),
+
+    #[error(transparent)]
+    JoinError(#[from] tokio::task::JoinError),
+
+    #[error("`{0}`")]
+    OtherError(String),
 }
 
-impl From<ZksyncClientError> for RegisterError {
-    fn from(error: ZksyncClientError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+#[derive(thiserror::Error, Debug)]
+pub enum AuthenticationError {
+    #[error(transparent)]
+    StateServiceError(#[from] StateServiceError),
 
-impl From<StateServiceError> for RegisterError {
-    fn from(error: StateServiceError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    IdentityServiceError(#[from] IdentityServiceError),
 
-impl From<IdentityServiceError> for RegisterError {
-    fn from(error: IdentityServiceError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    IpfsClientError(#[from] IpfsClientError),
 
-impl From<IpfsClientError> for RegisterError {
-    fn from(error: IpfsClientError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    SerdeSerializeError(#[from] serde_json::Error),
 
-impl From<Error> for RegisterError {
-    fn from(error: Error) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    FromHexError(#[from] rustc_hex::FromHexError),
 
-impl std::fmt::Display for RegisterError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.err)
-    }
-}
+    #[error(transparent)]
+    ProviderError(#[from] ProviderError),
 
-#[derive(Serialize, Debug)]
-pub struct AuthenticationError {
-    pub err: String,
-}
+    #[error(transparent)]
+    IdentityContractError(#[from] ContractError<Provider<Ws>>),
 
-impl From<ProviderError> for AuthenticationError {
-    fn from(error: ProviderError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl From<FromHexError> for AuthenticationError {
-    fn from(error: FromHexError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl From<ContractError<Provider<Ws>>> for AuthenticationError {
-    fn from(error: ContractError<Provider<Ws>>) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl From<JoinError> for AuthenticationError {
-    fn from(error: JoinError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
-
-impl From<IdentityServiceError> for AuthenticationError {
-    fn from(err: IdentityServiceError) -> AuthenticationError {
-        return Self {
-            err: err.to_string(),
-        };
-    }
-}
-
-impl From<StateServiceError> for AuthenticationError {
-    fn from(err: StateServiceError) -> AuthenticationError {
-        return Self {
-            err: err.to_string(),
-        };
-    }
-}
-
-impl From<IpfsClientError> for AuthenticationError {
-    fn from(err: IpfsClientError) -> AuthenticationError {
-        return Self {
-            err: err.to_string(),
-        };
-    }
-}
-
-impl std::fmt::Display for AuthenticationError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.err)
-    }
+    #[error("`{0}`")]
+    OtherError(String),
 }

@@ -68,9 +68,9 @@ impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityS
                 authentication_controller.start(&mut stream).await
             }
             Err(_) => {
-                return Err(AuthenticationError {
-                    err: "Unable to initiate event stream".to_string(),
-                });
+                return Err(AuthenticationError::OtherError(
+                    "Unable to initiate event stream".to_string(),
+                ));
             }
         };
 
@@ -127,9 +127,9 @@ impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I>
         if identity.hash == request.data_hash {
             return Ok(());
         } else {
-            return Err(AuthenticationError {
-                err: "Hashes do not match".to_string(),
-            });
+            return Err(AuthenticationError::OtherError(
+                "Hashes do not match".to_string(),
+            ));
         }
     }
 }

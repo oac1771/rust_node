@@ -62,9 +62,11 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
         ZksyncClientError,
     > {
         if config.contract_address == H160::zero() {
-            return Err(ZksyncClientError{err: "Contract Address not set".to_string()})
+            return Err(ZksyncClientError::ContractValidationError(
+                "Contract Address not set".to_string(),
+            ));
         }
-        
+
         let http_provider = Provider::<Http>::try_from(&config.zksync_api_url)?;
         let chain_id = http_provider.get_chainid().await?.as_u64();
 

@@ -4,9 +4,7 @@ use ethers::{
     providers::ProviderError,
     signers::WalletError,
 };
-
-use serde::Deserialize;
-use url::ParseError;
+use thiserror::Error;
 use rustc_hex::FromHexError;
 
 use super::contracts::ethers_traits::IdentifierError;
@@ -131,61 +129,27 @@ impl Event for IpfsDeletionRequest {
         return "IpfsDeletionRequest(address,uint256,string)".to_string()
     }
 }
-#[derive(Deserialize, Debug)]
-pub struct ZksyncClientError {
-    pub err: String,
-}
 
-impl From<ParseError> for ZksyncClientError {
-    fn from(error: url::ParseError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+#[derive(Error, Debug)]
+pub enum ZksyncClientError {
+    #[error(transparent)]
+    UrlParseError(#[from] url::ParseError),
 
-impl From<ProviderError> for ZksyncClientError {
-    fn from(error: ProviderError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    ProviderError(#[from] ProviderError),
 
-impl From<WalletError> for ZksyncClientError {
-    fn from(error: WalletError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    WalletError(#[from] WalletError),
 
-impl From<FromHexError> for ZksyncClientError {
-    fn from(error: FromHexError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    FromHexError(#[from] FromHexError),
 
-impl From<AbiError> for ZksyncClientError {
-    fn from(error: AbiError) -> Self {
-        Self {
-            err: error.to_string(),
-        }
-    }
-}
+    #[error(transparent)]
+    AbiError(#[from] AbiError),
 
-impl From<IdentifierError> for ZksyncClientError {
-    fn from(error: IdentifierError) -> Self {
-        Self {
-            err: error.err,
-        }
-    }
-}
+    #[error(transparent)]
+    IdentifierContractError(#[from] IdentifierError),
 
-impl std::fmt::Display for ZksyncClientError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.err)
-    }
+    #[error("Contract Validation Error: `{0}`")]
+    ContractValidationError(String),
 }
