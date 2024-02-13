@@ -48,17 +48,17 @@ pub trait ZClient {
         T: Detokenize + Event + 'static;
 }
 
-pub struct ZksyncClient<I, H> {
+pub struct ZksyncClient<I> {
     pub contract: I,
     pub api_url: String,
-    pub http_provider: H,
+    pub http_provider: Box<dyn HttpProvider + std::marker::Sync + std::marker::Send>,
 }
 
-impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>> {
+impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>> {
     pub async fn new(
         config: &ZksyncConfig,
     ) -> Result<
-        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
+        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>>,
         ZksyncClientError,
     > {
         if config.contract_address == H160::zero() {
@@ -81,7 +81,7 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
         return Ok(ZksyncClient {
             contract,
             api_url: config.zksync_api_url.to_string(),
-            http_provider: Provider::<Http>::try_from(&config.zksync_api_url)?,
+            http_provider: Box::new(Provider::<Http>::try_from(&config.zksync_api_url)?),
         });
     }
 }
@@ -89,8 +89,7 @@ impl ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Pro
 #[async_trait]
 impl<
         I: Iden + std::marker::Sync + std::marker::Send,
-        H: HttpProvider + std::marker::Sync + std::marker::Send,
-    > ZClient for ZksyncClient<I, H>
+    > ZClient for ZksyncClient<I>
 {
     async fn register_identity(
         &self,

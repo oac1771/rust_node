@@ -27,7 +27,7 @@ mod tests {
         let client = ZksyncClient {
             api_url: "".to_string(),
             contract: mock_contract,
-            http_provider: mock_http_provider,
+            http_provider: Box::new(mock_http_provider),
         };
 
         let hash = client
@@ -53,7 +53,7 @@ mod tests {
         let client = ZksyncClient {
             api_url: "".to_string(),
             contract: mock_contract,
-            http_provider: mock_http_proiver,
+            http_provider: Box::new(mock_http_proiver),
         };
 
         let hash = client
@@ -103,7 +103,7 @@ mod tests {
         let client = ZksyncClient {
             api_url: "".to_string(),
             contract: mock_contract,
-            http_provider: mock_http_provider,
+            http_provider: Box::new(mock_http_provider),
         };
 
         let id = client.get_token_id(principal).await.unwrap().unwrap();
@@ -156,7 +156,7 @@ mod tests {
         let client = ZksyncClient {
             api_url: "".to_string(),
             contract: mock_contract,
-            http_provider: mock_http_provider,
+            http_provider: Box::new(mock_http_provider),
         };
 
         let returned_ipfs_addr = client.get_ipfs_addr(principal, 0).await.unwrap().unwrap();
@@ -174,7 +174,7 @@ mod tests {
         let client = ZksyncClient {
             api_url: "".to_string(),
             contract: mock_contract,
-            http_provider: mock_http_proiver,
+            http_provider: Box::new(mock_http_proiver),
         };
 
         let result = client

@@ -21,19 +21,19 @@ use crate::services::{
 
 use super::models::AuthenticationError;
 
-pub struct AuthenticationController<IC, S, I> {
+pub struct AuthenticationController<IC> {
     pub ipfs_client: IC,
-    pub state_service: S,
-    pub identity_service: I,
+    pub identity_service: Box<dyn IdService + std::marker::Send + std::marker::Sync>,
+    pub state_service: Box<dyn StService + std::marker::Send + std::marker::Sync>,
 }
 
-impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
+impl AuthenticationController<IpfsClient<ReqwestClient>> {
     pub async fn new(
         config: Config,
-    ) -> AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityService> {
+    ) -> AuthenticationController<IpfsClient<ReqwestClient>> {
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
-        let state_service = StateService::new();
-        let identity_service = IdentityService::new();
+        let state_service = Box::new(StateService::new());
+        let identity_service = Box::new(IdentityService::new());
 
         let authentication_controller = AuthenticationController {
             ipfs_client,
@@ -78,7 +78,7 @@ impl AuthenticationController<IpfsClient<ReqwestClient>, StateService, IdentityS
     }
 }
 
-impl<IC: IClient, S: StService, I: IdService> AuthenticationController<IC, S, I> {
+impl<IC: IClient> AuthenticationController<IC> {
     pub async fn start(
         &self,
         event_stream: &mut EventStream<

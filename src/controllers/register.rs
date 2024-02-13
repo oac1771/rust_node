@@ -23,20 +23,18 @@ use crate::{
 
 use super::models::{RegisterError, RegisterResponse, RemoveResponse};
 
-pub struct RegisterController<IC, ZC, IS, SS> {
+pub struct RegisterController<IC, ZC> {
     pub ipfs_client: IC,
     pub zksync_client: ZC,
-    pub identity_service: IS,
-    pub state_service: SS,
+    pub identity_service: Box<dyn IdService + std::marker::Send + std::marker::Sync>,
+    pub state_service: Box<dyn StService + std::marker::Send + std::marker::Sync>,
     pub check_identity: bool,
 }
 
 impl
     RegisterController<
         IpfsClient<ReqwestClient>,
-        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
-        IdentityService,
-        StateService,
+        ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>>
     >
 {
     pub async fn new(
@@ -44,27 +42,25 @@ impl
     ) -> Result<
         RegisterController<
             IpfsClient<ReqwestClient>,
-            ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>, Provider<Http>>,
-            IdentityService,
-            StateService,
+            ZksyncClient<Identifier<SignerMiddleware<Provider<Http>, LocalWallet>>>
         >,
         RegisterError,
     > {
         let ipfs_client = IpfsClient::new(&config.ipfs_config);
-        let identity_service = IdentityService::new();
+        let identity_service = Box::new(IdentityService::new());
         let zksync_client = ZksyncClient::new(&config.zksync_config).await?;
 
         let register_controller = RegisterController {
             ipfs_client,
             zksync_client,
             identity_service,
-            state_service: StateService {},
+            state_service: Box::new(StateService {}),
             check_identity: config.check_identity,
         };
         return Ok(register_controller);
     }
 }
-impl<IC: IClient, ZC: ZClient, IS: IdService, SS: StService> RegisterController<IC, ZC, IS, SS> {
+impl<IC: IClient, ZC: ZClient> RegisterController<IC, ZC> {
     pub async fn register(
         &self,
         data: Data,

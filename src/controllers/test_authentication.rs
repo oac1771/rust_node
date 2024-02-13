@@ -54,8 +54,8 @@ mod tests {
 
         let authentication_controller = AuthenticationController {
             ipfs_client: mock_ipfs_client,
-            state_service: mock_state_service,
-            identity_service: mock_identity_service,
+            state_service: Box::new(mock_state_service),
+            identity_service: Box::new(mock_identity_service),
         };
 
         let response = authentication_controller

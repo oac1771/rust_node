@@ -63,8 +63,8 @@ mod tests {
 
         let register_controller = RegisterController {
             ipfs_client: mock_ipfs_client,
-            state_service: mock_state_service,
-            identity_service: mock_identity_service,
+            state_service: Box::new(mock_state_service),
+            identity_service: Box::new(mock_identity_service),
             zksync_client: mock_zksync_client,
             check_identity: false,
         };
@@ -108,8 +108,8 @@ mod tests {
 
         let register_controller = RegisterController {
             ipfs_client: mock_ipfs_client,
-            state_service: mock_state_service,
-            identity_service: mock_identity_service,
+            state_service: Box::new(mock_state_service),
+            identity_service: Box::new(mock_identity_service),
             zksync_client: mock_zksync_client,
             check_identity: false,
         };
